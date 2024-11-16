@@ -393,7 +393,7 @@ void OceanCurrentWorldPlugin::LoadStratifiedCurrentDatabase()
   {
     gzerr << "Transient current configuration not available" << std::endl;
   }
-  
+
   if (transientCurrentParams->HasElement("topic_stratified"))
   {
     this->sharedDataPtr->stratifiedCurrentVelocityTopic =
