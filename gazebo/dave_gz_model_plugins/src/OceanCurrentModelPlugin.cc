@@ -169,7 +169,7 @@ void OceanCurrentModelPlugin::Configure(
   // Set the flow velocity topic from SDF or use the default topic name
   if (_sdf->HasElement("flow_velocity_topic"))
   {
-    this->dataPtr->currentVelocityTopic = _sdf->Get<std::string>("flow_velocity_topic");
+    this->dataPtr->currentVelocityTopic = _sdf->Get<std::string>("flow_velocity_topic") + "/" + this->dataPtr->modelName;
   }
   else
   {
@@ -639,7 +639,3 @@ void OceanCurrentModelPlugin::PublishCurrentVelocity(const gz::sim::UpdateInfo &
 }
 
 }  // namespace dave_gz_model_plugins
-
-// Notes -
-// 1. Relplace "TransientCurrentPlugin" with OceanCurrentModelPlugin
-// 2.

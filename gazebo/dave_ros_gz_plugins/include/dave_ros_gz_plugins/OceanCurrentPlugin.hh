@@ -17,8 +17,8 @@
 #include "dave_gz_world_plugins/OceanCurrentWorldPlugin.hh"
 
 // Dave Interfaces: Message Types
-#include "dave_interfaces/msg/Stratified_Current_Database.hpp"
-#include "dave_interfaces/msg/Stratified_Current_Velocity.hpp"
+#include "dave_interfaces/msg/stratified_current_database.hpp"
+#include "dave_interfaces/msg/stratified_current_velocity.hpp"
 
 // Dave Interfaces: Service Types
 #include "dave_interfaces/srv/Get_Current_Model.hpp"

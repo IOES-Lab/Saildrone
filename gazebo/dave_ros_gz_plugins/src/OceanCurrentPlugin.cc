@@ -126,12 +126,21 @@ void OceanCurrentPlugin::Configure(
   dave_gz_world_plugins::OceanCurrentWorldPlugin::SharedData data;
 
   // Set the topic for the stratified current velocity database
-  this->dataPtr->stratifiedCurrentVelocityDatabaseTopic =
-    data.stratifiedCurrentVelocityTopic + "_database";
+  this->dataPtr->stratifiedCurrentVelocityDatabaseTopic = "stratifiedCurrentVelocityTopic_database";
+  // this->dataPtr->stratifiedCurrentVelocityDatabaseTopic =
+  //   data.stratifiedCurrentVelocityTopic + "_database";
 
   // Retrieve the model namespace from the SDF if it exists
-  this->dataPtr->model_namespace =
-    _sdf->HasElement("namespace") ? _sdf->Get<std::string>("namespace") : "";
+  // this->dataPtr->model_namespace =
+  // _sdf->HasElement("namespace") ? _sdf->Get<std::string>("namespace") : "";
+  if (_sdf->HasElement("namespace"))
+  {
+    this->dataPtr->model_namespace = _sdf->Get<std::string>("namespace");
+  }
+  else
+  {
+    this->dataPtr->model_namespace = "hydrodynamics";
+  }
 
   // Reinitialize the ROS 2 node with the model namespace
   this->dataPtr->rosNode =
@@ -141,17 +150,26 @@ void OceanCurrentPlugin::Configure(
   // Advertise the flow velocity as a stamped twist message
   this->dataPtr->flowVelocityPub =
     this->dataPtr->rosNode->create_publisher<geometry_msgs::msg::TwistStamped>(
-      data.currentVelocityTopic, rclcpp::QoS(10));
+      "currentVelocityTopic", rclcpp::QoS(10));
 
   // Advertise the stratified ocean current message
   this->dataPtr->stratifiedCurrentVelocityPub =
     this->dataPtr->rosNode->create_publisher<dave_interfaces::msg::StratifiedCurrentVelocity>(
-      data.stratifiedCurrentVelocityTopic, rclcpp::QoS(10));
+      "stratifiedCurrentVelocityTopic", rclcpp::QoS(10));
 
   // Advertise the stratified ocean current database message
   this->dataPtr->stratifiedCurrentDatabasePub =
     this->dataPtr->rosNode->create_publisher<dave_interfaces::msg::StratifiedCurrentDatabase>(
       this->dataPtr->stratifiedCurrentVelocityDatabaseTopic, rclcpp::QoS(10));
+  // // Advertise the stratified ocean current message
+  // this->dataPtr->stratifiedCurrentVelocityPub =
+  //   this->dataPtr->rosNode->create_publisher<dave_interfaces::msg::StratifiedCurrentVelocity>(
+  //     data.stratifiedCurrentVelocityTopic, rclcpp::QoS(10));
+
+  // // Advertise the stratified ocean current database message
+  // this->dataPtr->stratifiedCurrentDatabasePub =
+  //   this->dataPtr->rosNode->create_publisher<dave_interfaces::msg::StratifiedCurrentDatabase>(
+  //     this->dataPtr->stratifiedCurrentVelocityDatabaseTopic, rclcpp::QoS(10));
 
   // Advertise the service to get the current velocity model
   this->dataPtr->get_current_velocity_model =

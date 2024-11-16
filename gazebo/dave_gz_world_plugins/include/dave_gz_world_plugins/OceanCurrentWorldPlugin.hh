@@ -101,7 +101,7 @@ public:
     std::vector<std::array<int, 5>> dateGMT;  // Date in GMT (year, month, day, hour, minute)
     std::vector<double> speedcmsec;           // Speed in cm/sec
   };
-  std::unique_ptr<SharedData> sharedDataPtr;
+  std::shared_ptr<SharedData> sharedDataPtr;
 
 private:
   // std::shared_ptr<rclcpp::Node> ros_node_;

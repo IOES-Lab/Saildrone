@@ -6,6 +6,7 @@
 
 // Include Gazebo and Ignition libraries
 #include <gz/msgs/vector3d.pb.h>
+#include <gz/common/Util.hh>
 #include <gz/math/Pose3.hh>
 #include <gz/math/Vector3.hh>
 #include <gz/math/Vector4.hh>
@@ -57,6 +58,10 @@ struct OceanCurrentWorldPlugin::PrivateData
   // Publishers
   gz::transport::Node::Publisher gz_node_cvel_world_pub;  // Publisher for current velocity
 
+  // Publishers
+  gz::transport::Node::Publisher
+    gz_node_scvel_world_pub;  // Publisher for Stratified current velocity
+
   // Subscribers
   gz::transport::Node subscriber;  // Subscriber for vehicle depth
 
@@ -82,7 +87,7 @@ struct OceanCurrentWorldPlugin::PrivateData
 };
 
 OceanCurrentWorldPlugin::OceanCurrentWorldPlugin()
-: dataPtr(std::make_unique<PrivateData>()), sharedDataPtr(std::make_unique<SharedData>())
+: dataPtr(std::make_unique<PrivateData>()), sharedDataPtr(std::shared_ptr<SharedData>())
 {
   // this->sharedDataPtr = std::make_unique<SharedData>();
 }
@@ -165,32 +170,80 @@ void OceanCurrentWorldPlugin::LoadTidalOscillationDatabase()
   }
 
   // Read the tidal oscillation direction from the SDF file
-  GZ_ASSERT(
-    tidalOscillationParams->HasElement("mean_direction"), "Tidal mean direction not defined");
+  if (!(tidalOscillationParams->HasElement("mean_direction")))
+  {
+    gzerr << "Tidal mean direction not defined" << std::endl;
+  }
+
   if (tidalOscillationParams->HasElement("mean_direction"))
   {
     sdf::ElementPtr elem = tidalOscillationParams->GetElement("mean_direction");
-    GZ_ASSERT(elem->HasElement("ebb"), "Tidal mean ebb direction not defined");
-    this->sharedDataPtr->ebbDirection = elem->Get<double>("ebb");
-    this->sharedDataPtr->floodDirection = elem->Get<double>("flood");
-    GZ_ASSERT(elem->HasElement("flood"), "Tidal mean flood direction not defined");
+    if (elem->HasElement("ebb"))
+    {
+      this->sharedDataPtr->ebbDirection = elem->Get<double>("ebb");
+    }
+    else
+    {
+      gzerr << "Tidal mean ebb direction not defined" << std::endl;
+    }
+
+    if (!(elem->HasElement("flood")))
+    {
+      this->sharedDataPtr->floodDirection = elem->Get<double>("flood");
+    }
+    else
+    {
+      gzerr << "Tidal mean flood direction not defined" << std::endl;
+    }
   }
 
   // Read the world start time (GMT) from the SDF file
-  GZ_ASSERT(
-    tidalOscillationParams->HasElement("world_start_time_GMT"),
-    "World start time (GMT) not defined");
+  if (!(tidalOscillationParams->HasElement("world_start_time_GMT")))
+  {
+    gzerr << "World start time (GMT) not defined" << std::endl;
+  }
+
   if (tidalOscillationParams->HasElement("world_start_time_GMT"))
   {
     sdf::ElementPtr elem = tidalOscillationParams->GetElement("world_start_time_GMT");
-    GZ_ASSERT(elem->HasElement("day"), "World start time (day) not defined");
-    this->sharedDataPtr->world_start_time_day = elem->Get<double>("day");
-    GZ_ASSERT(elem->HasElement("month"), "World start time (month) not defined");
-    this->sharedDataPtr->world_start_time_month = elem->Get<double>("month");
-    GZ_ASSERT(elem->HasElement("year"), "World start time (year) not defined");
-    this->sharedDataPtr->world_start_time_year = elem->Get<double>("year");
-    GZ_ASSERT(elem->HasElement("hour"), "World start time (hour) not defined");
-    this->sharedDataPtr->world_start_time_hour = elem->Get<double>("hour");
+
+    if (elem->HasElement("day"))
+    {
+      this->sharedDataPtr->world_start_time_day = elem->Get<double>("day");
+    }
+    else
+    {
+      gzerr << "World start time (day) not defined" << std::endl;
+    }
+
+    if (elem->HasElement("month"))
+    {
+      this->sharedDataPtr->world_start_time_month = elem->Get<double>("month");
+    }
+    else
+    {
+      gzerr << "World start time (month) not defined" << std::endl;
+    }
+
+    if (elem->HasElement("year"))
+    {
+      this->sharedDataPtr->world_start_time_year = elem->Get<double>("year");
+    }
+    else
+    {
+      gzerr << "World start time (year) not defined" << std::endl;
+    }
+
+    if (elem->HasElement("hour"))
+    {
+      this->sharedDataPtr->world_start_time_hour = elem->Get<double>("hour");
+    }
+    else
+
+    {
+      gzerr << "World start time (hour) not defined" << std::endl;
+    }
+
     if (elem->HasElement("minute"))
     {
       this->sharedDataPtr->world_start_time_minute = elem->Get<double>("minute");
@@ -204,21 +257,42 @@ void OceanCurrentWorldPlugin::LoadTidalOscillationDatabase()
   if (this->sharedDataPtr->tidalHarmonicFlag)
   {
     // Read harmonic constituents
-    GZ_ASSERT(tidalHarmonicParams->HasElement("M2"), "Harcomnic constituents M2 not found");
-    sdf::ElementPtr M2Params = tidalHarmonicParams->GetElement("M2");
-    this->sharedDataPtr->M2_amp = M2Params->Get<double>("amp");
-    this->sharedDataPtr->M2_phase = M2Params->Get<double>("phase");
-    this->sharedDataPtr->M2_speed = M2Params->Get<double>("speed");
-    GZ_ASSERT(tidalHarmonicParams->HasElement("S2"), "Harcomnic constituents S2 not found");
-    sdf::ElementPtr S2Params = tidalHarmonicParams->GetElement("S2");
-    this->sharedDataPtr->S2_amp = S2Params->Get<double>("amp");
-    this->sharedDataPtr->S2_phase = S2Params->Get<double>("phase");
-    this->sharedDataPtr->S2_speed = S2Params->Get<double>("speed");
-    GZ_ASSERT(tidalHarmonicParams->HasElement("N2"), "Harcomnic constituents N2 not found");
-    sdf::ElementPtr N2Params = tidalHarmonicParams->GetElement("N2");
-    this->sharedDataPtr->N2_amp = N2Params->Get<double>("amp");
-    this->sharedDataPtr->N2_phase = N2Params->Get<double>("phase");
-    this->sharedDataPtr->N2_speed = N2Params->Get<double>("speed");
+    if (tidalHarmonicParams->HasElement("M2"))
+    {
+      sdf::ElementPtr M2Params = tidalHarmonicParams->GetElement("M2");
+      this->sharedDataPtr->M2_amp = M2Params->Get<double>("amp");
+      this->sharedDataPtr->M2_phase = M2Params->Get<double>("phase");
+      this->sharedDataPtr->M2_speed = M2Params->Get<double>("speed");
+    }
+    else
+    {
+      gzerr << "Harcomnic constituents M2 not found" << std::endl;
+    }
+
+    if (tidalHarmonicParams->HasElement("S2"))
+    {
+      sdf::ElementPtr S2Params = tidalHarmonicParams->GetElement("S2");
+      this->sharedDataPtr->S2_amp = S2Params->Get<double>("amp");
+      this->sharedDataPtr->S2_phase = S2Params->Get<double>("phase");
+      this->sharedDataPtr->S2_speed = S2Params->Get<double>("speed");
+    }
+    else
+    {
+      gzerr << "Harcomnic constituents S2 not found" << std::endl;
+    }
+
+    if (tidalHarmonicParams->HasElement("N2"))
+    {
+      sdf::ElementPtr N2Params = tidalHarmonicParams->GetElement("N2");
+      this->sharedDataPtr->N2_amp = N2Params->Get<double>("amp");
+      this->sharedDataPtr->N2_phase = N2Params->Get<double>("phase");
+      this->sharedDataPtr->N2_speed = N2Params->Get<double>("speed");
+    }
+    else
+    {
+      gzerr << "Harcomnic constituents N2 not found" << std::endl;
+    }
+
     gzmsg << "Tidal harmonic constituents loaded : " << std::endl;
     gzmsg << "M2 amp: " << this->sharedDataPtr->M2_amp
           << " phase: " << this->sharedDataPtr->M2_phase
@@ -242,7 +316,11 @@ void OceanCurrentWorldPlugin::LoadTidalOscillationDatabase()
       this->dataPtr->tidalFilePath = paths->FindFile(this->dataPtr->tidalFilePath, true);
       csvFile.open(this->dataPtr->tidalFilePath);
     }
-    GZ_ASSERT(csvFile, "Tidal Oscillation database file does not exist");
+
+    if (!csvFile)
+    {
+      gzerr << "Tidal Oscillation database file does not exist" << std::endl;
+    }
 
     gzmsg << "Tidal Oscillation  Database loaded : " << this->dataPtr->tidalFilePath << std::endl;
 
@@ -305,11 +383,17 @@ void OceanCurrentWorldPlugin::LoadTidalOscillationDatabase()
 /////////////////////////////////////////////////
 void OceanCurrentWorldPlugin::LoadStratifiedCurrentDatabase()
 {
-  GZ_ASSERT(
-    this->dataPtr->sdf->HasElement("transient_current"),
-    "Transient current configuration not available");
-  sdf::ElementPtr transientCurrentParams = this->dataPtr->sdf->GetElement("transient_current");
+  sdf::ElementPtr transientCurrentParams;
 
+  if (this->dataPtr->sdf->HasElement("transient_current"))
+  {
+    transientCurrentParams = this->dataPtr->sdf->GetElement("transient_current");
+  }
+  else
+  {
+    gzerr << "Transient current configuration not available" << std::endl;
+  }
+  
   if (transientCurrentParams->HasElement("topic_stratified"))
   {
     this->sharedDataPtr->stratifiedCurrentVelocityTopic =
@@ -320,9 +404,10 @@ void OceanCurrentWorldPlugin::LoadStratifiedCurrentDatabase()
     this->sharedDataPtr->stratifiedCurrentVelocityTopic = "stratified_current_velocity";
   }
 
-  GZ_ASSERT(
-    !this->sharedDataPtr->stratifiedCurrentVelocityTopic.empty(),
-    "Empty stratified ocean current velocity topic");
+  if (this->sharedDataPtr->stratifiedCurrentVelocityTopic.empty())
+  {
+    gzerr << "Empty stratified ocean current velocity topic" << std::endl;
+  }
 
   // Read the depth dependent ocean current file path from the SDF file
   if (transientCurrentParams->HasElement("databasefilePath"))
@@ -337,16 +422,12 @@ void OceanCurrentWorldPlugin::LoadStratifiedCurrentDatabase()
                                       "/worlds/transientOceanCurrentDatabase.csv";
   }
 
-  GZ_ASSERT(
-    !this->dataPtr->databaseFilePath.empty(), "Empty stratified ocean current database file path");
+  if (this->dataPtr->databaseFilePath.empty())
+  {
+    gzerr << "Empty stratified ocean current database file path" << std::endl;
+  }
 
   gzmsg << this->dataPtr->databaseFilePath << std::endl;
-
-  // #if GAZEBO_MAJOR_VERSION >= 8
-  //   this->dataPtr->lastUpdate = this->dataPtr->world->SimTime();
-  // #else
-  //   this->dataPtr->lastUpdate = this->dataPtr->world->GetSimTime();
-  // #endif
 
   // Read database
   std::ifstream csvFile;
@@ -358,7 +439,11 @@ void OceanCurrentWorldPlugin::LoadStratifiedCurrentDatabase()
     this->dataPtr->databaseFilePath = paths->FindFile(this->dataPtr->databaseFilePath, true);
     csvFile.open(this->dataPtr->databaseFilePath);
   }
-  GZ_ASSERT(csvFile, "Stratified Ocean database file does not exist");
+
+  if (!csvFile)
+  {
+    gzerr << "Stratified Ocean database file does not exist" << std::endl;
+  }
 
   gzmsg << "Statified Ocean Current Database loaded : " << this->dataPtr->databaseFilePath
         << std::endl;
@@ -427,7 +512,7 @@ void OceanCurrentWorldPlugin::LoadStratifiedCurrentDatabase()
   }
   csvFile.close();
 
-  this->dataPtr->gz_node_cvel_world_pub =
+  this->dataPtr->gz_node_scvel_world_pub =
     this->dataPtr->gz_node->Advertise<dave_gz_world_plugins_msgs::msgs::StratifiedCurrentVelocity>(
       this->dataPtr->ns + "/" + this->sharedDataPtr->stratifiedCurrentVelocityTopic);
 
@@ -445,9 +530,16 @@ void OceanCurrentWorldPlugin::LoadGlobalCurrentConfig()
   //       Consider setting it up as one or the other, but not both?
 
   // Retrieve the velocity configuration, if existent
-  GZ_ASSERT(
-    this->dataPtr->sdf->HasElement("constant_current"), "Current configuration not available");
-  sdf::ElementPtr currentVelocityParams = this->dataPtr->sdf->GetElement("constant_current");
+
+  sdf::ElementPtr currentVelocityParams;
+  if (this->dataPtr->sdf->HasElement("constant_current"))
+  {
+    currentVelocityParams = this->dataPtr->sdf->GetElement("constant_current");
+  }
+  else
+  {
+    gzerr << "Current configuration not available" << std::endl;
+  }
 
   // Read the topic names from the SDF file
   if (currentVelocityParams->HasElement("topic"))
@@ -459,8 +551,10 @@ void OceanCurrentWorldPlugin::LoadGlobalCurrentConfig()
     this->sharedDataPtr->currentVelocityTopic = "current_velocity";
   }
 
-  GZ_ASSERT(
-    !this->sharedDataPtr->currentVelocityTopic.empty(), "Empty ocean current velocity topic");
+  if (this->sharedDataPtr->currentVelocityTopic.empty())
+  {
+    gzerr << "Empty ocean current velocity topic" << std::endl;
+  }
 
   if (currentVelocityParams->HasElement("velocity"))
   {
@@ -486,22 +580,31 @@ void OceanCurrentWorldPlugin::LoadGlobalCurrentConfig()
       this->sharedDataPtr->currentVelModel.noiseAmp = elem->Get<double>("noiseAmp");
     }
 
-    GZ_ASSERT(
-      this->sharedDataPtr->currentVelModel.min < this->sharedDataPtr->currentVelModel.max,
-      "Invalid current velocity limits");
-    GZ_ASSERT(
-      this->sharedDataPtr->currentVelModel.mean >= this->sharedDataPtr->currentVelModel.min,
-      "Mean velocity must be greater than minimum");
-    GZ_ASSERT(
-      this->sharedDataPtr->currentVelModel.mean <= this->sharedDataPtr->currentVelModel.max,
-      "Mean velocity must be smaller than maximum");
-    GZ_ASSERT(
-      this->sharedDataPtr->currentVelModel.mu >= 0 && this->sharedDataPtr->currentVelModel.mu < 1,
-      "Invalid process constant");
-    GZ_ASSERT(
+    if (this->sharedDataPtr->currentVelModel.min < this->sharedDataPtr->currentVelModel.max)
+    {
+      gzerr << "Invalid current velocity limits" << std::endl;
+    }
+
+    if (this->sharedDataPtr->currentVelModel.mean >= this->sharedDataPtr->currentVelModel.min)
+    {
+      gzerr << "Mean velocity must be greater than minimum" << std::endl;
+    }
+    if (this->sharedDataPtr->currentVelModel.mean <= this->sharedDataPtr->currentVelModel.max)
+    {
+      gzerr << "Mean velocity must be smaller than maximum" << std::endl;
+    }
+
+    if (this->sharedDataPtr->currentVelModel.mu >= 0 && this->sharedDataPtr->currentVelModel.mu < 1)
+    {
+      gzerr << "Invalid process constant" << std::endl;
+    }
+
+    if (
       this->sharedDataPtr->currentVelModel.noiseAmp < 1 &&
-        this->sharedDataPtr->currentVelModel.noiseAmp >= 0,
-      "Noise amplitude has to be smaller than 1");
+      this->sharedDataPtr->currentVelModel.noiseAmp >= 0)
+    {
+      gzerr << "Noise amplitude has to be smaller than 1" << std::endl;
+    }
   }
 
   this->sharedDataPtr->currentVelModel.var = this->sharedDataPtr->currentVelModel.mean;
@@ -533,26 +636,40 @@ void OceanCurrentWorldPlugin::LoadGlobalCurrentConfig()
       this->sharedDataPtr->currentHorzAngleModel.noiseAmp = elem->Get<double>("noiseAmp");
     }
 
-    GZ_ASSERT(
+    if (
       this->sharedDataPtr->currentHorzAngleModel.min <
-        this->sharedDataPtr->currentHorzAngleModel.max,
-      "Invalid current horizontal angle limits");
-    GZ_ASSERT(
+      this->sharedDataPtr->currentHorzAngleModel.max)
+    {
+      gzerr << "Invalid current horizontal angle limits" << std::endl;
+    }
+
+    if (
       this->sharedDataPtr->currentHorzAngleModel.mean >=
-        this->sharedDataPtr->currentHorzAngleModel.min,
-      "Mean horizontal angle must be greater than minimum");
-    GZ_ASSERT(
+      this->sharedDataPtr->currentHorzAngleModel.min)
+    {
+      gzerr << "Mean horizontal angle must be greater than minimum" << std::endl;
+    }
+
+    if (
       this->sharedDataPtr->currentHorzAngleModel.mean <=
-        this->sharedDataPtr->currentHorzAngleModel.max,
-      "Mean horizontal angle must be smaller than maximum");
-    GZ_ASSERT(
+      this->sharedDataPtr->currentHorzAngleModel.max)
+    {
+      gzerr << "Mean horizontal angle must be smaller than maximum" << std::endl;
+    }
+
+    if (
       this->sharedDataPtr->currentHorzAngleModel.mu >= 0 &&
-        this->sharedDataPtr->currentHorzAngleModel.mu < 1,
-      "Invalid process constant");
-    GZ_ASSERT(
+      this->sharedDataPtr->currentHorzAngleModel.mu < 1)
+    {
+      gzerr << "Invalid process constant" << std::endl;
+    }
+
+    if (
       this->sharedDataPtr->currentHorzAngleModel.noiseAmp < 1 &&
-        this->sharedDataPtr->currentHorzAngleModel.noiseAmp >= 0,
-      "Noise amplitude for horizontal angle has to be between 0 and 1");
+      this->sharedDataPtr->currentHorzAngleModel.noiseAmp >= 0)
+    {
+      gzerr << "Noise amplitude for horizontal angle has to be between 0 and 1" << std::endl;
+    }
   }
 
   this->sharedDataPtr->currentHorzAngleModel.var = this->sharedDataPtr->currentHorzAngleModel.mean;
@@ -584,26 +701,40 @@ void OceanCurrentWorldPlugin::LoadGlobalCurrentConfig()
       this->sharedDataPtr->currentVertAngleModel.noiseAmp = elem->Get<double>("noiseAmp");
     }
 
-    GZ_ASSERT(
+    if (
       this->sharedDataPtr->currentVertAngleModel.min <
-        this->sharedDataPtr->currentVertAngleModel.max,
-      "Invalid current vertical angle limits");
-    GZ_ASSERT(
+      this->sharedDataPtr->currentVertAngleModel.max)
+    {
+      gzerr << "Invalid current vertical angle limits" << std::endl;
+    }
+
+    if (
       this->sharedDataPtr->currentVertAngleModel.mean >=
-        this->sharedDataPtr->currentVertAngleModel.min,
-      "Mean vertical angle must be greater than minimum");
-    GZ_ASSERT(
+      this->sharedDataPtr->currentVertAngleModel.min)
+    {
+      gzerr << "Mean vertical angle must be greater than minimum" << std::endl;
+    }
+
+    if (
       this->sharedDataPtr->currentVertAngleModel.mean <=
-        this->sharedDataPtr->currentVertAngleModel.max,
-      "Mean vertical angle must be smaller than maximum");
-    GZ_ASSERT(
+      this->sharedDataPtr->currentVertAngleModel.max)
+    {
+      gzerr << "Mean vertical angle must be smaller than maximum" << std::endl;
+    }
+
+    if (
       this->sharedDataPtr->currentVertAngleModel.mu >= 0 &&
-        this->sharedDataPtr->currentVertAngleModel.mu < 1,
-      "Invalid process constant");
-    GZ_ASSERT(
+      this->sharedDataPtr->currentVertAngleModel.mu < 1)
+    {
+      gzerr << "Invalid process constant" << std::endl;
+    }
+
+    if (
       this->sharedDataPtr->currentVertAngleModel.noiseAmp < 1 &&
-        this->sharedDataPtr->currentVertAngleModel.noiseAmp >= 0,
-      "Noise amplitude for vertical angle has to be between 0 and 1");
+      this->sharedDataPtr->currentVertAngleModel.noiseAmp >= 0)
+    {
+      gzerr << "Noise amplitude for vertical angle has to be between 0 and 1" << std::endl;
+    }
   }
 
   this->sharedDataPtr->currentVertAngleModel.var = this->sharedDataPtr->currentVertAngleModel.mean;
@@ -637,12 +768,16 @@ void OceanCurrentWorldPlugin::Update(
   // model
 
   // Update current velocity
-  double currentVelMag = this->sharedDataPtr->currentVelModel.Update(time);
-  // Update current horizontal direction around z axis of flow frame
-  double horzAngle = this->sharedDataPtr->currentHorzAngleModel.Update(time);
+  double currentVelMag = this->sharedDataPtr->currentVelModel.Update(time);  // (TODO)
+  // double currentVelMag = 1.00;
 
   // Update current horizontal direction around z axis of flow frame
-  double vertAngle = this->sharedDataPtr->currentVertAngleModel.Update(time);
+  double horzAngle = this->sharedDataPtr->currentHorzAngleModel.Update(time);  // (TODO)
+  // double horzAngle = 0.3;
+
+  // Update current horizontal direction around z axis of flow frame
+  // double vertAngle = 0.3;
+  double vertAngle = this->sharedDataPtr->currentVertAngleModel.Update(time);  // (TODO)
 
   // Generating the current velocity vector as in the North-East-Down frame
   this->sharedDataPtr->currentVelocity = gz::math::Vector3d(
@@ -679,20 +814,24 @@ void OceanCurrentWorldPlugin::PublishCurrentVelocity()
 /////////////////////////////////////////////////
 void OceanCurrentWorldPlugin::PublishStratifiedCurrentVelocity()
 {
-  dave_gz_world_plugins_msgs::msgs::StratifiedCurrentVelocity currentVel;  // check
+  dave_gz_world_plugins_msgs::msgs::StratifiedCurrentVelocity stratcurrentVel;  // check
   for (std::vector<gz::math::Vector4d>::iterator it =
          this->sharedDataPtr->currentStratifiedVelocity.begin();
        it != this->sharedDataPtr->currentStratifiedVelocity.end();
        ++it)  // currentStratifiedVelocity values defined where ? (TODO)
   {
-    gz::msgs::Set(currentVel.add_velocity(), gz::math::Vector3d(it->X(), it->Y(), it->Z()));
-    currentVel.add_depth(it->W());
+    gz::msgs::Set(stratcurrentVel.add_velocity(), gz::math::Vector3d(it->X(), it->Y(), it->Z()));
+    // auto* velocity = stratcurrentVel.add_velocity();
+    // velocity->set_x(it->X());
+    // velocity->set_y(it->Y());
+    // velocity->set_z(it->Z());
+    stratcurrentVel.add_depth(it->W());
   }
-  if (currentVel.velocity_size() == 0)
+  if (stratcurrentVel.velocity_size() == 0)
   {
     return;
   }
-  this->dataPtr->gz_node_cvel_world_pub.Publish(currentVel);
+  this->dataPtr->gz_node_scvel_world_pub.Publish(stratcurrentVel);
 }
 
 /////////////////////////////////////////////////
