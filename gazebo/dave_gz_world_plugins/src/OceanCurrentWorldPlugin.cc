@@ -89,7 +89,7 @@ struct OceanCurrentWorldPlugin::PrivateData
 OceanCurrentWorldPlugin::OceanCurrentWorldPlugin()
 : dataPtr(std::make_unique<PrivateData>()), sharedDataPtr(std::shared_ptr<SharedData>())
 {
-  // this->sharedDataPtr = std::make_unique<SharedData>();
+  this->sharedDataPtr = std::shared_ptr<SharedData>();
 }
 
 /////////////////////////////////////////////////
@@ -559,9 +559,12 @@ void OceanCurrentWorldPlugin::LoadGlobalCurrentConfig()
   if (currentVelocityParams->HasElement("velocity"))
   {
     sdf::ElementPtr elem = currentVelocityParams->GetElement("velocity");
+    // this->sharedDataPtr = std::make_shared<double>();
     if (elem->HasElement("mean"))
     {
-      this->sharedDataPtr->currentVelModel.mean = elem->Get<double>("mean");
+      // this->sharedDataPtr->currentVelModel.mean = elem->Get<double>("mean");
+      this->sharedDataPtr->currentVelModel.mean =
+        std::make_shared<dave_gz_world_plugins::GaussMarkovProcess>(elem->Get<double>("mean"));
     }
     if (elem->HasElement("min"))
     {
@@ -580,28 +583,28 @@ void OceanCurrentWorldPlugin::LoadGlobalCurrentConfig()
       this->sharedDataPtr->currentVelModel.noiseAmp = elem->Get<double>("noiseAmp");
     }
 
-    if (this->sharedDataPtr->currentVelModel.min < this->sharedDataPtr->currentVelModel.max)
+    if (!(this->sharedDataPtr->currentVelModel.min < this->sharedDataPtr->currentVelModel.max))
     {
       gzerr << "Invalid current velocity limits" << std::endl;
     }
 
-    if (this->sharedDataPtr->currentVelModel.mean >= this->sharedDataPtr->currentVelModel.min)
+    if (!(this->sharedDataPtr->currentVelModel.mean >= this->sharedDataPtr->currentVelModel.min))
     {
       gzerr << "Mean velocity must be greater than minimum" << std::endl;
     }
-    if (this->sharedDataPtr->currentVelModel.mean <= this->sharedDataPtr->currentVelModel.max)
+    if (!(this->sharedDataPtr->currentVelModel.mean <= this->sharedDataPtr->currentVelModel.max))
     {
       gzerr << "Mean velocity must be smaller than maximum" << std::endl;
     }
 
-    if (this->sharedDataPtr->currentVelModel.mu >= 0 && this->sharedDataPtr->currentVelModel.mu < 1)
+    if (!(this->sharedDataPtr->currentVelModel.mu >= 0 &&
+          this->sharedDataPtr->currentVelModel.mu < 1))
     {
       gzerr << "Invalid process constant" << std::endl;
     }
 
-    if (
-      this->sharedDataPtr->currentVelModel.noiseAmp < 1 &&
-      this->sharedDataPtr->currentVelModel.noiseAmp >= 0)
+    if (!(this->sharedDataPtr->currentVelModel.noiseAmp < 1 &&
+          this->sharedDataPtr->currentVelModel.noiseAmp >= 0))
     {
       gzerr << "Noise amplitude has to be smaller than 1" << std::endl;
     }
@@ -636,37 +639,32 @@ void OceanCurrentWorldPlugin::LoadGlobalCurrentConfig()
       this->sharedDataPtr->currentHorzAngleModel.noiseAmp = elem->Get<double>("noiseAmp");
     }
 
-    if (
-      this->sharedDataPtr->currentHorzAngleModel.min <
-      this->sharedDataPtr->currentHorzAngleModel.max)
+    if (!(this->sharedDataPtr->currentHorzAngleModel.min <
+          this->sharedDataPtr->currentHorzAngleModel.max))
     {
       gzerr << "Invalid current horizontal angle limits" << std::endl;
     }
 
-    if (
-      this->sharedDataPtr->currentHorzAngleModel.mean >=
-      this->sharedDataPtr->currentHorzAngleModel.min)
+    if (!(this->sharedDataPtr->currentHorzAngleModel.mean >=
+          this->sharedDataPtr->currentHorzAngleModel.min))
     {
       gzerr << "Mean horizontal angle must be greater than minimum" << std::endl;
     }
 
-    if (
-      this->sharedDataPtr->currentHorzAngleModel.mean <=
-      this->sharedDataPtr->currentHorzAngleModel.max)
+    if (!(this->sharedDataPtr->currentHorzAngleModel.mean <=
+          this->sharedDataPtr->currentHorzAngleModel.max))
     {
       gzerr << "Mean horizontal angle must be smaller than maximum" << std::endl;
     }
 
-    if (
-      this->sharedDataPtr->currentHorzAngleModel.mu >= 0 &&
-      this->sharedDataPtr->currentHorzAngleModel.mu < 1)
+    if (!(this->sharedDataPtr->currentHorzAngleModel.mu >= 0 &&
+          this->sharedDataPtr->currentHorzAngleModel.mu < 1))
     {
       gzerr << "Invalid process constant" << std::endl;
     }
 
-    if (
-      this->sharedDataPtr->currentHorzAngleModel.noiseAmp < 1 &&
-      this->sharedDataPtr->currentHorzAngleModel.noiseAmp >= 0)
+    if (!(this->sharedDataPtr->currentHorzAngleModel.noiseAmp < 1 &&
+          this->sharedDataPtr->currentHorzAngleModel.noiseAmp >= 0))
     {
       gzerr << "Noise amplitude for horizontal angle has to be between 0 and 1" << std::endl;
     }
@@ -701,37 +699,32 @@ void OceanCurrentWorldPlugin::LoadGlobalCurrentConfig()
       this->sharedDataPtr->currentVertAngleModel.noiseAmp = elem->Get<double>("noiseAmp");
     }
 
-    if (
-      this->sharedDataPtr->currentVertAngleModel.min <
-      this->sharedDataPtr->currentVertAngleModel.max)
+    if (!(this->sharedDataPtr->currentVertAngleModel.min <
+          this->sharedDataPtr->currentVertAngleModel.max))
     {
       gzerr << "Invalid current vertical angle limits" << std::endl;
     }
 
-    if (
-      this->sharedDataPtr->currentVertAngleModel.mean >=
-      this->sharedDataPtr->currentVertAngleModel.min)
+    if (!(this->sharedDataPtr->currentVertAngleModel.mean >=
+          this->sharedDataPtr->currentVertAngleModel.min))
     {
       gzerr << "Mean vertical angle must be greater than minimum" << std::endl;
     }
 
-    if (
-      this->sharedDataPtr->currentVertAngleModel.mean <=
-      this->sharedDataPtr->currentVertAngleModel.max)
+    if (!(this->sharedDataPtr->currentVertAngleModel.mean <=
+          this->sharedDataPtr->currentVertAngleModel.max))
     {
       gzerr << "Mean vertical angle must be smaller than maximum" << std::endl;
     }
 
-    if (
-      this->sharedDataPtr->currentVertAngleModel.mu >= 0 &&
-      this->sharedDataPtr->currentVertAngleModel.mu < 1)
+    if (!(this->sharedDataPtr->currentVertAngleModel.mu >= 0 &&
+          this->sharedDataPtr->currentVertAngleModel.mu < 1))
     {
       gzerr << "Invalid process constant" << std::endl;
     }
 
-    if (
-      this->sharedDataPtr->currentVertAngleModel.noiseAmp < 1 &&
-      this->sharedDataPtr->currentVertAngleModel.noiseAmp >= 0)
+    if (!(this->sharedDataPtr->currentVertAngleModel.noiseAmp < 1 &&
+          this->sharedDataPtr->currentVertAngleModel.noiseAmp >= 0))
     {
       gzerr << "Noise amplitude for vertical angle has to be between 0 and 1" << std::endl;
     }
