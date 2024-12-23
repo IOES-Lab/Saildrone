@@ -9,6 +9,7 @@
 // #include <cmath>
 #include <gz/math/Vector4.hh>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -100,8 +101,60 @@ public:
     // Date and speed information
     std::vector<std::array<int, 5>> dateGMT;  // Date in GMT (year, month, day, hour, minute)
     std::vector<double> speedcmsec;           // Speed in cm/sec
+
+    // ------------------------------------------
+
+    // // Gauss-Markov process instances for current models
+    // std::shared_ptr<dave_gz_world_plugins::GaussMarkovProcess>
+    //   currentHorzAngleModel;                                                     // Horizontal
+    //   angle
+    // std::shared_ptr<dave_gz_world_plugins::GaussMarkovProcess> currentVelModel;  // Velocity
+    // std::shared_ptr<dave_gz_world_plugins::GaussMarkovProcess>
+    //   currentVertAngleModel;  // Vertical angle
+
+    // // Stratified current database and models
+    // std::shared_ptr<std::vector<gz::math::Vector3d>>
+    //   stratifiedDatabase;  // Database values for stratified currents
+    // std::shared_ptr<std::vector<dave_gz_world_plugins::GaussMarkovProcess>>
+    //   stratifiedCurrentModels;  // Stratified current models
+
+    // // Tidal harmonic flag
+    // std::shared_ptr<bool> tidalHarmonicFlag;
+
+    // // Current velocity information
+    // std::shared_ptr<gz::math::Vector3d> currentVelocity;  // Current linear velocity vector
+    // std::shared_ptr<std::vector<gz::math::Vector4d>>
+    //   currentStratifiedVelocity;  // Depth-specific linear velocity vectors for stratified
+    //   current
+
+    // // Tidal harmonic data (M2, S2, N2 constituents)
+    // std::shared_ptr<double> M2_amp, M2_phase, M2_speed;  // M2 tidal constituent
+    // std::shared_ptr<double> S2_amp, S2_phase, S2_speed;  // S2 tidal constituent
+    // std::shared_ptr<double> N2_amp, N2_phase, N2_speed;  // N2 tidal constituent
+
+    // // Tidal oscillation mean directions
+    // std::shared_ptr<double> ebbDirection;    // Mean ebb direction
+    // std::shared_ptr<double> floodDirection;  // Mean flood direction
+
+    // // Tidal oscillation world start time (GMT)
+    // std::shared_ptr<int> world_start_time_day;
+    // std::shared_ptr<int> world_start_time_month;
+    // std::shared_ptr<int> world_start_time_year;
+    // std::shared_ptr<int> world_start_time_hour;
+    // std::shared_ptr<int> world_start_time_minute;
+
+    // // Topics
+    // std::shared_ptr<std::string> currentVelocityTopic;
+    // std::shared_ptr<std::string> stratifiedCurrentVelocityTopic;
+    // // std::string vehicleDepthTopic;
+
+    // // Date and speed information
+    // std::shared_ptr<std::vector<std::array<int, 5>>>
+    //   dateGMT;  // Date in GMT (year, month, day, hour, minute)
+    // std::shared_ptr<std::vector<double>> speedcmsec;  // Speed in cm/sec
   };
-  std::shared_ptr<SharedData> sharedDataPtr;
+
+  std::shared_ptr<SharedData> sharedDataPtr = std::make_shared<SharedData>();
 
 private:
   // std::shared_ptr<rclcpp::Node> ros_node_;

@@ -28,6 +28,7 @@
 #include <math.h>
 #include <chrono>
 #include <map>
+#include <memory>
 #include <string>
 
 // AMENT library for package directory functions
@@ -124,6 +125,8 @@ void OceanCurrentWorldPlugin::Configure(
 
   LoadGlobalCurrentConfig();
   LoadStratifiedCurrentDatabase();
+  LoadGlobalCurrentConfig();
+
   if (_sdf->HasElement("tidal_oscillation"))
   {
     if (_sdf->Get<bool>("tidal_oscillation"))
@@ -562,9 +565,9 @@ void OceanCurrentWorldPlugin::LoadGlobalCurrentConfig()
     // this->sharedDataPtr = std::make_shared<double>();
     if (elem->HasElement("mean"))
     {
-      // this->sharedDataPtr->currentVelModel.mean = elem->Get<double>("mean");
-      this->sharedDataPtr->currentVelModel.mean =
-        std::make_shared<dave_gz_world_plugins::GaussMarkovProcess>(elem->Get<double>("mean"));
+      this->sharedDataPtr->currentVelModel.mean = elem->Get<double>("mean");
+      // this->sharedDataPtr->currentVelModel.mean =
+      //   std::make_shared<dave_gz_world_plugins::GaussMarkovProcess>(elem->Get<double>("mean"));
     }
     if (elem->HasElement("min"))
     {

@@ -3,6 +3,8 @@
 #include <chrono>
 #include <functional>
 #include <iostream>
+#include <memory>
+#include <string>
 #include <vector>
 
 // Boost Library Header

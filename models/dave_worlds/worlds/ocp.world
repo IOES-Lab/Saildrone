@@ -203,8 +203,8 @@
       </tidal_oscillation>
     </plugin>
 
-    <plugin filename="OceanCurrentPlugin" name="dave_ros_gz_plugins::OceanCurrentPlugin">
+    <!-- <plugin filename="OceanCurrentPlugin" name="dave_ros_gz_plugins::OceanCurrentPlugin">
       <namespace>hydrodynamics</namespace>
-    </plugin>
+    </plugin> -->
   </world>
 </sdf>
