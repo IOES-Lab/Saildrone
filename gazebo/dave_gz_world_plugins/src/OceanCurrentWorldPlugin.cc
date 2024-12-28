@@ -103,9 +103,6 @@ void OceanCurrentWorldPlugin::Configure(
   const gz::sim::Entity & _entity, const std::shared_ptr<const sdf::Element> & _sdf,
   gz::sim::EntityComponentManager & _ecm, gz::sim::EventManager & _eventMgr)
 {
-  // GZ_ASSERT(_entity !=  gz::sim::kNullEntity, "World pointer is invalid");
-  // GZ_ASSERT(_sdf != nullptr, "SDF pointer is invalid");
-
   this->dataPtr->world = gz::sim::World(_ecm.EntityByComponents(gz::sim::components::World()));
   if (!this->dataPtr->world.Valid(_ecm))  // check
   {
@@ -117,7 +114,7 @@ void OceanCurrentWorldPlugin::Configure(
   // Read the namespace for topics and services
   this->dataPtr->ns = _sdf->Get<std::string>("namespace");
 
-  gzmsg << "Loading underwater world..." << std::endl;
+  gzmsg << "Loading underwater world plugin" << std::endl;
   // Initializing the transport node
   this->dataPtr->gz_node = std::make_shared<gz::transport::Node>();
 
@@ -474,6 +471,8 @@ void OceanCurrentWorldPlugin::LoadStratifiedCurrentDatabase()
     read.Y() = row[1];
     read.Z() = row[2];
     this->sharedDataPtr->stratifiedDatabase.push_back(read);
+    // gzmsg << "stratifiedDatabase: " << this->sharedDataPtr->stratifiedDatabase << std::endl;
+    // //testline (TODO)
 
     // Create Gauss-Markov processes for the stratified currents
     // Means are the database-specified magnitudes & angles, and
@@ -512,6 +511,8 @@ void OceanCurrentWorldPlugin::LoadStratifiedCurrentDatabase()
     depthModels.push_back(hAngleModel);
     depthModels.push_back(vAngleModel);
     this->sharedDataPtr->stratifiedCurrentModels.push_back(depthModels);
+    // gzmsg << "stratifiedCurrentModels: " << this->sharedDataPtr->stratifiedCurrentModels <<
+    // std::endl; //testline (TODO)
   }
   csvFile.close();
 
@@ -781,10 +782,12 @@ void OceanCurrentWorldPlugin::Update(
     currentVelMag * cos(horzAngle) * cos(vertAngle),
     currentVelMag * sin(horzAngle) * cos(vertAngle), currentVelMag * sin(vertAngle));
 
+  gzmsg << "out DepthVel";  // testline (TODO)
   // Generate the depth-specific velocities
   this->sharedDataPtr->currentStratifiedVelocity.clear();
   for (int i = 0; i < this->sharedDataPtr->stratifiedDatabase.size(); i++)
   {
+    gzmsg << "enter DepthVel";  // testline (TODO)
     double depth = this->sharedDataPtr->stratifiedDatabase[i].Z();
     currentVelMag = this->sharedDataPtr->stratifiedCurrentModels[i][0].Update(time);
     horzAngle = this->sharedDataPtr->stratifiedCurrentModels[i][1].Update(time);
@@ -792,6 +795,7 @@ void OceanCurrentWorldPlugin::Update(
     gz::math::Vector4d depthVel(
       currentVelMag * cos(horzAngle) * cos(vertAngle),
       currentVelMag * sin(horzAngle) * cos(vertAngle), currentVelMag * sin(vertAngle), depth);
+    gzmsg << "DepthVel: " << depthVel << std::endl;  // testline (TODO)
     this->sharedDataPtr->currentStratifiedVelocity.push_back(depthVel);
   }
 }
