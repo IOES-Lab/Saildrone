@@ -129,12 +129,7 @@ void OceanCurrentPlugin::Configure(
 
   // Set the topic for the stratified current velocity database
   this->dataPtr->stratifiedCurrentVelocityDatabaseTopic = "stratifiedCurrentVelocityTopic_database";
-  // this->dataPtr->stratifiedCurrentVelocityDatabaseTopic =
-  //   data.stratifiedCurrentVelocityTopic + "_database";
 
-  // Retrieve the model namespace from the SDF if it exists
-  // this->dataPtr->model_namespace =
-  // _sdf->HasElement("namespace") ? _sdf->Get<std::string>("namespace") : "";
   if (_sdf->HasElement("namespace"))
   {
     this->dataPtr->model_namespace = _sdf->Get<std::string>("namespace");

@@ -90,7 +90,7 @@ struct OceanCurrentWorldPlugin::PrivateData
 OceanCurrentWorldPlugin::OceanCurrentWorldPlugin()
 : dataPtr(std::make_unique<PrivateData>()), sharedDataPtr(std::shared_ptr<SharedData>())
 {
-  this->sharedDataPtr = std::shared_ptr<SharedData>();
+  this->sharedDataPtr = std::make_shared<SharedData>();
 }
 
 /////////////////////////////////////////////////
@@ -547,7 +547,8 @@ void OceanCurrentWorldPlugin::LoadGlobalCurrentConfig()
   // Read the topic names from the SDF file
   if (currentVelocityParams->HasElement("topic"))
   {
-    this->sharedDataPtr->currentVelocityTopic = currentVelocityParams->Get<std::string>("topic");
+    this->sharedDataPtr->currentVelocityTopic =
+      this->dataPtr->ns + "/" + currentVelocityParams->Get<std::string>("topic");
   }
   else
   {
@@ -746,9 +747,9 @@ void OceanCurrentWorldPlugin::LoadGlobalCurrentConfig()
 
   // Advertise the current velocity & stratified current velocity topics
   this->dataPtr->gz_node_cvel_world_pub = this->dataPtr->gz_node->Advertise<gz::msgs::Vector3d>(
-    this->dataPtr->ns + "/" + this->sharedDataPtr->currentVelocityTopic);
-  gzmsg << "Current velocity topic name: "
-        << this->dataPtr->ns + "/" + this->sharedDataPtr->currentVelocityTopic << std::endl;
+    this->sharedDataPtr->currentVelocityTopic);
+  gzmsg << "Current velocity topic name: " << this->sharedDataPtr->currentVelocityTopic
+        << std::endl;
 }
 
 // ----------------------------------------------
