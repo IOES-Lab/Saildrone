@@ -51,6 +51,14 @@
 #include "MultibeamSonarSensor.hh"
 
 #include <gz/transport/Node.hh>
+#include <rclcpp/rclcpp.hpp>
+
+#include <pcl/features/normal_3d.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <opencv2/core/core.hpp>
 
 namespace gz
 {
@@ -525,7 +533,7 @@ bool MultibeamSonarSensor::Load(const sdf::Sensor & _sdf)
   if (_sdf.Type() != sdf::SensorType::CUSTOM)
   {
     gzerr << "Expected [" << this->Name() << "] sensor to be "
-          << "a DVL but found a " << _sdf.TypeStr() << "." << std::endl;
+          << "a Multibeam Sonar but found a " << _sdf.TypeStr() << "." << std::endl;
     return false;
   }
 
@@ -593,7 +601,56 @@ bool MultibeamSonarSensor::Load(const sdf::Sensor & _sdf)
   this->dataPtr->sceneChangeConnection = gz::sensors::RenderingEvents::ConnectSceneChangeCallback(
     std::bind(&MultibeamSonarSensor::SetScene, this, std::placeholders::_1));
 
+  // ROS Initialization
+
+  if (!rclcpp::ok())
+  {
+    rclcpp::init(0, nullptr);
+  }
+
+  this->ros_node_ = std::make_shared<rclcpp::Node>("multibeam_sonar_node");
+
+  this->pointCloudSub_ = this->ros_node_->create_subscription<sensor_msgs::msg::PointCloud2>(
+    "/sensor/multibeam_sonar/point_cloud", 10,
+    std::bind(&MultibeamSonarSensor::pointCloudCallback, this, std::placeholders::_1));
+
   return true;
+}
+
+void MultibeamSonarSensor::pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
+{
+  this->lock_.lock();
+
+  gzmsg << "Callback POINTCLOUD started" << std::endl;
+
+  pcl::PointCloud<pcl::PointXYZI>::Ptr pcl_pointcloud(new pcl::PointCloud<pcl::PointXYZI>);
+
+  gzmsg << "Converting ROS point cloud message to PCL format..." << std::endl;
+
+  pcl::fromROSMsg(*msg, *pcl_pointcloud);
+
+  gzmsg << "Point cloud converted. Number of points: " << pcl_pointcloud->size() << std::endl;
+
+  if (this->dataPtr->pointMsg.width() == 0 || this->dataPtr->pointMsg.height() == 0)
+  {
+    gzmsg << "Error: PointCloud2 message dimensions are zero!" << std::endl;
+  }
+  else
+  {
+    unsigned int width = this->dataPtr->pointMsg.width();
+    unsigned int height = this->dataPtr->pointMsg.height();
+
+    gzmsg << "Point cloud dimensions: width = " << width << ", height = " << height << std::endl;
+
+    this->point_cloud_image_.create(height, width, CV_32FC1);
+    cv::MatIterator_<float> iter_image = this->point_cloud_image_.begin<float>();
+
+    gzmsg << "Point cloud image matrix created" << std::endl;
+  }
+
+  this->lock_.unlock();
+
+  gzmsg << "Callback POINTCLOUD finished" << std::endl;
 }
 
 //////////////////////////////////////////////////
@@ -801,80 +858,28 @@ std::vector<gz::rendering::SensorPtr> MultibeamSonarSensor::RenderingSensors() c
   return {this->dataPtr->depthSensor, this->dataPtr->imageSensor};
 }
 
-//////////////////////////////////////////////////
+// Simplified function to only process point cloud
 void MultibeamSonarSensor::Implementation::OnNewFrame(
   const float * _scan, unsigned int _width, unsigned int _height, unsigned int _channels,
   const std::string & /*_format*/)
 {
-  // From GPU Lidar sensor
+  // Lock the ray buffer for thread safety
   std::lock_guard<std::mutex> lock(this->rayMutex);
 
+  // Total number of points in the scan
   unsigned int samples = _width * _height * _channels;
   unsigned int rayBufferSize = samples * sizeof(float);
 
+  // Allocate memory for the ray buffer if not already allocated
   if (!this->rayBuffer)
   {
     this->rayBuffer = new float[samples];
   }
 
+  // Copy the incoming scan data into the ray buffer
   memcpy(this->rayBuffer, _scan, rayBufferSize);
 
-  // From DVL sensor
-  const auto & intrinsics = this->depthSensorIntrinsics;
-
-  for (size_t i = 0; i < this->beams.size(); ++i)
-  {
-    const AxisAlignedPatch2i & beamScanPatch = this->beamScanPatches[i];
-    const AcousticBeam & beam = this->beams[i];
-
-    // Clear existing target, if any
-    std::optional<ObjectTarget> & beamTarget = this->beamTargets[i];
-    beamTarget.reset();
-
-    // Iterate over the beam solid angle in camera coordinates
-    for (auto v = beamScanPatch.YMin(); v < beamScanPatch.YMax(); ++v)
-    {
-      assert(v >= 0 && v < static_cast<int>(_height));
-      const gz::math::Angle inclination = v * intrinsics.step.Y() + intrinsics.offset.Y();
-
-      for (auto u = beamScanPatch.XMin(); u < beamScanPatch.XMax(); ++u)
-      {
-        assert(u >= 0 && u < static_cast<int>(_width));
-
-        const float range = _scan[(u + v * _width) * _channels];
-        if (!std::isfinite(range))
-        {
-          continue;
-        }
-
-        const gz::math::Angle azimuth = u * intrinsics.step.X() + intrinsics.offset.X();
-
-        // Convert to cartesian coordinates in the acoustic beams' frame
-        const auto point = range * gz::math::Vector3d{
-                                     std::cos(inclination.Radian()) * std::cos(azimuth.Radian()),
-                                     std::cos(inclination.Radian()) * std::sin(azimuth.Radian()),
-                                     std::sin(inclination.Radian())};
-
-        // Track point if (a) it effectively lies within the
-        // beam's aperture and (b) it is the closest seen so far
-        const gz::math::Angle angle = std::acos(point.Normalized().Dot(beam.Axis()));
-        if (angle < beam.ApertureAngle() / 2.)
-        {
-          if (beamTarget)
-          {
-            if (beamTarget->pose.Pos().Length() > point.Length())
-            {
-              beamTarget->pose.Pos() = point;
-            }
-          }
-          else
-          {
-            beamTarget = {gz::math::Pose3d{point, gz::math::Quaterniond::Identity}, 0};
-          }
-        }  // End of aperture angle loop
-      }  // End of beamScanPatch X loop
-    }  // End of beamScanPatch Y loop
-  }  // End of beam loop
+  // Further processing of the point cloud can go here, if needed
 }
 
 /////////////////////////////////////////////////
@@ -978,6 +983,7 @@ void MultibeamSonarSensor::PostUpdate(const std::chrono::steady_clock::duration 
            << "cannot estimate velocities." << std::endl;
     return;
   }
+  rclcpp::spin_some(this->ros_node_);
 
   for (size_t i = 0; i < this->dataPtr->beams.size(); ++i)
   {

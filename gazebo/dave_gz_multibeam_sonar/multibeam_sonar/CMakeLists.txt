@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 3.10.2 FATAL_ERROR)
+cmake_policy(SET CMP0144 NEW)
+
 project(multibeam_sonar)
 
 find_package(ament_cmake REQUIRED)
@@ -7,6 +9,17 @@ find_package(gz-sim8 REQUIRED)
 find_package(gz-sensors8 REQUIRED)
 find_package(gz-rendering8 REQUIRED OPTIONAL_COMPONENTS ogre ogre2)
 find_package(gz-transport13 REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(PCL REQUIRED)
+find_package(pcl_conversions REQUIRED)
+
+find_package(OpenCV REQUIRED)
+
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 
 # Set version variables
 set(GZ_MSGS_VER ${gz-msgs10_VERSION_MAJOR})
@@ -32,7 +45,6 @@ add_library(${PROJECT_NAME}
     MultibeamSonarSensor.cc
 )
 
-# Ensure that the CameraSensor class is available
 target_include_directories(${PROJECT_NAME}
   PUBLIC
   ${gz-sensors${GZ_SENSORS_VER}_INCLUDE_DIRS}
@@ -41,8 +53,8 @@ target_include_directories(${PROJECT_NAME}
   ${gz-transport${GZ_TRANSPORT_VER}_INCLUDE_DIRS}
   ${gz-sim${GZ_SIM_VER}_INCLUDE_DIRS}
 )
+target_link_libraries(${PROJECT_NAME} ${PCL_LIBRARIES})
 
-# Install targets
 install(TARGETS ${PROJECT_NAME}
   DESTINATION lib/${PROJECT_NAME}
 )
@@ -53,7 +65,14 @@ ament_target_dependencies(${PROJECT_NAME}
   gz-msgs${GZ_MSGS_VER}
   gz-transport${GZ_TRANSPORT_VER}
   gz-sim${GZ_SIM_VER}
+  rclcpp
+  sensor_msgs
+  rosidl_default_generators
+  PCL
+  pcl_conversions
+  OpenCV
 )
+
 
 # Environment hooks
 ament_environment_hooks(
