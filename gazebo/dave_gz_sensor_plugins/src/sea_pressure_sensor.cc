@@ -43,6 +43,7 @@ public:
   rclcpp::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr ros_depth_estimate_pub;
   std::shared_ptr<rclcpp::Node> rosNode;
   std::string robotNamespace;
+  std::string topic;
   double noiseAmp = 0.0;
   double noiseSigma = 3.0;
   double inferredDepth = 0.0;
@@ -82,6 +83,15 @@ void SubseaPressureSensorPlugin::Configure(
     return;
   }
   this->dataPtr->robotNamespace = _sdf->Get<std::string>("namespace");
+
+  if (_sdf->HasElement("topic"))
+  {
+    this->dataPtr->topic = _sdf->Get<std::string>("topic");
+  }
+  else
+  {
+    this->dataPtr->topic = "sea_pressure";
+  }
 
   if (_sdf->HasElement("saturation"))
   {
@@ -124,18 +134,20 @@ void SubseaPressureSensorPlugin::Configure(
 
   this->dataPtr->ros_pressure_sensor_pub =
     this->rosNode->create_publisher<sensor_msgs::msg::FluidPressure>(
-      this->dataPtr->robotNamespace + "/" + "Pressure", rclcpp::QoS(10).reliable());
+      "model/" + this->dataPtr->robotNamespace + "/" + this->dataPtr->topic,
+      rclcpp::QoS(10).reliable());
 
   if (this->dataPtr->estimateDepth)
   {
     this->dataPtr->ros_depth_estimate_pub =
       this->rosNode->create_publisher<geometry_msgs::msg::PointStamped>(
-        this->dataPtr->robotNamespace + "/" + "Pressure_depth", rclcpp::QoS(10).reliable());
+        "model/" + this->dataPtr->robotNamespace + "/" + this->dataPtr->topic + "_depth",
+        rclcpp::QoS(10).reliable());
   }
 
   this->dataPtr->gz_pressure_sensor_pub =
     this->dataPtr->gazeboNode->Advertise<gz::msgs::FluidPressure>(
-      this->dataPtr->robotNamespace + "/" + "Pressure");
+      "model/" + this->dataPtr->robotNamespace + "/" + this->dataPtr->topic);
 }
 //////////////////////////////////////////
 

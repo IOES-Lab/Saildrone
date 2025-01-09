@@ -1,6 +1,6 @@
-## Examples
+# Examples
 
-### 1. Launching a Dave Object Model using Fuel URI
+## Launching a Dave Object Model using Fuel URI
 
 To launch a Dave model directly from a Fuel URI, follow these steps:
 
@@ -18,7 +18,7 @@ To launch a Dave model directly from a Fuel URI, follow these steps:
 
 This method simplifies the process by pulling the model directly from Fuel, ensuring you always have the latest version without needing to manage local files.
 
-### 2. Launching a Dave Sensor Model using Downloaded Model Files
+## Launching a Dave Sensor Model using Downloaded Model Files
 
 If you prefer to use model files downloaded from Fuel, proceed as follows:
 
@@ -52,7 +52,39 @@ If you prefer to use model files downloaded from Fuel, proceed as follows:
 
 This approach gives you more control over the models you use, allowing for offline use and customization. It's especially useful when working in environments with limited internet connectivity or when specific model versions are required.
 
-### 3. Launching a World File
+## Launching a Dave Robot Model
+
+Before launching, ensure to build and source the workspace:
+
+```bash
+colcon build && source install/setup.bash
+```
+
+1. Launching REXROV in dave_ocean_waves.world:
+
+```bash
+ros2 launch dave_demos dave_robot.launch.py z:=-5 namespace:=rexrov world_name:=dave_ocean_waves paused:=false
+```
+
+2. Launching BlueROV2 in dave_ocean_waves.world:
+
+```bash
+ros2 launch dave_demos dave_robot.launch.py z:=-5 namespace:=bluerov2 world_name:=dave_ocean_waves paused:=false
+```
+
+3. Launching BlueROV2 Heavy in dave_ocean_waves.world:
+
+```bash
+ros2 launch dave_demos dave_robot.launch.py z:=-5 namespace:=bluerov2_heavy world_name:=dave_ocean_waves paused:=false
+```
+
+4. Launching Slocum Glider in dave_ocean_waves.world:
+
+```bash
+ros2 launch dave_demos dave_robot.launch.py x:=4 z:=-1.5 namespace:=glider_slocum world_name:=dave_ocean_waves paused:=false
+```
+
+## Launching a World File
 
 To launch a specific world file, you can specify the world name without the `.world` extension. Follow these steps:
 
@@ -62,7 +94,7 @@ To launch a specific world file, you can specify the world name without the `.wo
 colcon build && source install/setup.bash
 ```
 
-1. Launch the world using the specified launch file
+2. Launch the world using the specified launch file
 
 ```bash
 ros2 launch dave_demos dave_world.launch.py world_name:='dave_ocean_waves'
@@ -70,6 +102,6 @@ ros2 launch dave_demos dave_world.launch.py world_name:='dave_ocean_waves'
 
 To check which worlds are available to launch, refer to `models/dave_worlds/worlds` directory.
 
-The worlds files are linked to use models at https://app.gazebosim.org/ which means you need an internet connection to download the models and it takes some time to download at first launch. The files are saved in temporary directories and are reused in subsequent launches.
+The world files are linked to use models at https://app.gazebosim.org/ which means you need an internet connection to download the models and it takes some time to download at first launch. The files are saved in temporary directories and are reused in subsequent launches.
 
 In this setup, you can dynamically specify different world files by changing the `world_name` argument in the launch command.

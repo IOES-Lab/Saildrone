@@ -39,14 +39,33 @@
           </box>
         </geometry>
       </collision>
+    </link>
 
+    <link name="imu_link">
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.015</mass>
+        <inertia>
+          <ixx>0.00001</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>0.00001</iyy>
+          <iyz>0.0</iyz>
+          <izz>0.00001</izz>
+        </inertia>
+      </inertial>
       <sensor name="imu_sensor" type="imu">
         <always_on>true</always_on>
-        <update_rate>1000.0</update_rate>
-        <topic>imu</topic>
+        <update_rate>50.0</update_rate>
+        <topic>/model/glider_slocum/imu</topic>
       </sensor>
-
     </link>
+
+    <joint name="imu_joint" type="fixed">
+      <pose>0 0 0 0 0 0</pose>
+      <parent>base_link</parent>
+      <child>imu_link</child>
+    </joint>
 
     <link name='battery_link'>
       <inertial>
@@ -87,6 +106,33 @@
       <power_load>10</power_load>
       <start_on_motion>true</start_on_motion>
     </plugin>
+
+    <link name="navsat_link">
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.001</mass>
+        <inertia>
+          <ixx>0.00001</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>0.00001</iyy>
+          <iyz>0.0</iyz>
+          <izz>0.00001</izz>
+        </inertia>
+      </inertial>
+
+      <sensor name="navsat_sensor" type="navsat">
+        <always_on>true</always_on>
+        <update_rate>30.0</update_rate>
+        <topic>/model/glider_slocum/navsat</topic>
+      </sensor>
+    </link>
+
+    <joint name="navsat_joint" type="fixed">
+      <pose>0 0 0 0 0 0</pose>
+      <parent>base_link</parent>
+      <child>navsat_link</child>
+    </joint>
 
     <link name="propeller_link">
       <visual name="propeller_link_visual">
@@ -160,10 +206,10 @@
       <mQ>-20</mQ>
       <nR>-32</nR>
       <!-- cross terms -->
-      <yR>150</yR>
+      <!-- <yR>150</yR>
       <zQ>-100</zQ>
       <mW>37</mW>
-      <nV>-34</nV>
+      <nV>-34</nV> -->
 
       <!-- Quadratic Drag Coefficients -->
       <xUabsU>0</xUabsU>
@@ -180,6 +226,11 @@
     </plugin>
 
     <plugin
+      filename="gz-sim-navsat-system"
+      name="gz::sim::systems::NavSat">
+    </plugin>
+
+    <plugin
       filename="gz-sim-odometry-publisher-system"
       name="gz::sim::systems::OdometryPublisher">
       <odom_frame>map</odom_frame>
@@ -193,6 +244,18 @@
       name="gz::sim::systems::JointStatePublisher">
     </plugin>
 
+    <!-- Sea Pressure Sensor Plugin -->
+    <plugin
+      filename="sea_pressure_sensor"
+      name=" dave_gz_sensor_plugins::SubseaPressureSensorPlugin">
+      <namespace>glider_slocum</namespace>
+      <topic>sea_pressure</topic>
+      <update_rate>10</update_rate>
+      <noise_sigma>3.0</noise_sigma>
+      <estimate_depth_on>true</estimate_depth_on>
+      <standard_pressure>101.325</standard_pressure>
+      <kPa_per_meter>9.80638</kPa_per_meter>
+    </plugin>
 
   </model>
 </sdf>

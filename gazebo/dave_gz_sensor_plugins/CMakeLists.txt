@@ -14,6 +14,7 @@ find_package(dave_interfaces REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(gz-msgs10 REQUIRED)
+find_package(OpenCV REQUIRED)
 
 # Set version variables
 set(GZ_PLUGIN_VER ${gz-plugin2_VERSION_MAJOR})
@@ -21,15 +22,19 @@ set(GZ_COMMON_VER ${gz-common5_VERSION_MAJOR})
 set(GZ_SIM_VER ${gz-sim8_VERSION_MAJOR})
 set(GZ_MSGS_VER ${gz-msgs10_VERSION_MAJOR})
 
+include_directories(${OpenCV_INCLUDE_DIRS})
+
 message(STATUS "Compiling against Gazebo Harmonic")
 
 add_library(UsblTransceiver SHARED src/UsblTransceiver.cc)
 add_library(UsblTransponder SHARED src/UsblTransponder.cc)
 add_library(sea_pressure_sensor SHARED src/sea_pressure_sensor.cc)
+add_library(UnderwaterCamera SHARED src/UnderwaterCamera.cc)
 
 target_include_directories(UsblTransceiver PRIVATE include)
 target_include_directories(UsblTransponder PRIVATE include)
 target_include_directories(sea_pressure_sensor PRIVATE include)
+target_include_directories(UnderwaterCamera PRIVATE include)
 
 target_link_libraries(UsblTransceiver
   gz-sim${GZ_SIM_VER}::gz-sim${GZ_SIM_VER}
@@ -41,6 +46,11 @@ target_link_libraries(UsblTransponder
 
 target_link_libraries(sea_pressure_sensor
   gz-sim${GZ_SIM_VER}::gz-sim${GZ_SIM_VER}
+)
+
+target_link_libraries(UnderwaterCamera
+  gz-sim${GZ_SIM_VER}::gz-sim${GZ_SIM_VER}
+  ${OpenCV_LIBS}
 )
 
 # Specify dependencies for FullSystem using ament_target_dependencies
@@ -65,8 +75,18 @@ ament_target_dependencies(sea_pressure_sensor
   geometry_msgs
 )
 
+ament_target_dependencies(UnderwaterCamera
+  rclcpp
+  sensor_msgs
+)
+
 # Install targets
-install(TARGETS UsblTransceiver UsblTransponder sea_pressure_sensor
+install(
+  TARGETS
+    UsblTransceiver
+    UsblTransponder
+    sea_pressure_sensor
+    UnderwaterCamera
   DESTINATION lib/${PROJECT_NAME}
 )
 
