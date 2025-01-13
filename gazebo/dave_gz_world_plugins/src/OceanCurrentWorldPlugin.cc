@@ -126,10 +126,7 @@ void OceanCurrentWorldPlugin::Configure(
 
   if (_sdf->HasElement("tidal_oscillation"))
   {
-    if (_sdf->Get<bool>("tidal_oscillation"))
-    {
-      LoadTidalOscillationDatabase();
-    }
+    LoadTidalOscillationDatabase();
   }
   else
   {
@@ -165,7 +162,7 @@ void OceanCurrentWorldPlugin::LoadTidalOscillationDatabase()
     else
     {
       this->dataPtr->tidalFilePath = ament_index_cpp::get_package_share_directory("dave_worlds") +
-                                     "/worlds/ACT1951_predictionMaxSlack_2021-02-24.csv";
+                                     "/worlds/ACT1951_1_Annual_2021.csv";
     }
   }
 
