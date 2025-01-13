@@ -1,10 +1,19 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, RegisterEventHandler, LogInfo
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.actions import (
+    DeclareLaunchArgument,
+    RegisterEventHandler,
+    LogInfo,
+    IncludeLaunchDescription,
+)
+from launch.substitutions import (
+    LaunchConfiguration,
+    PathJoinSubstitution,
+)
 from launch.conditions import IfCondition
 from launch_ros.substitutions import FindPackageShare
 from launch.event_handlers import OnProcessExit
 from launch_ros.actions import Node
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 
 def generate_launch_description():
@@ -97,7 +106,7 @@ def generate_launch_description():
         ],
         output="both",
         condition=IfCondition(use_ned_frame),
-        parameters=[{"use_sim_time_time": use_sim_time}],
+        parameters=[{"use_sim_time": use_sim_time}],
     )
 
     gz_spawner = Node(
@@ -114,19 +123,40 @@ def generate_launch_description():
             y,
             "-z",
             z,
-            "-roll",
+            "-R",
             roll,
-            "-pitch",
+            "-P",
             pitch,
-            "-yaw",
+            "-Y",
             yaw,
         ],
         output="both",
         condition=IfCondition(gui),
-        parameters=[{"use_sim_time_time": use_sim_time}],
+        parameters=[{"use_sim_time": use_sim_time}],
     )
 
     nodes = [tf2_spawner, gz_spawner]
+
+    # Include robot_config.py based on the model name
+    robot_config = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            [
+                PathJoinSubstitution(
+                    [
+                        FindPackageShare("dave_robot_models"),
+                        "config",
+                        namespace,
+                        "robot_config.py",
+                    ]
+                )
+            ]
+        ),
+        launch_arguments={
+            "namespace": namespace,
+        }.items(),
+    )
+
+    include = [robot_config]
 
     event_handlers = [
         RegisterEventHandler(
@@ -134,4 +164,4 @@ def generate_launch_description():
         )
     ]
 
-    return LaunchDescription(args + nodes + event_handlers)
+    return LaunchDescription(args + nodes + event_handlers + include)

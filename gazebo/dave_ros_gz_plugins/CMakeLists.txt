@@ -23,16 +23,12 @@ message(STATUS "Compiling against Gazebo Harmonic")
 
 # Libraries
 add_library(SphericalCoords SHARED src/SphericalCoords.cc)
+add_library(DVLBridge SHARED src/DVLBridge.cc)
 add_library(OceanCurrentPlugin SHARED src/OceanCurrentPlugin.cc)
 
 # Include directories
-target_include_directories(SphericalCoords
-  PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
+target_include_directories(SphericalCoords PRIVATE include)
+target_include_directories(DVLBridge PRIVATE include)
 target_include_directories(OceanCurrentPlugin
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -45,6 +41,8 @@ target_include_directories(OceanCurrentPlugin
 
 # Linking
 target_link_libraries(SphericalCoords
+  gz-sim${GZ_SIM_VER}::gz-sim${GZ_SIM_VER})
+target_link_libraries(DVLBridge
   gz-sim${GZ_SIM_VER}::gz-sim${GZ_SIM_VER}
 )
 target_link_libraries(OceanCurrentPlugin
@@ -58,13 +56,23 @@ ament_target_dependencies(SphericalCoords
   geometry_msgs
   std_msgs
 )
-
+ament_target_dependencies(DVLBridge
+  dave_interfaces
+  rclcpp
+  geometry_msgs
+  std_msgs
+)
 ament_target_dependencies(OceanCurrentPlugin
   rclcpp
   std_msgs
   geometry_msgs
   dave_interfaces
   dave_gz_world_plugins
+)
+
+# Install targets
+install(TARGETS SphericalCoords DVLBridge
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 # Install headers
