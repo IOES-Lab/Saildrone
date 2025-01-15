@@ -121,7 +121,7 @@
       <constant_current>
         <topic>current_velocity</topic>
         <velocity>
-          <mean>0</mean>
+          <mean>2</mean>
           <min>0</min>
           <max>5</max>
           <mu>0.0</mu>
@@ -129,7 +129,7 @@
         </velocity>
 
         <horizontal_angle>
-          <mean>0</mean>
+          <mean>1</mean>
           <min>-3.141592653589793238</min>
           <max>3.141592653589793238</max>
           <mu>0.0</mu>
@@ -137,7 +137,7 @@
         </horizontal_angle>
 
         <vertical_angle>
-          <mean>0</mean>
+          <mean>1.2</mean>
           <min>-3.141592653589793238</min>
           <max>3.141592653589793238</max>
           <mu>0.0</mu>
@@ -149,7 +149,7 @@
         <topic_stratified>stratified_current_velocity</topic_stratified>
         <!-- Database tag can accept full path or filename for .csv within the dave_worlds/worlds
         folder  -->
-        <databasefilePath>transientOceanCurrentDatabase.csv</databasefilePath>
+        <databasefileName>transientOceanCurrentDatabase.csv</databasefileName>
       </transient_current>
 
       <!-- transient current database CSV file (North direction value) is used as a depth variation -->
@@ -203,8 +203,8 @@
       </tidal_oscillation>
     </plugin>
 
-    <plugin filename="OceanCurrentPlugin" name="dave_ros_gz_plugins::OceanCurrentPlugin">
+    <!-- <plugin filename="OceanCurrentPlugin" name="dave_ros_gz_plugins::OceanCurrentPlugin">
       <namespace>hydrodynamics</namespace>
-    </plugin>
+    </plugin> -->
   </world>
 </sdf>

@@ -5,6 +5,6 @@ import "gz/msgs/vector3d.proto";
 
 message StratifiedCurrentVelocity
 {
-  repeated gz.msgs.Vector3d   velocity  = 1;
-  repeated double                 depth     = 2;
+  repeated gz.msgs.Vector3d velocity = 1;
+  repeated double          depth    = 2;
 }
