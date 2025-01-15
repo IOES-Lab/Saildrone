@@ -240,9 +240,17 @@ void OceanCurrentModelPlugin::LoadCurrentVelocityParams(
       sdf::ElementPtr elem = currentVelocityParams->GetElement("velocity_north");
       if (elem->HasElement("mean"))
       {
+        this->dataPtr->currentVelNorthModel.mean = elem->Get<double>("mean");
+      }
+      else
+      {
         this->dataPtr->currentVelNorthModel.mean = 0.0;
       }
       if (elem->HasElement("mu"))
+      {
+        this->dataPtr->currentVelNorthModel.mu = elem->Get<double>("mu");
+      }
+      else
       {
         this->dataPtr->currentVelNorthModel.mu = 0.0;
       }
@@ -250,14 +258,22 @@ void OceanCurrentModelPlugin::LoadCurrentVelocityParams(
       {
         this->dataPtr->noiseAmp_North = elem->Get<double>("noiseAmp");
       }
-      this->dataPtr->currentVelNorthModel.min =
-        this->dataPtr->currentVelNorthModel.mean - this->dataPtr->noiseAmp_North;
-      this->dataPtr->currentVelNorthModel.max =
-        this->dataPtr->currentVelNorthModel.mean + this->dataPtr->noiseAmp_North;
+      else
+      {
+        this->dataPtr->noiseAmp_North = 0.0;
+      }
       if (elem->HasElement("noiseFreq"))
       {
         this->dataPtr->noiseFreq_North = elem->Get<double>("noiseFreq");
       }
+      else
+      {
+        this->dataPtr->noiseFreq_North = 0.0;
+      }
+      this->dataPtr->currentVelNorthModel.min =
+        this->dataPtr->currentVelNorthModel.mean - this->dataPtr->noiseAmp_North;
+      this->dataPtr->currentVelNorthModel.max =
+        this->dataPtr->currentVelNorthModel.mean + this->dataPtr->noiseAmp_North;
       this->dataPtr->currentVelNorthModel.noiseAmp = this->dataPtr->noiseFreq_North;
     }
 
@@ -273,9 +289,17 @@ void OceanCurrentModelPlugin::LoadCurrentVelocityParams(
       sdf::ElementPtr elem = currentVelocityParams->GetElement("velocity_east");
       if (elem->HasElement("mean"))
       {
+        this->dataPtr->currentVelEastModel.mean = elem->Get<double>("mean");
+      }
+      else
+      {
         this->dataPtr->currentVelEastModel.mean = 0.0;
       }
       if (elem->HasElement("mu"))
+      {
+        this->dataPtr->currentVelEastModel.mu = elem->Get<double>("mu");
+      }
+      else
       {
         this->dataPtr->currentVelEastModel.mu = 0.0;
       }
@@ -283,14 +307,22 @@ void OceanCurrentModelPlugin::LoadCurrentVelocityParams(
       {
         this->dataPtr->noiseAmp_East = elem->Get<double>("noiseAmp");
       }
-      this->dataPtr->currentVelEastModel.min =
-        this->dataPtr->currentVelEastModel.mean - this->dataPtr->noiseAmp_East;
-      this->dataPtr->currentVelEastModel.max =
-        this->dataPtr->currentVelEastModel.mean + this->dataPtr->noiseAmp_East;
+      else
+      {
+        this->dataPtr->noiseAmp_East = 0.0;
+      }
       if (elem->HasElement("noiseFreq"))
       {
         this->dataPtr->noiseFreq_East = elem->Get<double>("noiseFreq");
       }
+      else
+      {
+        this->dataPtr->noiseFreq_East = 0.0;
+      }
+      this->dataPtr->currentVelEastModel.min =
+        this->dataPtr->currentVelEastModel.mean - this->dataPtr->noiseAmp_East;
+      this->dataPtr->currentVelEastModel.max =
+        this->dataPtr->currentVelEastModel.mean + this->dataPtr->noiseAmp_East;
       this->dataPtr->currentVelEastModel.noiseAmp = this->dataPtr->noiseFreq_East;
     }
 
@@ -306,9 +338,17 @@ void OceanCurrentModelPlugin::LoadCurrentVelocityParams(
       sdf::ElementPtr elem = currentVelocityParams->GetElement("velocity_down");
       if (elem->HasElement("mean"))
       {
+        this->dataPtr->currentVelDownModel.mean = elem->Get<double>("mean");
+      }
+      else
+      {
         this->dataPtr->currentVelDownModel.mean = 0.0;
       }
       if (elem->HasElement("mu"))
+      {
+        this->dataPtr->currentVelDownModel.mu = elem->Get<double>("mu");
+      }
+      else
       {
         this->dataPtr->currentVelDownModel.mu = 0.0;
       }
@@ -316,14 +356,22 @@ void OceanCurrentModelPlugin::LoadCurrentVelocityParams(
       {
         this->dataPtr->noiseAmp_Down = elem->Get<double>("noiseAmp");
       }
-      this->dataPtr->currentVelDownModel.min =
-        this->dataPtr->currentVelDownModel.mean - this->dataPtr->noiseAmp_Down;
-      this->dataPtr->currentVelDownModel.max =
-        this->dataPtr->currentVelDownModel.mean + this->dataPtr->noiseAmp_Down;
+      else
+      {
+        this->dataPtr->noiseAmp_Down = 0.0;
+      }
       if (elem->HasElement("noiseFreq"))
       {
         this->dataPtr->noiseFreq_Down = elem->Get<double>("noiseFreq");
       }
+      else
+      {
+        this->dataPtr->noiseFreq_Down = 0.0;
+      }
+      this->dataPtr->currentVelDownModel.min =
+        this->dataPtr->currentVelDownModel.mean - this->dataPtr->noiseAmp_Down;
+      this->dataPtr->currentVelDownModel.max =
+        this->dataPtr->currentVelDownModel.mean + this->dataPtr->noiseAmp_Down;
       this->dataPtr->currentVelDownModel.noiseAmp = this->dataPtr->noiseFreq_Down;
     }
 
