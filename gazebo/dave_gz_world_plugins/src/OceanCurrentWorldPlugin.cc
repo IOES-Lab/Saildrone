@@ -19,10 +19,10 @@
 #include <gz/transport/Node.hh>
 
 // Boost libraries for string manipulation, binding, and shared pointers
-// #include <boost/algorithm/string.hpp>
-// #include <boost/bind.hpp>
-// #include <boost/bind/bind.hpp>
-// #include <boost/shared_ptr.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
+#include <boost/shared_ptr.hpp>
 
 // Other necessary libraries
 #include <math.h>
@@ -88,6 +88,8 @@ struct OceanCurrentWorldPlugin::PrivateData
   std::shared_ptr<rclcpp::Node> rosNode;
 };
 
+OceanCurrentWorldPlugin * OceanCurrentWorldPlugin::singletonInstance = nullptr;
+
 OceanCurrentWorldPlugin::OceanCurrentWorldPlugin()
 : dataPtr(std::make_unique<PrivateData>()), sharedDataPtr(std::shared_ptr<SharedData>())
 {
@@ -95,8 +97,21 @@ OceanCurrentWorldPlugin::OceanCurrentWorldPlugin()
 }
 
 /////////////////////////////////////////////////
-OceanCurrentWorldPlugin::~OceanCurrentWorldPlugin() = default;
-// OceanCurrentWorldPlugin::~OceanCurrentWorldPlugin() { this->dataPtr->rosNode.reset(); }
+// OceanCurrentWorldPlugin::~OceanCurrentWorldPlugin() = default;
+
+OceanCurrentWorldPlugin::~OceanCurrentWorldPlugin()
+{
+  // Clear the static pointer if we are the instance
+  if (OceanCurrentWorldPlugin::singletonInstance == this)
+  {
+    OceanCurrentWorldPlugin::singletonInstance = nullptr;
+  }
+}
+
+OceanCurrentWorldPlugin * OceanCurrentWorldPlugin::Instance()
+{
+  return OceanCurrentWorldPlugin::singletonInstance;
+}
 
 // ----------------------------------------------
 
@@ -132,6 +147,11 @@ void OceanCurrentWorldPlugin::Configure(
   else
   {
     gzmsg << "Tidal oscillation not enabled" << std::endl;
+  }
+
+  if (!OceanCurrentWorldPlugin::singletonInstance)
+  {
+    OceanCurrentWorldPlugin::singletonInstance = this;
   }
 
   gzmsg << "Underwater current plugin loaded!" << std::endl

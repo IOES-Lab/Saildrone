@@ -125,8 +125,26 @@ void OceanCurrentPlugin::Configure(
   // Save the SDF pointer
   this->dataPtr->sdf = _sdf;
 
-  dave_gz_world_plugins::OceanCurrentWorldPlugin::SharedData data;
+  auto * worldPlugin = dave_gz_world_plugins::OceanCurrentWorldPlugin::Instance();
+  if (!worldPlugin)
+  {
+    gzerr
+      << "The world plugin hasn't been configured or isn't loaded so we can't publish real data yet"
+      << std::endl;
+    return;
+  }
 
+  auto sharedPtr = worldPlugin->sharedDataPtr;
+  if (!sharedPtr)
+  {
+    gzerr
+      << "The world plugin hasn't been configured or isn't loaded so we can't publish real data yet"
+      << std::endl;
+    return;
+  }
+
+  // Access the "real" currentHorzAngleModel
+  auto & horzModel = worldPlugin->sharedDataPtr->currentHorzAngleModel;
   // Set the topic for the stratified current velocity database
   this->dataPtr->stratifiedCurrentVelocityDatabaseTopic = "stratifiedCurrentVelocityTopic_database";
 
@@ -258,38 +276,24 @@ void OceanCurrentPlugin::Configure(
       "set_stratified_current_vert_angle", std::bind(
                                              &OceanCurrentPlugin::UpdateStratVertAngle, this,
                                              std::placeholders::_1, std::placeholders::_2));
-
-  // Connect to the Gazebo Harmonic update event
-  // this->dataPtr->rosPublishConnection = _world->OnUpdateBegin([this](const gz::sim::UpdateInfo &
-  // info)
-  //                                                    { this->dataPtr->OnUpdateCurrentVel(info);
-  //                                                    });
 }
 
-/////////////////////////////////////////////////
-// void OceanCurrentPlugin::PreUpdate(
-//   const gz::sim::UpdateInfo & _info, gz::sim::EntityComponentManager & _ecm)
-// {
-// }
-// /////////////////////////////////////////////////
-// void OceanCurrentPlugin::Update(
-//   const gz::sim::UpdateInfo & _info, const gz::sim::EntityComponentManager & _ecm)
-// {
-//   if (_info.simTime > this->dataPtr->lastUpdate)
-//   {
-//     // TODO put in postupdate
-//   }
-// }
-
-// namespace dave_ros_gz_plugins
 /////////////////////////////////////////////////
 bool OceanCurrentPlugin::UpdateHorzAngle(
   const std::shared_ptr<dave_interfaces::srv::SetCurrentDirection::Request> _req,
   std::shared_ptr<dave_interfaces::srv::SetCurrentDirection::Response> _res)
 {
-  dave_gz_world_plugins::OceanCurrentWorldPlugin::SharedData data;
-  _res->success = data.currentHorzAngleModel.SetMean(_req->angle);
+  auto * worldPlugin = dave_gz_world_plugins::OceanCurrentWorldPlugin::Instance();
+  if (!worldPlugin || !worldPlugin->sharedDataPtr)
+  {
+    _res->success = false;
+    return true;
+  }
+  auto & horzModel = worldPlugin->sharedDataPtr->currentHorzAngleModel;
+  _res->success = horzModel.SetMean(_req->angle);
   return true;
+  // _res->success = data.currentHorzAngleModel.SetMean(_req->angle);
+  // return true;
 }
 
 /////////////////////////////////////////////////
@@ -297,22 +301,30 @@ bool OceanCurrentPlugin::UpdateStratHorzAngle(
   const std::shared_ptr<dave_interfaces::srv::SetStratifiedCurrentDirection::Request> _req,
   std::shared_ptr<dave_interfaces::srv::SetStratifiedCurrentDirection::Response> _res)
 {
-  dave_gz_world_plugins::OceanCurrentWorldPlugin::SharedData data;
-
-  if (_req->layer >= data.stratifiedDatabase.size())
+  auto * worldPlugin = dave_gz_world_plugins::OceanCurrentWorldPlugin::Instance();
+  if (!worldPlugin || !worldPlugin->sharedDataPtr)
   {
     _res->success = false;
     return true;
   }
 
-  _res->success = data.stratifiedCurrentModels[_req->layer][1].SetMean(_req->angle);
+  auto & stratifiedDatabase = worldPlugin->sharedDataPtr->stratifiedDatabase;
+  auto & stratifiedCurrentModels = worldPlugin->sharedDataPtr->stratifiedCurrentModels;
+
+  if (_req->layer >= stratifiedDatabase.size())
+  {
+    _res->success = false;
+    return true;
+  }
+
+  _res->success = stratifiedCurrentModels[_req->layer][1].SetMean(_req->angle);
   if (_res->success)
   {
     // Update the database values (new angle, unchanged velocity)
     double velocity =
-      hypot(data.stratifiedDatabase[_req->layer].X(), data.stratifiedDatabase[_req->layer].Y());
-    data.stratifiedDatabase[_req->layer].X() = cos(_req->angle) * velocity;
-    data.stratifiedDatabase[_req->layer].Y() = sin(_req->angle) * velocity;
+      hypot(stratifiedDatabase[_req->layer].X(), stratifiedDatabase[_req->layer].Y());
+    stratifiedDatabase[_req->layer].X() = cos(_req->angle) * velocity;
+    stratifiedDatabase[_req->layer].Y() = sin(_req->angle) * velocity;
   }
   return true;
 }
@@ -322,8 +334,15 @@ bool OceanCurrentPlugin::UpdateVertAngle(
   const std::shared_ptr<dave_interfaces::srv::SetCurrentDirection::Request> _req,
   std::shared_ptr<dave_interfaces::srv::SetCurrentDirection::Response> _res)
 {
-  dave_gz_world_plugins::OceanCurrentWorldPlugin::SharedData data;
-  _res->success = data.currentVertAngleModel.SetMean(_req->angle);
+  auto * worldPlugin = dave_gz_world_plugins::OceanCurrentWorldPlugin::Instance();
+  if (!worldPlugin || !worldPlugin->sharedDataPtr)
+  {
+    _res->success = false;
+    return true;
+  }
+
+  auto & currentVertAngleModel = worldPlugin->sharedDataPtr->currentVertAngleModel;
+  _res->success = currentVertAngleModel.SetMean(_req->angle);
   return true;
 }
 
@@ -332,14 +351,22 @@ bool OceanCurrentPlugin::UpdateStratVertAngle(
   const std::shared_ptr<dave_interfaces::srv::SetStratifiedCurrentDirection::Request> _req,
   std::shared_ptr<dave_interfaces::srv::SetStratifiedCurrentDirection::Response> _res)
 {
-  dave_gz_world_plugins::OceanCurrentWorldPlugin::SharedData data;
-
-  if (_req->layer >= data.stratifiedDatabase.size())
+  auto * worldPlugin = dave_gz_world_plugins::OceanCurrentWorldPlugin::Instance();
+  if (!worldPlugin || !worldPlugin->sharedDataPtr)
   {
     _res->success = false;
     return true;
   }
-  _res->success = data.stratifiedCurrentModels[_req->layer][2].SetMean(_req->angle);
+
+  auto & stratifiedDatabase = worldPlugin->sharedDataPtr->stratifiedDatabase;
+  auto & stratifiedCurrentModels = worldPlugin->sharedDataPtr->stratifiedCurrentModels;
+
+  if (_req->layer >= stratifiedDatabase.size())
+  {
+    _res->success = false;
+    return true;
+  }
+  _res->success = stratifiedCurrentModels[_req->layer][2].SetMean(_req->angle);
   return true;
 }
 
@@ -348,12 +375,22 @@ bool OceanCurrentPlugin::UpdateCurrentVelocity(
   const std::shared_ptr<dave_interfaces::srv::SetCurrentVelocity::Request> _req,
   std::shared_ptr<dave_interfaces::srv::SetCurrentVelocity::Response> _res)
 {
-  dave_gz_world_plugins::OceanCurrentWorldPlugin::SharedData data;
+  auto * worldPlugin = dave_gz_world_plugins::OceanCurrentWorldPlugin::Instance();
+  if (!worldPlugin || !worldPlugin->sharedDataPtr)
+  {
+    _res->success = false;
+    return true;
+  }
+
+  // Access the "real" currentHorzAngleModel
+  auto & currentVelModel = worldPlugin->sharedDataPtr->currentVelModel;
+  auto & currentHorzAngleModel = worldPlugin->sharedDataPtr->currentHorzAngleModel;
+  auto & currentVertAngleModel = worldPlugin->sharedDataPtr->currentVertAngleModel;
 
   if (
-    data.currentVelModel.SetMean(_req->velocity) &&
-    data.currentHorzAngleModel.SetMean(_req->horizontal_angle) &&
-    data.currentVertAngleModel.SetMean(_req->vertical_angle))
+    currentVelModel.SetMean(_req->velocity) &&
+    currentHorzAngleModel.SetMean(_req->horizontal_angle) &&
+    currentVertAngleModel.SetMean(_req->vertical_angle))
   {
     gzmsg << "Current velocity [m/s] = " << _req->velocity << std::endl
           << "Current horizontal angle [rad] = " << _req->horizontal_angle << std::endl
@@ -374,21 +411,29 @@ bool OceanCurrentPlugin::UpdateStratCurrentVelocity(
   const std::shared_ptr<dave_interfaces::srv::SetStratifiedCurrentVelocity::Request> _req,
   std::shared_ptr<dave_interfaces::srv::SetStratifiedCurrentVelocity::Response> _res)
 {
-  dave_gz_world_plugins::OceanCurrentWorldPlugin::SharedData data;
+  auto * worldPlugin = dave_gz_world_plugins::OceanCurrentWorldPlugin::Instance();
+  if (!worldPlugin || !worldPlugin->sharedDataPtr)
+  {
+    _res->success = false;
+    return true;
+  }
 
-  if (_req->layer >= data.stratifiedDatabase.size())
+  auto & stratifiedCurrentModels = worldPlugin->sharedDataPtr->stratifiedCurrentModels;
+  auto & stratifiedDatabase = worldPlugin->sharedDataPtr->stratifiedDatabase;
+
+  if (_req->layer >= stratifiedDatabase.size())
   {
     _res->success = false;
     return true;
   }
   if (
-    data.stratifiedCurrentModels[_req->layer][0].SetMean(_req->velocity) &&
-    data.stratifiedCurrentModels[_req->layer][1].SetMean(_req->horizontal_angle) &&
-    data.stratifiedCurrentModels[_req->layer][2].SetMean(_req->vertical_angle))
+    stratifiedCurrentModels[_req->layer][0].SetMean(_req->velocity) &&
+    stratifiedCurrentModels[_req->layer][1].SetMean(_req->horizontal_angle) &&
+    stratifiedCurrentModels[_req->layer][2].SetMean(_req->vertical_angle))
   {
     // Update the database values as well
-    data.stratifiedDatabase[_req->layer].X() = cos(_req->horizontal_angle) * _req->velocity;
-    data.stratifiedDatabase[_req->layer].Y() = sin(_req->horizontal_angle) * _req->velocity;
+    stratifiedDatabase[_req->layer].X() = cos(_req->horizontal_angle) * _req->velocity;
+    stratifiedDatabase[_req->layer].Y() = sin(_req->horizontal_angle) * _req->velocity;
     gzmsg << "Layer " << _req->layer << " current velocity [m/s] = " << _req->velocity << std::endl
           << "  Horizontal angle [rad] = " << _req->horizontal_angle << std::endl
           << "  Vertical angle [rad] = " << _req->vertical_angle << std::endl
@@ -408,13 +453,20 @@ bool OceanCurrentPlugin::GetCurrentVelocityModel(
   const std::shared_ptr<dave_interfaces::srv::GetCurrentModel::Request> _req,
   std::shared_ptr<dave_interfaces::srv::GetCurrentModel::Response> _res)
 {
-  dave_gz_world_plugins::OceanCurrentWorldPlugin::SharedData data;
+  auto * worldPlugin = dave_gz_world_plugins::OceanCurrentWorldPlugin::Instance();
+  if (!worldPlugin || !worldPlugin->sharedDataPtr)
+  {
+    // _res->success = false;
+    return true;
+  }
 
-  _res->mean = data.currentVelModel.mean;
-  _res->min = data.currentVelModel.min;
-  _res->max = data.currentVelModel.max;
-  _res->noise = data.currentVelModel.noiseAmp;
-  _res->mu = data.currentVelModel.mu;
+  auto & currentVelModel = worldPlugin->sharedDataPtr->currentVelModel;
+
+  _res->mean = currentVelModel.mean;
+  _res->min = currentVelModel.min;
+  _res->max = currentVelModel.max;
+  _res->noise = currentVelModel.noiseAmp;
+  _res->mu = currentVelModel.mu;
   return true;
 }
 
@@ -423,13 +475,20 @@ bool OceanCurrentPlugin::GetCurrentHorzAngleModel(
   const std::shared_ptr<dave_interfaces::srv::GetCurrentModel::Request> _req,
   std::shared_ptr<dave_interfaces::srv::GetCurrentModel::Response> _res)
 {
-  dave_gz_world_plugins::OceanCurrentWorldPlugin::SharedData data;
+  auto * worldPlugin = dave_gz_world_plugins::OceanCurrentWorldPlugin::Instance();
+  if (!worldPlugin || !worldPlugin->sharedDataPtr)
+  {
+    // _res->success = false;
+    return true;
+  }
 
-  _res->mean = data.currentHorzAngleModel.mean;
-  _res->min = data.currentHorzAngleModel.min;
-  _res->max = data.currentHorzAngleModel.max;
-  _res->noise = data.currentHorzAngleModel.noiseAmp;
-  _res->mu = data.currentHorzAngleModel.mu;
+  auto & currentHorzAngleModel = worldPlugin->sharedDataPtr->currentHorzAngleModel;
+
+  _res->mean = currentHorzAngleModel.mean;
+  _res->min = currentHorzAngleModel.min;
+  _res->max = currentHorzAngleModel.max;
+  _res->noise = currentHorzAngleModel.noiseAmp;
+  _res->mu = currentHorzAngleModel.mu;
   return true;
 }
 
@@ -438,13 +497,20 @@ bool OceanCurrentPlugin::GetCurrentVertAngleModel(
   const std::shared_ptr<dave_interfaces::srv::GetCurrentModel::Request> _req,
   std::shared_ptr<dave_interfaces::srv::GetCurrentModel::Response> _res)
 {
-  dave_gz_world_plugins::OceanCurrentWorldPlugin::SharedData data;
+  auto * worldPlugin = dave_gz_world_plugins::OceanCurrentWorldPlugin::Instance();
+  if (!worldPlugin || !worldPlugin->sharedDataPtr)
+  {
+    // _res->success = false;
+    return true;
+  }
 
-  _res->mean = data.currentVertAngleModel.mean;
-  _res->min = data.currentVertAngleModel.min;
-  _res->max = data.currentVertAngleModel.max;
-  _res->noise = data.currentVertAngleModel.noiseAmp;
-  _res->mu = data.currentVertAngleModel.mu;
+  auto & currentVertAngleModel = worldPlugin->sharedDataPtr->currentVertAngleModel;
+
+  _res->mean = currentVertAngleModel.mean;
+  _res->min = currentVertAngleModel.min;
+  _res->max = currentVertAngleModel.max;
+  _res->noise = currentVertAngleModel.noiseAmp;
+  _res->mu = currentVertAngleModel.mu;
   return true;
 }
 
@@ -453,23 +519,30 @@ bool OceanCurrentPlugin::UpdateCurrentVelocityModel(
   const std::shared_ptr<dave_interfaces::srv::SetCurrentModel::Request> _req,
   std::shared_ptr<dave_interfaces::srv::SetCurrentModel::Response> _res)
 {
-  dave_gz_world_plugins::OceanCurrentWorldPlugin::SharedData data;
+  auto * worldPlugin = dave_gz_world_plugins::OceanCurrentWorldPlugin::Instance();
+  if (!worldPlugin || !worldPlugin->sharedDataPtr)
+  {
+    _res->success = false;
+    return true;
+  }
 
-  _res->success = data.currentVelModel.SetModel(
+  auto & currentVelModel = worldPlugin->sharedDataPtr->currentVelModel;
+  auto & stratifiedCurrentModels = worldPlugin->sharedDataPtr->stratifiedCurrentModels;
+
+  _res->success = currentVelModel.SetModel(
     std::max(0.0, _req->mean), std::min(0.0, _req->min), std::max(0.0, _req->max), _req->mu,
     _req->noise);
 
-  for (int i = 0; i < data.stratifiedCurrentModels.size(); i++)
+  for (int i = 0; i < stratifiedCurrentModels.size(); i++)
   {
-    dave_gz_world_plugins::GaussMarkovProcess & model =
-      data.stratifiedCurrentModels[i][0];  //(updated)
+    dave_gz_world_plugins::GaussMarkovProcess & model = stratifiedCurrentModels[i][0];  //(updated)
     model.SetModel(
       model.mean, std::max(0.0, _req->min), std::max(0.0, _req->max), _req->mu, _req->noise);
   }
 
   gzmsg << "Current velocity model updated" << std::endl
         << "\tWARNING: Current velocity calculated in the ENU frame" << std::endl;
-  data.currentVelModel.Print();
+  currentVelModel.Print();
 
   return true;
 }
@@ -478,26 +551,29 @@ bool OceanCurrentPlugin::UpdateCurrentHorzAngleModel(
   const std::shared_ptr<dave_interfaces::srv::SetCurrentModel::Request> _req,
   std::shared_ptr<dave_interfaces::srv::SetCurrentModel::Response> _res)
 {
-  dave_gz_world_plugins::OceanCurrentWorldPlugin::SharedData data;
-
-  _res->success =
-    data.currentHorzAngleModel.SetModel(_req->mean, _req->min, _req->max, _req->mu, _req->noise);
-
-  for (int i = 0; i < data.stratifiedCurrentModels.size(); i++)
+  auto * worldPlugin = dave_gz_world_plugins::OceanCurrentWorldPlugin::Instance();
+  if (!worldPlugin || !worldPlugin->sharedDataPtr)
   {
-    dave_gz_world_plugins::GaussMarkovProcess & model = data.stratifiedCurrentModels[i][1];
+    _res->success = false;
+    return true;
+  }
+
+  auto & horzModel = worldPlugin->sharedDataPtr->currentHorzAngleModel;
+  auto & stratifiedCurrentModels = worldPlugin->sharedDataPtr->stratifiedCurrentModels;
+
+  _res->success = horzModel.SetModel(_req->mean, _req->min, _req->max, _req->mu, _req->noise);
+
+  for (int i = 0; i < stratifiedCurrentModels.size(); i++)
+  {
+    dave_gz_world_plugins::GaussMarkovProcess & model = stratifiedCurrentModels[i][1];
     model.SetModel(
       model.mean, std::max(-M_PI, _req->min), std::min(M_PI, _req->max), _req->mu, _req->noise);
   }
 
   gzmsg << "Horizontal angle model updated" << std::endl
         << "\tWARNING: Current velocity calculated in the ENU frame" << std::endl;
-  data.currentHorzAngleModel.Print();
+  horzModel.Print();
   return true;
-
-  // gzmsg << "Horizontal angle model updated" << std::endl
-  //       << "\tWARNING: Current velocity calculated in the ENU frame" << std::endl;
-  // this->dataPtr->currentHorzAngleModel.Print();
 }
 
 /////////////////////////////////////////////////
@@ -505,14 +581,21 @@ bool OceanCurrentPlugin::UpdateCurrentVertAngleModel(
   const std::shared_ptr<dave_interfaces::srv::SetCurrentModel::Request> _req,
   std::shared_ptr<dave_interfaces::srv::SetCurrentModel::Response> _res)
 {
-  dave_gz_world_plugins::OceanCurrentWorldPlugin::SharedData data;
+  auto * worldPlugin = dave_gz_world_plugins::OceanCurrentWorldPlugin::Instance();
+  if (!worldPlugin || !worldPlugin->sharedDataPtr)
+  {
+    _res->success = false;
+    return true;
+  }
+
+  auto & currentVertAngleModel = worldPlugin->sharedDataPtr->currentVertAngleModel;
 
   _res->success =
-    data.currentVertAngleModel.SetModel(_req->mean, _req->min, _req->max, _req->mu, _req->noise);
+    currentVertAngleModel.SetModel(_req->mean, _req->min, _req->max, _req->mu, _req->noise);
 
   gzmsg << "Vertical angle model updated" << std::endl
         << "\tWARNING: Current velocity calculated in the ENU frame" << std::endl;
-  data.currentVertAngleModel.Print();
+  currentVertAngleModel.Print();
   return true;
 }
 
@@ -520,20 +603,31 @@ bool OceanCurrentPlugin::UpdateCurrentVertAngleModel(
 void OceanCurrentPlugin::PostUpdate(
   const gz::sim::UpdateInfo & _info, const gz::sim::EntityComponentManager & _ecm)
 {
-  dave_gz_world_plugins::OceanCurrentWorldPlugin::SharedData data;
+  auto * worldPlugin = dave_gz_world_plugins::OceanCurrentWorldPlugin::Instance();
+  if (!worldPlugin)
+  {
+    gzerr
+      << "The world plugin hasn't been configured or isn't loaded so we can't publish real data yet"
+      << std::endl;
+    return;
+  }
+
+  auto sharedPtr = worldPlugin->sharedDataPtr;
+  if (!sharedPtr)
+  {
+    return;
+  }
+
   // Generate and publish current velocity according to the vehicle depth
   geometry_msgs::msg::TwistStamped flowVelMsg;
   flowVelMsg.header.stamp = this->dataPtr->rosNode->get_clock()->now();
-  flowVelMsg.header.frame_id =
-    "world";  // Changed from "/world" to be consistent with ROS 2 TF2 conventions
+  flowVelMsg.header.frame_id = "world";
 
-  flowVelMsg.twist.linear.x = data.currentVelocity.X();
-  flowVelMsg.twist.linear.y = data.currentVelocity.Y();
-  flowVelMsg.twist.linear.z = data.currentVelocity.Z();
+  flowVelMsg.twist.linear.x = sharedPtr->currentVelocity.X();
+  flowVelMsg.twist.linear.y = sharedPtr->currentVelocity.Y();
+  flowVelMsg.twist.linear.z = sharedPtr->currentVelocity.Z();
 
   this->dataPtr->flowVelocityPub->publish(flowVelMsg);
-
-  //
 
   // Generate and publish stratified current velocity
   dave_interfaces::msg::StratifiedCurrentVelocity stratCurrentVelocityMsg;
@@ -543,72 +637,72 @@ void OceanCurrentPlugin::PostUpdate(
   // Updating for stratified behaviour of Ocean Currents
   // What is the .size value over here, to be (checked)
 
-  for (size_t i = 0; i < data.currentStratifiedVelocity.size();
+  for (size_t i = 0; i < sharedPtr->currentStratifiedVelocity.size();
        i++)  // need to check if the values are in sync with ocean_cureent_world_plugin.cc(TODO)
   {
     geometry_msgs::msg::Vector3 velocity;
-    velocity.x = data.currentStratifiedVelocity[i].X();
-    velocity.y = data.currentStratifiedVelocity[i].Y();
-    velocity.z = data.currentStratifiedVelocity[i].Z();
+    velocity.x = sharedPtr->currentStratifiedVelocity[i].X();
+    velocity.y = sharedPtr->currentStratifiedVelocity[i].Y();
+    velocity.z = sharedPtr->currentStratifiedVelocity[i].Z();
     stratCurrentVelocityMsg.velocities.push_back(velocity);
-    stratCurrentVelocityMsg.depths.push_back(data.currentStratifiedVelocity[i].W());
+    stratCurrentVelocityMsg.depths.push_back(sharedPtr->currentStratifiedVelocity[i].W());
   }
 
   this->dataPtr->stratifiedCurrentVelocityPub->publish(stratCurrentVelocityMsg);
 
   // Generate and publish stratified current database
   dave_interfaces::msg::StratifiedCurrentDatabase currentDatabaseMsg;
-  for (int i = 0;
-       i < data.stratifiedDatabase.size();  // again check with ocean_cureent_world_plugin.cc (TODO)
-       i++)                                 // read from csv file in ocean_cureent_world_plugin.cc
+  for (int i = 0; i < sharedPtr->stratifiedDatabase
+                        .size();  // again check with ocean_cureent_world_plugin.cc (TODO)
+       i++)                       // read from csv file in ocean_cureent_world_plugin.cc
   {
     // Stratified current database entry preparation
     geometry_msgs::msg::Vector3 velocity;
-    velocity.x = data.stratifiedDatabase[i].X();
-    velocity.y = data.stratifiedDatabase[i].Y();
+    velocity.x = sharedPtr->stratifiedDatabase[i].X();
+    velocity.y = sharedPtr->stratifiedDatabase[i].Y();
     velocity.z = 0.0;  // Assuming z is intentionally set to 0.0
     currentDatabaseMsg.velocities.push_back(velocity);
-    currentDatabaseMsg.depths.push_back(data.stratifiedDatabase[i].Z());
+    currentDatabaseMsg.depths.push_back(sharedPtr->stratifiedDatabase[i].Z());
   }
 
-  if (data.tidalHarmonicFlag)  // again check with ocean_cureent_world_plugin.cc (TODO)
+  if (sharedPtr->tidalHarmonicFlag)  // again check with ocean_cureent_world_plugin.cc (TODO)
   {
     // Tidal harmonic constituents
-    currentDatabaseMsg.m2_amp = data.M2_amp;
-    currentDatabaseMsg.m2_phase = data.M2_phase;
-    currentDatabaseMsg.m2_speed = data.M2_speed;
-    currentDatabaseMsg.s2_amp = data.S2_amp;
-    currentDatabaseMsg.s2_phase = data.S2_phase;
-    currentDatabaseMsg.s2_speed = data.S2_speed;
-    currentDatabaseMsg.n2_amp = data.N2_amp;
-    currentDatabaseMsg.n2_phase = data.N2_phase;
-    currentDatabaseMsg.n2_speed = data.N2_speed;
+    currentDatabaseMsg.m2_amp = sharedPtr->M2_amp;
+    currentDatabaseMsg.m2_phase = sharedPtr->M2_phase;
+    currentDatabaseMsg.m2_speed = sharedPtr->M2_speed;
+    currentDatabaseMsg.s2_amp = sharedPtr->S2_amp;
+    currentDatabaseMsg.s2_phase = sharedPtr->S2_phase;
+    currentDatabaseMsg.s2_speed = sharedPtr->S2_speed;
+    currentDatabaseMsg.n2_amp = sharedPtr->N2_amp;
+    currentDatabaseMsg.n2_phase = sharedPtr->N2_phase;
+    currentDatabaseMsg.n2_speed = sharedPtr->N2_speed;
     currentDatabaseMsg.tideconstituents = true;
   }
   else
   {
-    for (int i = 0; i < data.dateGMT.size(); i++)
+    for (int i = 0; i < sharedPtr->dateGMT.size(); i++)
     {
       // Tidal oscillation database
-      currentDatabaseMsg.time_gmt_year.push_back(data.dateGMT[i][0]);
-      currentDatabaseMsg.time_gmt_month.push_back(data.dateGMT[i][1]);
-      currentDatabaseMsg.time_gmt_day.push_back(data.dateGMT[i][2]);
-      currentDatabaseMsg.time_gmt_hour.push_back(data.dateGMT[i][3]);
-      currentDatabaseMsg.time_gmt_minute.push_back(data.dateGMT[i][4]);
+      currentDatabaseMsg.time_gmt_year.push_back(sharedPtr->dateGMT[i][0]);
+      currentDatabaseMsg.time_gmt_month.push_back(sharedPtr->dateGMT[i][1]);
+      currentDatabaseMsg.time_gmt_day.push_back(sharedPtr->dateGMT[i][2]);
+      currentDatabaseMsg.time_gmt_hour.push_back(sharedPtr->dateGMT[i][3]);
+      currentDatabaseMsg.time_gmt_minute.push_back(sharedPtr->dateGMT[i][4]);
 
-      currentDatabaseMsg.tidevelocities.push_back(data.speedcmsec[i]);
+      currentDatabaseMsg.tidevelocities.push_back(sharedPtr->speedcmsec[i]);
     }
     currentDatabaseMsg.tideconstituents = false;
   }
 
-  currentDatabaseMsg.ebb_direction = data.ebbDirection;
-  currentDatabaseMsg.flood_direction = data.floodDirection;
+  currentDatabaseMsg.ebb_direction = sharedPtr->ebbDirection;
+  currentDatabaseMsg.flood_direction = sharedPtr->floodDirection;
 
-  currentDatabaseMsg.world_start_time_year = data.world_start_time_year;
-  currentDatabaseMsg.world_start_time_month = data.world_start_time_month;
-  currentDatabaseMsg.world_start_time_day = data.world_start_time_day;
-  currentDatabaseMsg.world_start_time_hour = data.world_start_time_hour;
-  currentDatabaseMsg.world_start_time_minute = data.world_start_time_minute;
+  currentDatabaseMsg.world_start_time_year = sharedPtr->world_start_time_year;
+  currentDatabaseMsg.world_start_time_month = sharedPtr->world_start_time_month;
+  currentDatabaseMsg.world_start_time_day = sharedPtr->world_start_time_day;
+  currentDatabaseMsg.world_start_time_hour = sharedPtr->world_start_time_hour;
+  currentDatabaseMsg.world_start_time_minute = sharedPtr->world_start_time_minute;
 
   this->dataPtr->stratifiedCurrentDatabasePub->publish(currentDatabaseMsg);
 

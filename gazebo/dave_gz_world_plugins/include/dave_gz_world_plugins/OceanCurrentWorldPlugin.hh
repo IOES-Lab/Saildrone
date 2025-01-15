@@ -57,6 +57,8 @@ public:
 
   // ----------------------------------------------
 
+  static OceanCurrentWorldPlugin * Instance();
+
   struct SharedData
   {
     // Gauss-Markov process instances for current models
@@ -107,7 +109,7 @@ public:
   std::shared_ptr<SharedData> sharedDataPtr;
 
 private:
-  // std::shared_ptr<rclcpp::Node> ros_node_;
+  static OceanCurrentWorldPlugin * singletonInstance;
 
   struct PrivateData;
   std::unique_ptr<PrivateData> dataPtr;
