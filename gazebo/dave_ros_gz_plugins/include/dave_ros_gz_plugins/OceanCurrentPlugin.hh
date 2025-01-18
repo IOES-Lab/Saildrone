@@ -51,12 +51,6 @@ public:
 
   // ----------------------------------------------
 
-  // void Update(const gz::sim::UpdateInfo & _info, const gz::sim::EntityComponentManager & _ecm);
-  // void PreUpdate(
-  //   const gz::sim::UpdateInfo & _info, gz::sim::EntityComponentManager & _ecm) override;
-
-  // ----------------------------------------------
-
   void PostUpdate(const gz::sim::UpdateInfo & _info, const gz::sim::EntityComponentManager & _ecm);
 
   // ----------------------------------------------
@@ -110,6 +104,8 @@ public:
     std::shared_ptr<dave_interfaces::srv::SetCurrentModel::Response> _res);
 
 private:
+  // std::shared_ptr<rclcpp::Node> rosNode;
+
   struct PrivateData;
   std::unique_ptr<PrivateData> dataPtr;
 };

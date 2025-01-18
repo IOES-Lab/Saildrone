@@ -12,6 +12,7 @@
 
 // ROS 2 Headers
 #include <geometry_msgs/msg/twist_stamped.hpp>
+#include <geometry_msgs/msg/vector3.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/service.hpp>
 #include <std_msgs/msg/string.hpp>
@@ -40,10 +41,6 @@ namespace dave_ros_gz_plugins
 {
 struct OceanCurrentPlugin::PrivateData
 {
-  // std::string db_path;  (check)(TODO)
-  // this->dataPtr->db_path = ament_index_cpp::get_package_share_directory("dave_worlds");
-  // // rclcpp::Service<dave_interfaces::srv::>::SharedPtr;  //Template
-
   // Time management
   std::chrono::steady_clock::duration lastUpdate{0};
 
@@ -157,25 +154,26 @@ void OceanCurrentPlugin::Configure(
     this->dataPtr->model_namespace = "hydrodynamics";
   }
 
-  // Reinitialize the ROS 2 node with the model namespace
-  this->dataPtr->rosNode =
-    std::make_shared<rclcpp::Node>("underwater_current_ros_plugin", this->dataPtr->model_namespace);
+  // Reinitialize the ROS 2 node with the model namespace // TODO: Do we need this confirm with
+  // woen-sug : ) this->dataPtr->rosNode =
+  //   std::make_shared<rclcpp::Node>("underwater_current_ros_plugin",
+  //   this->dataPtr->model_namespace);
 
   // Create and advertise Messages
   // Advertise the flow velocity as a stamped twist message
   this->dataPtr->flowVelocityPub =
     this->dataPtr->rosNode->create_publisher<geometry_msgs::msg::TwistStamped>(
-      "currentVelocityTopic", rclcpp::QoS(10));
+      "currentVelocityTopic", 1);
 
   // Advertise the stratified ocean current message
   this->dataPtr->stratifiedCurrentVelocityPub =
     this->dataPtr->rosNode->create_publisher<dave_interfaces::msg::StratifiedCurrentVelocity>(
-      "stratifiedCurrentVelocityTopic", rclcpp::QoS(10));
+      "stratifiedCurrentVelocityTopic", 1);
 
   // Advertise the stratified ocean current database message
   this->dataPtr->stratifiedCurrentDatabasePub =
     this->dataPtr->rosNode->create_publisher<dave_interfaces::msg::StratifiedCurrentDatabase>(
-      this->dataPtr->stratifiedCurrentVelocityDatabaseTopic, rclcpp::QoS(10));
+      this->dataPtr->stratifiedCurrentVelocityDatabaseTopic, 1);
   // // Advertise the stratified ocean current message
   // this->dataPtr->stratifiedCurrentVelocityPub =
   //   this->dataPtr->rosNode->create_publisher<dave_interfaces::msg::StratifiedCurrentVelocity>(
@@ -603,6 +601,16 @@ bool OceanCurrentPlugin::UpdateCurrentVertAngleModel(
 void OceanCurrentPlugin::PostUpdate(
   const gz::sim::UpdateInfo & _info, const gz::sim::EntityComponentManager & _ecm)
 {
+  if (!_info.paused)
+  {
+    rclcpp::spin_some(this->dataPtr->rosNode);
+    gzmsg << "ros 2 is running" << std::endl;
+
+    if (_info.iterations % 1000 == 0)
+    {
+      gzmsg << "dave_ros_gz_plugins::OceanCurrentPlugin::PostUpdate" << std::endl;
+    }
+  }
   auto * worldPlugin = dave_gz_world_plugins::OceanCurrentWorldPlugin::Instance();
   if (!worldPlugin)
   {
@@ -619,7 +627,9 @@ void OceanCurrentPlugin::PostUpdate(
   }
 
   // Generate and publish current velocity according to the vehicle depth
-  geometry_msgs::msg::TwistStamped flowVelMsg;
+  // geometry_msgs::msg::TwistStamped flowVelMsg;
+  auto flowVelMsg = geometry_msgs::msg::TwistStamped();
+
   flowVelMsg.header.stamp = this->dataPtr->rosNode->get_clock()->now();
   flowVelMsg.header.frame_id = "world";
 
@@ -630,7 +640,10 @@ void OceanCurrentPlugin::PostUpdate(
   this->dataPtr->flowVelocityPub->publish(flowVelMsg);
 
   // Generate and publish stratified current velocity
-  dave_interfaces::msg::StratifiedCurrentVelocity stratCurrentVelocityMsg;
+  // dave_interfaces::msg::StratifiedCurrentVelocity stratCurrentVelocityMsg;
+
+  auto stratCurrentVelocityMsg = dave_interfaces::msg::StratifiedCurrentVelocity();
+
   stratCurrentVelocityMsg.header.stamp = this->dataPtr->rosNode->get_clock()->now();
   stratCurrentVelocityMsg.header.frame_id = "world";
 
@@ -651,10 +664,9 @@ void OceanCurrentPlugin::PostUpdate(
   this->dataPtr->stratifiedCurrentVelocityPub->publish(stratCurrentVelocityMsg);
 
   // Generate and publish stratified current database
-  dave_interfaces::msg::StratifiedCurrentDatabase currentDatabaseMsg;
-  for (int i = 0; i < sharedPtr->stratifiedDatabase
-                        .size();  // again check with ocean_cureent_world_plugin.cc (TODO)
-       i++)                       // read from csv file in ocean_cureent_world_plugin.cc
+  // dave_interfaces::msg::StratifiedCurrentDatabase currentDatabaseMsg;
+  auto currentDatabaseMsg = dave_interfaces::msg::StratifiedCurrentDatabase();
+  for (int i = 0; i < sharedPtr->stratifiedDatabase.size(); i++)
   {
     // Stratified current database entry preparation
     geometry_msgs::msg::Vector3 velocity;
@@ -665,7 +677,7 @@ void OceanCurrentPlugin::PostUpdate(
     currentDatabaseMsg.depths.push_back(sharedPtr->stratifiedDatabase[i].Z());
   }
 
-  if (sharedPtr->tidalHarmonicFlag)  // again check with ocean_cureent_world_plugin.cc (TODO)
+  if (sharedPtr->tidalHarmonicFlag)
   {
     // Tidal harmonic constituents
     currentDatabaseMsg.m2_amp = sharedPtr->M2_amp;

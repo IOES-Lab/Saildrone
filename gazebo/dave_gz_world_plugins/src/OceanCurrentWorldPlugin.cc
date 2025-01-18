@@ -263,7 +263,7 @@ void OceanCurrentWorldPlugin::LoadTidalOscillationDatabase()
     }
     else
     {
-      this->sharedDataPtr->world_start_time_minute = 0;
+      gzerr << "World start time (minute) not defined" << std::endl;
     }
   }
   else
