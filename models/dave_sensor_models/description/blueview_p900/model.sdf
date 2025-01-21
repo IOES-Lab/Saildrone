@@ -73,7 +73,7 @@
           <ray degrees="false">
             <scan>
                 <horizontal>
-                  <samples>1024</samples>
+                  <beams>1024</beams>
                   <min_angle>-0.78539816339</min_angle>
                   <max_angle>0.78539816339</max_angle>
                 </horizontal>
