@@ -425,6 +425,14 @@ public:
 public:
   double maximumRange;
 
+  /// \brief Horizontal FOV
+public:
+  double hFOV;
+
+  /// \brief Vertical FOV
+public:
+  double vFOV;
+
   /// \brief State of the world.
 public:
   const WorldState * worldState;
@@ -732,6 +740,17 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
 
   const int beamCount = horizontalElement->Get<int>("beams", 256).first;
   const int rayCount = verticalElement->Get<int>("rays", 3).first;
+
+  // Compute FOVs
+  this->hFOV = horizAngleMax - horizAngleMin;        // Horizontal Field of View
+  this->vFOV = verticalAngleMax - verticalAngleMin;  // Vertical Field of View
+
+  if (useDegrees == false)
+  {
+    // Convert the FOV to degrees
+    this->hFOV *= (180.0 / M_PI);  // Convert horizontal FOV to degrees
+    this->vFOV *= (180.0 / M_PI);  // Convert vertical FOV to degrees
+  }
 
   // ---- Construct AcousticBeam
   // Initialize beamId
