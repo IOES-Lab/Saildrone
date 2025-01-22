@@ -105,7 +105,6 @@ public:
     std::vector<double> speedcmsec;           // Speed in cm/sec
   };
 
-  // std::shared_ptr<SharedData> sharedDataPtr = std::make_shared<SharedData>(); // (TODO)
   std::shared_ptr<SharedData> sharedDataPtr;
 
 private:

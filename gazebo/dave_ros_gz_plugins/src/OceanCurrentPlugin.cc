@@ -240,14 +240,14 @@ void OceanCurrentPlugin::Configure(
                                            &OceanCurrentPlugin::UpdateStratCurrentVelocity, this,
                                            std::placeholders::_1, std::placeholders::_2));
 
-  // Advertise the service to update the current horizontal angle //TODO
+  // Advertise the service to update the current horizontal angle
   this->dataPtr->set_current_horz_angle =
     this->dataPtr->rosNode->create_service<dave_interfaces::srv::SetCurrentDirection>(
       "set_current_horz_angle",
       std::bind(
         &OceanCurrentPlugin::UpdateHorzAngle, this, std::placeholders::_1, std::placeholders::_2));
 
-  // Advertise the service to update the current horizontal angle //TODO
+  // Advertise the service to update the current horizontal angle
   this->dataPtr->set_current_vert_angle =
     this->dataPtr->rosNode->create_service<dave_interfaces::srv::SetCurrentDirection>(
       "set_current_vert_angle",
@@ -604,8 +604,6 @@ void OceanCurrentPlugin::PostUpdate(
   if (!_info.paused)
   {
     rclcpp::spin_some(this->dataPtr->rosNode);
-    gzmsg << "ros 2 is running" << std::endl;
-
     if (_info.iterations % 1000 == 0)
     {
       gzmsg << "dave_ros_gz_plugins::OceanCurrentPlugin::PostUpdate" << std::endl;
@@ -640,8 +638,6 @@ void OceanCurrentPlugin::PostUpdate(
   this->dataPtr->flowVelocityPub->publish(flowVelMsg);
 
   // Generate and publish stratified current velocity
-  // dave_interfaces::msg::StratifiedCurrentVelocity stratCurrentVelocityMsg;
-
   auto stratCurrentVelocityMsg = dave_interfaces::msg::StratifiedCurrentVelocity();
 
   stratCurrentVelocityMsg.header.stamp = this->dataPtr->rosNode->get_clock()->now();
@@ -650,8 +646,7 @@ void OceanCurrentPlugin::PostUpdate(
   // Updating for stratified behaviour of Ocean Currents
   // What is the .size value over here, to be (checked)
 
-  for (size_t i = 0; i < sharedPtr->currentStratifiedVelocity.size();
-       i++)  // need to check if the values are in sync with ocean_cureent_world_plugin.cc(TODO)
+  for (size_t i = 0; i < sharedPtr->currentStratifiedVelocity.size(); i++)
   {
     geometry_msgs::msg::Vector3 velocity;
     velocity.x = sharedPtr->currentStratifiedVelocity[i].X();

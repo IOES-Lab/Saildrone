@@ -488,13 +488,11 @@ void OceanCurrentWorldPlugin::LoadStratifiedCurrentDatabase()
     read.Y() = row[1];
     read.Z() = row[2];
     this->sharedDataPtr->stratifiedDatabase.push_back(read);
-    // gzmsg << "stratifiedDatabase: " << this->sharedDataPtr->stratifiedDatabase << std::endl;
-    // //testline (TODO)
 
     // Create Gauss-Markov processes for the stratified currents
     // Means are the database-specified magnitudes & angles, and
     // the other values come from the constant current models
-    // TODO: Vertical angle currently set to 0 (not in database)
+
     dave_gz_world_plugins::GaussMarkovProcess magnitudeModel;
     magnitudeModel.mean = hypot(row[1], row[0]);
     magnitudeModel.var = magnitudeModel.mean;
@@ -527,8 +525,6 @@ void OceanCurrentWorldPlugin::LoadStratifiedCurrentDatabase()
     depthModels.push_back(hAngleModel);
     depthModels.push_back(vAngleModel);
     this->sharedDataPtr->stratifiedCurrentModels.push_back(depthModels);
-    // gzmsg << "stratifiedCurrentModels: " << this->sharedDataPtr->stratifiedCurrentModels <<
-    // std::endl; //testline (TODO)
   }
   csvFile.close();
 
@@ -782,16 +778,13 @@ void OceanCurrentWorldPlugin::Update(
   // model
 
   // Update current velocity
-  double currentVelMag = this->sharedDataPtr->currentVelModel.Update(time);  // (TODO)
-  // double currentVelMag = 1.00;
+  double currentVelMag = this->sharedDataPtr->currentVelModel.Update(time);
 
   // Update current horizontal direction around z axis of flow frame
-  double horzAngle = this->sharedDataPtr->currentHorzAngleModel.Update(time);  // (TODO)
-  // double horzAngle = 0.3;
+  double horzAngle = this->sharedDataPtr->currentHorzAngleModel.Update(time);
 
   // Update current horizontal direction around z axis of flow frame
-  // double vertAngle = 0.3;
-  double vertAngle = this->sharedDataPtr->currentVertAngleModel.Update(time);  // (TODO)
+  double vertAngle = this->sharedDataPtr->currentVertAngleModel.Update(time);
 
   // Generating the current velocity vector as in the North-East-Down frame
   this->sharedDataPtr->currentVelocity = gz::math::Vector3d(
@@ -809,7 +802,6 @@ void OceanCurrentWorldPlugin::Update(
     gz::math::Vector4d depthVel(
       currentVelMag * cos(horzAngle) * cos(vertAngle),
       currentVelMag * sin(horzAngle) * cos(vertAngle), currentVelMag * sin(vertAngle), depth);
-    // gzmsg << "DepthVel: " << depthVel << std::endl;  // testline (TODO)
     this->sharedDataPtr->currentStratifiedVelocity.push_back(depthVel);
   }
 }
@@ -824,8 +816,6 @@ void OceanCurrentWorldPlugin::PublishCurrentVelocity()
                 this->sharedDataPtr->currentVelocity.X(), this->sharedDataPtr->currentVelocity.Y(),
                 this->sharedDataPtr->currentVelocity.Z()));
   this->dataPtr->gz_node_cvel_world_pub.Publish(currVel);
-  // gzmsg << this->sharedDataPtr->currentVelocity << std::endl;  TODO : Remove after testing
-  // gzmsg << "currvel-" << currVel.DebugString() << std::endl;  TODO : Remove after testing
 }
 
 /////////////////////////////////////////////////
@@ -838,17 +828,12 @@ void OceanCurrentWorldPlugin::PublishStratifiedCurrentVelocity()
   {
     gz::msgs::Set(stratcurrentVel.add_velocity(), gz::math::Vector3d(it->X(), it->Y(), it->Z()));
     stratcurrentVel.add_depth(it->W());
-    // gzmsg << "X: " << it->X() << std::endl;
-    // gzmsg << "Y: " << it->Y() << std::endl;
-    // gzmsg << "Z: " << it->Z() << std::endl;
-    // gzmsg << "Depth: " << it->W() << std::endl;
   }
   if (stratcurrentVel.velocity_size() == 0)
   {
     return;
   }
   this->dataPtr->gz_node_scvel_world_pub.Publish(stratcurrentVel);
-  // gzmsg << stratcurrentVel.DebugString() << std::endl;
 }
 
 /////////////////////////////////////////////////
