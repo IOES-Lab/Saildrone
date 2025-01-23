@@ -143,7 +143,8 @@ void OceanCurrentPlugin::Configure(
   // Access the "real" currentHorzAngleModel
   auto & horzModel = worldPlugin->sharedDataPtr->currentHorzAngleModel;
   // Set the topic for the stratified current velocity database
-  this->dataPtr->stratifiedCurrentVelocityDatabaseTopic = "stratifiedCurrentVelocityTopic_database";
+  this->dataPtr->stratifiedCurrentVelocityDatabaseTopic =
+    "stratified_current_velocity_topic_database";
 
   if (_sdf->HasElement("namespace"))
   {
@@ -155,9 +156,10 @@ void OceanCurrentPlugin::Configure(
   }
 
   // Reinitialize the ROS 2 node with the model namespace // TODO: Do we need this confirm with
-  // woen-sug : ) this->dataPtr->rosNode =
-  //   std::make_shared<rclcpp::Node>("underwater_current_ros_plugin",
-  //   this->dataPtr->model_namespace);
+  // woen-sug : )
+
+  this->dataPtr->rosNode =
+    std::make_shared<rclcpp::Node>("underwater_current_ros_plugin", this->dataPtr->model_namespace);
 
   // Create and advertise Messages
   // Advertise the flow velocity as a stamped twist message

@@ -222,13 +222,11 @@ void OceanCurrentModelPlugin::LoadCurrentVelocityParams(
     if (currentVelocityParams->HasElement("topic_stratified"))
     {
       this->dataPtr->transientCurrentVelocityTopic =
-        "/hydrodynamics/" + currentVelocityParams->Get<std::string>("topic_stratified") +
-        "_database";
+        currentVelocityParams->Get<std::string>("topic_stratified");
     }
     else
     {
-      this->dataPtr->transientCurrentVelocityTopic =
-        "/hydrodynamics/stratified_current_velocity_database";
+      this->dataPtr->transientCurrentVelocityTopic = "stratified_current_velocity_topic_database";
     }
 
     // Read Gauss-Markov parameters
@@ -648,12 +646,6 @@ void OceanCurrentModelPlugin::CalculateOceanCurrent(double vehicleDepth)
 void OceanCurrentModelPlugin::PostUpdate(
   const gz::sim::UpdateInfo & _info, const gz::sim::EntityComponentManager & _ecm)
 {
-  // Publish the Current Velocity. TODO find if we really need this
-  // if (!_info.paused && _info.simTime > this->dataPtr->lastUpdate)
-  // {
-  //   this->dataPtr->lastUpdate = _info.simTime;
-  //   PostPublishCurrentVelocity();
-  // }
   this->dataPtr->lastUpdate = _info.simTime;
   PublishCurrentVelocity(_info);
   if (!_info.paused)
