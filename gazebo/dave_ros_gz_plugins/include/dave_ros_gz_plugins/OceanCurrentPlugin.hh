@@ -21,14 +21,14 @@
 #include "dave_interfaces/msg/stratified_current_velocity.hpp"
 
 // Dave Interfaces: Service Types
-#include "dave_interfaces/srv/Get_Current_Model.hpp"
-#include "dave_interfaces/srv/Get_Origin_Spherical_Coord.hpp"
-#include "dave_interfaces/srv/Set_Current_Direction.hpp"
-#include "dave_interfaces/srv/Set_Current_Model.hpp"
-#include "dave_interfaces/srv/Set_Current_Velocity.hpp"
-#include "dave_interfaces/srv/Set_Origin_Spherical_Coord.hpp"
-#include "dave_interfaces/srv/Set_Stratified_Current_Direction.hpp"
-#include "dave_interfaces/srv/Set_Stratified_Current_Velocity.hpp"
+#include "dave_interfaces/srv/get_current_model.hpp"
+#include "dave_interfaces/srv/get_origin_spherical_coord.hpp"
+#include "dave_interfaces/srv/set_current_direction.hpp"
+#include "dave_interfaces/srv/set_current_model.hpp"
+#include "dave_interfaces/srv/set_current_velocity.hpp"
+#include "dave_interfaces/srv/set_origin_spherical_coord.hpp"
+#include "dave_interfaces/srv/set_stratified_current_direction.hpp"
+#include "dave_interfaces/srv/set_stratified_current_velocity.hpp"
 
 // #include "dave_interfaces/srv/Stratified_Current_Database.hpp"
 // #include "dave_interfaces/srv/Stratified_Current_Velocity.hpp"

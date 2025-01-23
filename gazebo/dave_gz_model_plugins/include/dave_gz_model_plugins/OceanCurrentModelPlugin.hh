@@ -3,8 +3,8 @@
 
 #include "dave_gz_world_plugins/gauss_markov_process.hh"
 #include "dave_gz_world_plugins/tidal_oscillation.hh"
-#include "dave_interfaces/msg/Stratified_Current_Database.hpp"
-#include "dave_interfaces/msg/Stratified_Current_Velocity.hpp"
+#include "dave_interfaces/msg/stratified_current_database.hpp"
+#include "dave_interfaces/msg/stratified_current_velocity.hpp"
 
 // OceanCurrentModelPlugin
 

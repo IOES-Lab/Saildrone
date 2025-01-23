@@ -25,8 +25,8 @@
 #include <std_msgs/msg/string.hpp>
 
 // Message interfaces includes
-#include "dave_interfaces/msg/Stratified_Current_Database.hpp"
-#include "dave_interfaces/msg/Stratified_Current_Velocity.hpp"
+#include "dave_interfaces/msg/stratified_current_database.hpp"
+#include "dave_interfaces/msg/stratified_current_velocity.hpp"
 
 // Standard library includes
 #include <algorithm>
