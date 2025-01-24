@@ -56,6 +56,15 @@ public:
 
   void Update(const gz::sim::UpdateInfo & _info, gz::sim::EntityComponentManager & _ecm);
 
+  // // Callback to receive incoming stratified or global current
+  // void OnIncomingCurrent(const gz::msgs::StratifiedCurrentVelocity & _msg);
+
+  // // Publish final current to hydrodynamics plugin
+  // void PublishToHydrodynamics(const gz::math::Vector3d & _current);
+
+  // // Helper to find the vehicle depth from ECM, etc.
+  // double ComputeVehicleDepth(gz::sim::EntityComponentManager & _ecm);
+
   void CalculateOceanCurrent(double vehicleDepth);
 
   // ----------------------------------------------

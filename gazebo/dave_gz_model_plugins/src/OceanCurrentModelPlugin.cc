@@ -167,18 +167,25 @@ void OceanCurrentModelPlugin::Configure(
   this->dataPtr->modelName = _sdf->Get<std::string>("namespace");
 
   // Set the flow velocity topic from SDF or use the default topic name
+
+  ///  For Hydrodynamics Plugin -  <namespace> - This allows the robot to have an individual
+  ///  namespace for current. This is useful when you have multiple vehicles in different
+  ///  locations and you wish to set the currents of each vehicle separately. If no namespace is
+  ///  given then the plugin listens on the `/ocean_current` topic for a `Vector3d` message.
+  ///  Otherwise it listens on `/model/{namespace name}/ocean_current`.[String, Optional]
+
   if (_sdf->HasElement("flow_velocity_topic"))
   {
     this->dataPtr->currentVelocityTopic =
-      _sdf->Get<std::string>("flow_velocity_topic") + "/" + this->dataPtr->modelName;
+      "model/" + this->dataPtr->modelName + "/" + _sdf->Get<std::string>("flow_velocity_topic");
+    gzwarn << "Setting flow_velocity_topic to anything other than 'ocean_current' is not "
+              "recommended, as it might not be compatible with the hydrodynamics plugin."
+           << std::endl;
   }
   else
   {
-    this->dataPtr->currentVelocityTopic =
-      "hydrodynamics/current_velocity/" + this->dataPtr->modelName;
-    gzwarn << "Empty flow_velocity_topic for transient_current model plugin. Default topicName "
-              "definition is used."
-           << std::endl;
+    this->dataPtr->currentVelocityTopic = this->dataPtr->currentVelocityTopic =
+      "model/" + this->dataPtr->modelName + "/ocean_current";
   }
   gzmsg << "Transient velocity topic name for " << this->dataPtr->modelName << " : "
         << this->dataPtr->currentVelocityTopic << std::endl;
@@ -226,7 +233,8 @@ void OceanCurrentModelPlugin::LoadCurrentVelocityParams(
     }
     else
     {
-      this->dataPtr->transientCurrentVelocityTopic = "stratified_current_velocity_topic_database";
+      this->dataPtr->transientCurrentVelocityTopic =
+        "hydrodynamics/stratified_current_velocity_topic_database";
     }
 
     // Read Gauss-Markov parameters
@@ -669,6 +677,11 @@ void OceanCurrentModelPlugin::PublishCurrentVelocity(const gz::sim::UpdateInfo &
   flowVelMsg.twist.linear.x = this->dataPtr->currentVelocity.X();
   flowVelMsg.twist.linear.y = this->dataPtr->currentVelocity.Y();
   flowVelMsg.twist.linear.z = this->dataPtr->currentVelocity.Z();
+
+  // For Testing with higher current velocities -
+  // flowVelMsg.twist.linear.x = 25;
+  // flowVelMsg.twist.linear.y = 25;
+  // flowVelMsg.twist.linear.z = 0;
   this->dataPtr->flowVelocityPub->publish(flowVelMsg);
 
   // Generate and publish Gazebo topic according to the vehicle depth
