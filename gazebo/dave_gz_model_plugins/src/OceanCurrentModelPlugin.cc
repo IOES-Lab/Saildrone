@@ -1,11 +1,9 @@
-// Plugin includes
 #include "dave_gz_model_plugins/OceanCurrentModelPlugin.hh"
 #include "dave_gz_world_plugins/gauss_markov_process.hh"
 #include "dave_gz_world_plugins/tidal_oscillation.hh"
 
 // Gazebo includes
 #include <gz/msgs/vector3d.pb.h>
-#include <gz/physics/World.hh>
 #include <gz/plugin/Register.hh>
 #include <gz/sim/Model.hh>
 #include <gz/sim/System.hh>
@@ -13,35 +11,24 @@
 #include <gz/sim/World.hh>
 #include <gz/sim/components/Link.hh>
 #include <gz/sim/components/Name.hh>
-#include <gz/sim/components/ParentEntity.hh>
 #include <gz/sim/components/Pose.hh>
 #include <gz/sim/components/World.hh>
 #include <gz/transport/Node.hh>
 
-// ROS2 includes
+// ROS 2 includes
 #include <geometry_msgs/msg/twist_stamped.hpp>
-#include <geometry_msgs/msg/vector3.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/string.hpp>
 
-// Message interfaces includes
+// Custom message interfaces
 #include "dave_interfaces/msg/stratified_current_database.hpp"
-#include "dave_interfaces/msg/stratified_current_velocity.hpp"
 
 // Standard library includes
-#include <algorithm>
-#include <ament_index_cpp/get_package_share_directory.hpp>
 #include <array>
 #include <chrono>
-#include <iostream>
 #include <memory>
+#include <mutex>
 #include <string>
-#include <unordered_map>
 #include <vector>
-
-// Common utilities
-#include "gz/common/StringUtils.hh"
-#include "gz/plugin/Register.hh"
 
 GZ_ADD_PLUGIN(
   dave_gz_model_plugins::OceanCurrentModelPlugin, gz::sim::System,

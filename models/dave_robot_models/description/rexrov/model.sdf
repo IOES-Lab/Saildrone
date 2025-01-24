@@ -906,7 +906,7 @@
       <link_name>base_link</link_name>
       <base_link_name>$(arg namespace)/base_link</base_link_name>
       <transient_current>
-        <!-- <topic_stratified>stratified_current_velocity_topic_database</topic_stratified> -->
+        <!-- <topic_stratified>hydrodynamics/stratified_current_velocity_topic_database</topic_stratified> -->
         <velocity_north>
           <mean>1.0</mean>
           <mu>0.0</mu>
