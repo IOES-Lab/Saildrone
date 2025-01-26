@@ -78,7 +78,7 @@
 
 # Using the pre-built image for above commented out dockerfile code lines
 # hadolint ignore=DL3007
-FROM --platform=linux/arm64 woensugchoi/ubuntu-arm-rdp-base:latest
+FROM woensugchoi/ubuntu-arm-rdp-base:latest
 ARG USER=docker
 
 # ROS-Gazebo arg
