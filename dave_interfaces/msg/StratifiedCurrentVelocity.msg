@@ -7,4 +7,3 @@ float32[] depths
 
 # Velocities
 geometry_msgs/Vector3[] velocities
-

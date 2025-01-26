@@ -97,7 +97,6 @@ OceanCurrentWorldPlugin::OceanCurrentWorldPlugin()
 }
 
 /////////////////////////////////////////////////
-// OceanCurrentWorldPlugin::~OceanCurrentWorldPlugin() = default;
 
 OceanCurrentWorldPlugin::~OceanCurrentWorldPlugin()
 {
@@ -131,10 +130,6 @@ void OceanCurrentWorldPlugin::Configure(
   this->dataPtr->ns = _sdf->Get<std::string>("namespace");
 
   gzmsg << "Loading Ocean current world plugin" << std::endl;
-  // Initializing the transport node
-  // this->dataPtr->gz_node = std::make_shared<gz::transport::Node>();
-
-  // this->dataPtr->gz_node->Init(this->dataPtr->world.Name(_ecm));  // check if correct
 
   LoadGlobalCurrentConfig();
   LoadStratifiedCurrentDatabase();
@@ -540,11 +535,6 @@ void OceanCurrentWorldPlugin::LoadStratifiedCurrentDatabase()
 /////////////////////////////////////////////////
 void OceanCurrentWorldPlugin::LoadGlobalCurrentConfig()
 {
-  // NOTE: The plugin currently requires stratified current, so the
-  //       global current set up in this method is potentially
-  //       inconsistent or redundant.
-  //       Consider setting it up as one or the other, but not both?
-
   // Retrieve the velocity configuration, if existent
 
   sdf::ElementPtr currentVelocityParams;
@@ -576,12 +566,9 @@ void OceanCurrentWorldPlugin::LoadGlobalCurrentConfig()
   if (currentVelocityParams->HasElement("velocity"))
   {
     sdf::ElementPtr elem = currentVelocityParams->GetElement("velocity");
-    // this->sharedDataPtr = std::make_shared<double>();
     if (elem->HasElement("mean"))
     {
       this->sharedDataPtr->currentVelModel.mean = elem->Get<double>("mean");
-      // this->sharedDataPtr->currentVelModel.mean =
-      //   std::make_shared<dave_gz_world_plugins::GaussMarkovProcess>(elem->Get<double>("mean"));
     }
     if (elem->HasElement("min"))
     {

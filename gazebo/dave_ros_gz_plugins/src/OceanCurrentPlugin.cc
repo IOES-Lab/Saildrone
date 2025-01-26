@@ -176,15 +176,6 @@ void OceanCurrentPlugin::Configure(
   this->dataPtr->stratifiedCurrentDatabasePub =
     this->dataPtr->rosNode->create_publisher<dave_interfaces::msg::StratifiedCurrentDatabase>(
       this->dataPtr->stratifiedCurrentVelocityDatabaseTopic, 1);
-  // // Advertise the stratified ocean current message
-  // this->dataPtr->stratifiedCurrentVelocityPub =
-  //   this->dataPtr->rosNode->create_publisher<dave_interfaces::msg::StratifiedCurrentVelocity>(
-  //     data.stratifiedCurrentVelocityTopic, rclcpp::QoS(10));
-
-  // // Advertise the stratified ocean current database message
-  // this->dataPtr->stratifiedCurrentDatabasePub =
-  //   this->dataPtr->rosNode->create_publisher<dave_interfaces::msg::StratifiedCurrentDatabase>(
-  //     this->dataPtr->stratifiedCurrentVelocityDatabaseTopic, rclcpp::QoS(10));
 
   // Advertise the service to get the current velocity model
   this->dataPtr->get_current_velocity_model =
@@ -263,13 +254,6 @@ void OceanCurrentPlugin::Configure(
                                              &OceanCurrentPlugin::UpdateStratHorzAngle, this,
                                              std::placeholders::_1, std::placeholders::_2));
 
-  // // Advertise the service to update the current vertical angle
-  // this->dataPtr->set_current_vert_angle_model =
-  //   this->dataPtr->rosNode->create_service<dave_interfaces::srv::SetCurrentDirection>(
-  //     "set_current_vert_angle_model", std::bind(
-  //                                       &OceanCurrentPlugin::UpdateVertAngleModel, this,
-  //                                       std::placeholders::_1, std::placeholders::_2));
-
   // Advertise the service to update the stratified current vertical angle
   this->dataPtr->set_stratified_current_vert_angle =
     this->dataPtr->rosNode->create_service<dave_interfaces::srv::SetStratifiedCurrentDirection>(
@@ -292,8 +276,6 @@ bool OceanCurrentPlugin::UpdateHorzAngle(
   auto & horzModel = worldPlugin->sharedDataPtr->currentHorzAngleModel;
   _res->success = horzModel.SetMean(_req->angle);
   return true;
-  // _res->success = data.currentHorzAngleModel.SetMean(_req->angle);
-  // return true;
 }
 
 /////////////////////////////////////////////////
@@ -646,8 +628,6 @@ void OceanCurrentPlugin::PostUpdate(
   stratCurrentVelocityMsg.header.frame_id = "world";
 
   // Updating for stratified behaviour of Ocean Currents
-  // What is the .size value over here, to be (checked)
-
   for (size_t i = 0; i < sharedPtr->currentStratifiedVelocity.size(); i++)
   {
     geometry_msgs::msg::Vector3 velocity;
@@ -661,7 +641,6 @@ void OceanCurrentPlugin::PostUpdate(
   this->dataPtr->stratifiedCurrentVelocityPub->publish(stratCurrentVelocityMsg);
 
   // Generate and publish stratified current database
-  // dave_interfaces::msg::StratifiedCurrentDatabase currentDatabaseMsg;
   auto currentDatabaseMsg = dave_interfaces::msg::StratifiedCurrentDatabase();
   for (int i = 0; i < sharedPtr->stratifiedDatabase.size(); i++)
   {

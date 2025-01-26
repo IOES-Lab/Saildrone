@@ -12,8 +12,8 @@ find_package(gz-common5 REQUIRED COMPONENTS profiler)
 find_package(gz-sim8 REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(dave_interfaces REQUIRED)
-find_package(Protobuf REQUIRED) #r
-find_package(gz-msgs10 REQUIRED) #r
+find_package(Protobuf REQUIRED)
+find_package(gz-msgs10 REQUIRED)
 find_package(dave_gz_world_plugins REQUIRED)
 
 # Set version variables

@@ -8,9 +8,8 @@
 
 // OceanCurrentModelPlugin
 
-#include <gz/sim/System.hh>
-// #include <gz/utilise/ImplPtr.hh>
 #include <gz/physics/World.hh>
+#include <gz/sim/System.hh>
 
 #include <chrono>
 #include <map>

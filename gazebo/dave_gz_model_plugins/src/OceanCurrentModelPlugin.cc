@@ -183,9 +183,6 @@ void OceanCurrentModelPlugin::Configure(
   // Read the stratified ocean current topic name from the SDF
   LoadCurrentVelocityParams(sdfClone, _ecm);
 
-  // Initialize the Gauss-Markov process
-  //   Gauss_Markov_process_initialize(_sdf);
-
   // Advertise the ROS flow velocity as a stamped twist message
   this->dataPtr->flowVelocityPub =
     this->ros_node_->create_publisher<geometry_msgs::msg::TwistStamped>(
@@ -223,9 +220,6 @@ void OceanCurrentModelPlugin::LoadCurrentVelocityParams(
       this->dataPtr->transientCurrentVelocityTopic =
         "hydrodynamics/stratified_current_velocity_topic_database";
     }
-
-    // Read Gauss-Markov parameters
-    // sdf::ElementPtr currentVelocityDirection;
 
     // initialize velocity_north_model parameters
     if (currentVelocityParams->HasElement("velocity_north"))
