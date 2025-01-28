@@ -547,15 +547,24 @@ void OceanCurrentWorldPlugin::LoadGlobalCurrentConfig()
     gzerr << "Current configuration not available" << std::endl;
   }
 
-  // Read the topic names from the SDF file
-  if (currentVelocityParams->HasElement("topic"))
+  if (currentVelocityParams->HasElement("use_constant_current"))
   {
-    this->sharedDataPtr->currentVelocityTopic =
-      this->dataPtr->ns + "/" + currentVelocityParams->Get<std::string>("topic");
+    this->sharedDataPtr->use_constant_current =
+      currentVelocityParams->Get<bool>("use_constant_current");
   }
   else
   {
-    this->sharedDataPtr->currentVelocityTopic = "current_velocity";
+    this->sharedDataPtr->use_constant_current = false;
+  }
+
+  // Read the topic names from the SDF file
+  if (currentVelocityParams->HasElement("topic"))
+  {
+    this->sharedDataPtr->currentVelocityTopic = currentVelocityParams->Get<std::string>("topic");
+  }
+  else
+  {
+    this->sharedDataPtr->currentVelocityTopic = "ocean_current";
   }
 
   if (this->sharedDataPtr->currentVelocityTopic.empty())
@@ -745,11 +754,13 @@ void OceanCurrentWorldPlugin::LoadGlobalCurrentConfig()
   this->sharedDataPtr->currentVertAngleModel.lastUpdate =
     std::chrono::duration<double>(this->dataPtr->lastUpdate).count();
 
-  // Advertise the current velocity & stratified current velocity topics
-  this->dataPtr->gz_node_cvel_world_pub =
-    this->dataPtr->gz_node.Advertise<gz::msgs::Vector3d>(this->sharedDataPtr->currentVelocityTopic);
-  gzmsg << "Current velocity topic name: " << this->sharedDataPtr->currentVelocityTopic
-        << std::endl;
+  if (this->sharedDataPtr->use_constant_current)
+  {  // Advertise the current velocity & stratified current velocity topics
+    this->dataPtr->gz_node_cvel_world_pub = this->dataPtr->gz_node.Advertise<gz::msgs::Vector3d>(
+      this->sharedDataPtr->currentVelocityTopic);
+    gzmsg << "Current velocity topic name: " << this->sharedDataPtr->currentVelocityTopic
+          << std::endl;
+  }
 }
 
 // ----------------------------------------------
@@ -830,7 +841,10 @@ void OceanCurrentWorldPlugin::PostUpdate(
   // gzmsg << "Ocean current world plugin post update" << std::endl;
   // Update time stamp
   this->dataPtr->lastUpdate = _info.simTime;
-  PublishCurrentVelocity();
+  if (this->sharedDataPtr->use_constant_current)
+  {
+    PublishCurrentVelocity();
+  }
   PublishStratifiedCurrentVelocity();
 }
 // ----------------------------------------------

@@ -119,7 +119,8 @@
     <plugin filename="OceanCurrentWorldPlugin" name="dave_gz_world_plugins::OceanCurrentWorldPlugin">
       <namespace>hydrodynamics</namespace>
       <constant_current>
-        <topic>current_velocity</topic>
+        <use_constant_current>true</use_constant_current>
+        <topic>ocean_current</topic>
         <velocity>
           <mean>2</mean>
           <min>0</min>

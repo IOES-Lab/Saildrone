@@ -78,6 +78,7 @@ public:
     gz::math::Vector3d currentVelocity;  // Current linear velocity vector
     std::vector<gz::math::Vector4d>
       currentStratifiedVelocity;  // Depth-specific linear velocity vectors for stratified current
+    bool use_constant_current;    // Flag to check if constant current is to be used
 
     // Tidal harmonic data (M2, S2, N2 constituents)
     double M2_amp, M2_phase, M2_speed;  // M2 tidal constituent

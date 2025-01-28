@@ -812,7 +812,7 @@
       name="gz::sim::systems::Hydrodynamics">
 
       <!-- adding for ocean current force application -->
-      <namespace>rexrov</namespace>
+      <!-- <namespace>rexrov</namespace> -->
 
       <disable_coriolis>false</disable_coriolis>
       <disable_added_mass>false</disable_added_mass>
@@ -897,8 +897,7 @@
     </plugin>
 
     <!-- Dave Transient Current Plugin -->
-    <!-- dave_gz_model_plugins::TransientCurrentPlugin -->
-    <plugin
+    <!-- <plugin
       filename="OceanCurrentModelPlugin"
       name="dave_gz_model_plugins::OceanCurrentModelPlugin">
       <namespace>rexrov</namespace>
@@ -906,7 +905,7 @@
       <link_name>base_link</link_name>
       <base_link_name>$(arg namespace)/base_link</base_link_name>
       <transient_current>
-        <!-- <topic_stratified>hydrodynamics/stratified_current_velocity_topic_database</topic_stratified> -->
+        <topic_stratified>hydrodynamics/stratified_current_velocity_topic_database</topic_stratified>
         <velocity_north>
           <mean>1.0</mean>
           <mu>0.0</mu>
@@ -927,7 +926,7 @@
         </velocity_down>
       </transient_current>
       <tide_oscillation>false</tide_oscillation>
-    </plugin>
+    </plugin> -->
 
   </model>
 </sdf>

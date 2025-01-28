@@ -161,11 +161,13 @@ void OceanCurrentPlugin::Configure(
   this->dataPtr->rosNode =
     std::make_shared<rclcpp::Node>("underwater_current_ros_plugin", this->dataPtr->model_namespace);
 
-  // Create and advertise Messages
-  // Advertise the flow velocity as a stamped twist message
-  this->dataPtr->flowVelocityPub =
-    this->dataPtr->rosNode->create_publisher<geometry_msgs::msg::TwistStamped>(
-      "currentVelocityTopic", 1);
+  if (sharedPtr->use_constant_current)
+  {  // Create and advertise Messages
+    // Advertise the flow velocity as a stamped twist message
+    this->dataPtr->flowVelocityPub =
+      this->dataPtr->rosNode->create_publisher<geometry_msgs::msg::TwistStamped>(
+        "currentVelocityTopic", 1);
+  }
 
   // Advertise the stratified ocean current message
   this->dataPtr->stratifiedCurrentVelocityPub =
@@ -608,18 +610,20 @@ void OceanCurrentPlugin::PostUpdate(
     return;
   }
 
-  // Generate and publish current velocity according to the vehicle depth
-  // geometry_msgs::msg::TwistStamped flowVelMsg;
-  auto flowVelMsg = geometry_msgs::msg::TwistStamped();
+  // Publish constant current velocity
+  if (sharedPtr->use_constant_current)
+  {
+    auto flowVelMsg = geometry_msgs::msg::TwistStamped();
 
-  flowVelMsg.header.stamp = this->dataPtr->rosNode->get_clock()->now();
-  flowVelMsg.header.frame_id = "world";
+    flowVelMsg.header.stamp = this->dataPtr->rosNode->get_clock()->now();
+    flowVelMsg.header.frame_id = "world";
 
-  flowVelMsg.twist.linear.x = sharedPtr->currentVelocity.X();
-  flowVelMsg.twist.linear.y = sharedPtr->currentVelocity.Y();
-  flowVelMsg.twist.linear.z = sharedPtr->currentVelocity.Z();
+    flowVelMsg.twist.linear.x = sharedPtr->currentVelocity.X();
+    flowVelMsg.twist.linear.y = sharedPtr->currentVelocity.Y();
+    flowVelMsg.twist.linear.z = sharedPtr->currentVelocity.Z();
 
-  this->dataPtr->flowVelocityPub->publish(flowVelMsg);
+    this->dataPtr->flowVelocityPub->publish(flowVelMsg);
+  }
 
   // Generate and publish stratified current velocity
   auto stratCurrentVelocityMsg = dave_interfaces::msg::StratifiedCurrentVelocity();
