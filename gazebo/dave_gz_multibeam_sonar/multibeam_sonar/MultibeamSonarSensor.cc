@@ -437,21 +437,21 @@ public:
 public:
   const WorldState * worldState;
 
-  /// \brief Depth sensor (i.e. a GPU raytracing sensor).
+  /// \brief Ray sensor (i.e. a GPU raytracing sensor).
 public:
-  gz::rendering::GpuRaysPtr depthSensor;
+  gz::rendering::GpuRaysPtr raySensor;
 
   /// \brief Image sensor (i.e. a camera sensor) to aid ray queries.
 public:
   gz::rendering::CameraPtr imageSensor;
 
-  /// \brief Depth sensor intrinsic constants
+  /// \brief Ray sensor intrinsic constants
 public:
   struct
   {
     gz::math::Vector2d offset;  ///<! Azimuth and elevation offsets
     gz::math::Vector2d step;    ///<! Azimuth and elevation steps
-  } depthSensorIntrinsics;
+  } raySensorIntrinsics;
 
   /// \brief Callback for rendering sensor frames
 public:
@@ -459,9 +459,9 @@ public:
     const float * _scan, unsigned int _width, unsigned int _height, unsigned int _channels,
     const std::string & /*_format*/);
 
-  /// \brief Connection from depth camera with new depth data.
+  /// \brief Connection from ray sensor with new ray data.
 public:
-  gz::common::ConnectionPtr depthConnection;
+  gz::common::ConnectionPtr rayConnection;
 
   /// \brief Connection to the Manager's scene change event.
 public:
@@ -489,7 +489,7 @@ public:
 public:
   std::vector<std::optional<ObjectTarget>> beamTargets;
 
-  /// \brief DVL acoustic beams' patches in depth scan frame.
+  /// \brief DVL acoustic beams' patches in ray scan frame.
 public:
   std::vector<AxisAlignedPatch2i> beamScanPatches;
 
@@ -525,7 +525,7 @@ MultibeamSonarSensor::MultibeamSonarSensor() : dataPtr(new Implementation()) {}
 //////////////////////////////////////////////////
 MultibeamSonarSensor::~MultibeamSonarSensor()
 {
-  this->dataPtr->depthConnection.reset();
+  this->dataPtr->rayConnection.reset();
   this->dataPtr->sceneChangeConnection.reset();
 }
 
@@ -697,10 +697,10 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
   this->beams.clear();
   this->beamTargets.clear();
 
-  this->depthSensor = _sensor->Scene()->CreateGpuRays(_sensor->Name() + "_depth_sensor");
-  if (!this->depthSensor)
+  this->raySensor = _sensor->Scene()->CreateGpuRays(_sensor->Name() + "_ray_sensor");
+  if (!this->raySensor)
   {
-    gzerr << "Failed to create Depth (GPU Ray) sensor for "
+    gzerr << "Failed to create Ray (GPU Ray) sensor for "
           << "for [" << _sensor->Name() << "] sensor." << std::endl;
     return false;
   }
@@ -716,19 +716,19 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
   const bool useDegrees = rayElement->Get("degrees", false).first;
   const gz::math::Angle angleUnit = useDegrees ? GZ_DTOR(1.) : 1.;
 
-  // -------- Assign depth sensor properties
+  // -------- Assign ray sensor properties
   sdf::ElementPtr rangeElement = rayElement->GetElement("range");
   const double minimumRange = rangeElement->Get<double>("min", 0.1).first;
   gzmsg << "Setting minimum range to " << minimumRange << " m for [" << _sensor->Name()
         << "] sensor." << std::endl;
-  this->depthSensor->SetNearClipPlane(minimumRange);
+  this->raySensor->SetNearClipPlane(minimumRange);
   this->maximumRange = rangeElement->Get<double>("max", 5.).first;
   gzmsg << "Setting maximum range to " << this->maximumRange << " m for [" << _sensor->Name()
         << "] sensor." << std::endl;
-  this->depthSensor->SetFarClipPlane(this->maximumRange);
+  this->raySensor->SetFarClipPlane(this->maximumRange);
 
   // Mask ranges outside of min/max to +/- inf, as per REP 117
-  this->depthSensor->SetClamp(false);
+  this->raySensor->SetClamp(false);
 
   sdf::ElementPtr horizontalElement = rayElement->GetElement("scan")->GetElement("horizontal");
   const double horizAngleMin = horizontalElement->Get<double>("min_angle", -M_PI / 4.0).first;
@@ -797,26 +797,26 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
   // Rendering sensors' FOV must be symmetric about its main axis
   beamsSphericalFootprint.Merge(beamsSphericalFootprint.Flip());
 
-  this->depthSensor->SetAngleMin(beamsSphericalFootprint.XMin());
-  this->depthSensor->SetAngleMax(beamsSphericalFootprint.XMax());
+  this->raySensor->SetAngleMin(beamsSphericalFootprint.XMin());
+  this->raySensor->SetAngleMax(beamsSphericalFootprint.XMax());
   auto horizontalRayCount = beamCount;
   if (horizontalRayCount % 2 == 0)
   {
     ++horizontalRayCount;  // ensure odd
   }
-  this->depthSensor->SetRayCount(horizontalRayCount);
+  this->raySensor->SetRayCount(horizontalRayCount);
 
-  this->depthSensor->SetVerticalAngleMin(beamsSphericalFootprint.YMin());
-  this->depthSensor->SetVerticalAngleMax(beamsSphericalFootprint.YMax());
+  this->raySensor->SetVerticalAngleMin(beamsSphericalFootprint.YMin());
+  this->raySensor->SetVerticalAngleMax(beamsSphericalFootprint.YMax());
   auto verticalRayCount = rayCount;
   if (verticalRayCount % 2 == 0)
   {
     ++verticalRayCount;  // ensure odd
   }
 
-  this->depthSensor->SetVerticalRayCount(verticalRayCount);
+  this->raySensor->SetVerticalRayCount(verticalRayCount);
 
-  auto & intrinsics = this->depthSensorIntrinsics;
+  auto & intrinsics = this->raySensorIntrinsics;
   intrinsics.offset.X(beamsSphericalFootprint.XMin());
   intrinsics.offset.Y(beamsSphericalFootprint.YMin());
   intrinsics.step.X(beamsSphericalFootprint.XSize() / (horizontalRayCount - 1));
@@ -831,15 +831,15 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
       AxisAlignedPatch2i{(beam.SphericalFootprint() - intrinsics.offset) / intrinsics.step});
   }
 
-  // _sensor->Scene()->RootVisual()->AddChild(this->depthSensor);
+  // _sensor->Scene()->RootVisual()->AddChild(this->raySensor);
 
-  this->depthSensor->SetVisibilityMask(GZ_VISIBILITY_ALL);
+  this->raySensor->SetVisibilityMask(GZ_VISIBILITY_ALL);
 
-  _sensor->AddSensor(this->depthSensor);
+  _sensor->AddSensor(this->raySensor);
 
   // Set the values on the point message.
-  this->pointMsg.set_width(this->depthSensor->RangeCount());
-  this->pointMsg.set_height(this->depthSensor->VerticalRangeCount());
+  this->pointMsg.set_width(this->raySensor->RangeCount());
+  this->pointMsg.set_height(this->raySensor->VerticalRangeCount());
   this->pointMsg.set_row_step(this->pointMsg.point_step() * this->pointMsg.width());
 
   this->imageSensor = _sensor->Scene()->CreateCamera(_sensor->Name() + "_image_sensor");
@@ -864,7 +864,7 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
 
   _sensor->AddSensor(this->imageSensor);
 
-  this->depthConnection = this->depthSensor->ConnectNewGpuRaysFrame(std::bind(
+  this->rayConnection = this->raySensor->ConnectNewGpuRaysFrame(std::bind(
     &MultibeamSonarSensor::Implementation::OnNewFrame, this, std::placeholders::_1,
     std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
 
@@ -874,7 +874,7 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
 //////////////////////////////////////////////////
 std::vector<gz::rendering::SensorPtr> MultibeamSonarSensor::RenderingSensors() const
 {
-  return {this->dataPtr->depthSensor, this->dataPtr->imageSensor};
+  return {this->dataPtr->raySensor, this->dataPtr->imageSensor};
 }
 
 // Simplified function to only process point cloud
@@ -908,7 +908,7 @@ void MultibeamSonarSensor::SetScene(gz::rendering::ScenePtr _scene)
   if (this->Scene() != _scene)
   {
     // TODO(anyone) Remove camera from scene
-    this->dataPtr->depthSensor = nullptr;
+    this->dataPtr->raySensor = nullptr;
     this->dataPtr->imageSensor = nullptr;
     if (this->dataPtr->rayBuffer)
     {
@@ -949,14 +949,14 @@ bool MultibeamSonarSensor::Update(const std::chrono::steady_clock::duration & _n
     return false;
   }
 
-  if (!this->dataPtr->depthSensor)
+  if (!this->dataPtr->raySensor)
   {
-    gzerr << "Depth (GpuRays) Sensor for Multibeam Sonar doesn't exist.\n";
+    gzerr << "Ray (GpuRays) Sensor for Multibeam Sonar doesn't exist.\n";
     return false;
   }
 
   // const gz::math::Pose3d beamsFramePose = this->Pose() * this->dataPtr->beamsFrameTransform;
-  // this->dataPtr->depthSensor->SetLocalPose(beamsFramePose);
+  // this->dataPtr->raySensor->SetLocalPose(beamsFramePose);
   // this->dataPtr->imageSensor->SetLocalPose(beamsFramePose);
 
   // Generate sensor data
@@ -1049,16 +1049,16 @@ void MultibeamSonarSensor::Implementation::FillPointCloudMsg(const float * _rayB
   uint32_t height = this->pointMsg.height();
   unsigned int channels = 3;
 
-  float angleStep = (this->depthSensor->AngleMax() - this->depthSensor->AngleMin()).Radian() /
-                    (this->depthSensor->RangeCount() - 1);
+  float angleStep = (this->raySensor->AngleMax() - this->raySensor->AngleMin()).Radian() /
+                    (this->raySensor->RangeCount() - 1);
 
   float verticleAngleStep =
-    (this->depthSensor->VerticalAngleMax() - this->depthSensor->VerticalAngleMin()).Radian() /
-    (this->depthSensor->VerticalRangeCount() - 1);
+    (this->raySensor->VerticalAngleMax() - this->raySensor->VerticalAngleMin()).Radian() /
+    (this->raySensor->VerticalRangeCount() - 1);
 
   // Angles of ray currently processing, azimuth is horizontal, inclination
   // is vertical
-  float inclination = this->depthSensor->VerticalAngleMin().Radian();
+  float inclination = this->raySensor->VerticalAngleMin().Radian();
 
   std::string * msgBuffer = this->pointMsg.mutable_data();
   msgBuffer->resize(this->pointMsg.row_step() * this->pointMsg.height());
@@ -1068,7 +1068,7 @@ void MultibeamSonarSensor::Implementation::FillPointCloudMsg(const float * _rayB
   // Iterate over scan and populate point cloud
   for (uint32_t j = 0; j < height; ++j)
   {
-    float azimuth = this->depthSensor->AngleMin().Radian();
+    float azimuth = this->raySensor->AngleMin().Radian();
 
     for (uint32_t i = 0; i < width; ++i)
     {
