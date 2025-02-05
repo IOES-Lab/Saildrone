@@ -1,4 +1,8 @@
-cmake_minimum_required(VERSION 3.10.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.11.0 FATAL_ERROR)
+
+# Suppress developer warnings for the entire workspace.
+set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS TRUE CACHE BOOL "Suppress developer warnings" FORCE)
+# Set CMP0144 to NEW to ensure find_package uses upper-case <PACKAGENAME>_ROOT variables.
 cmake_policy(SET CMP0144 NEW)
 
 project(multibeam_sonar)
