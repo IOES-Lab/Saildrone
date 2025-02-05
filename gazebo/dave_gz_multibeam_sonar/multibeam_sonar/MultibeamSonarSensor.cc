@@ -34,6 +34,7 @@
 #include <gz/msgs/float_v.pb.h>
 #include <gz/msgs/pointcloud_packed.pb.h>
 #include <gz/msgs/PointCloudPackedUtils.hh>
+#include <gz/msgs/image.pb.h>
 #include <gz/msgs/Utility.hh>
 
 #include <gz/math/TimeVaryingVolumetricGrid.hh>
@@ -59,6 +60,8 @@
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <opencv2/core/core.hpp>
+
+#include "marine_acoustic_msgs/ProjectedSonarImage.h"
 
 namespace gz
 {
@@ -472,20 +475,6 @@ public:
 public:
   std::vector<AcousticBeam> beams;
 
-  /// \brief Rotation from sensor frame to reference frame.
-  ///
-  /// Useful to cope with different frame conventions.
-public:
-  gz::math::Quaterniond referenceFrameRotation;
-
-  /// \brief Transform from sensor frame to acoustic beams' frame.
-  ///
-  /// I.e. x-forward, y-left, z-up (sensor frame) rotates to
-  /// x-down, y-left, z-forward (acoustic beams' frame).
-public:
-  const gz::math::Pose3d beamsFrameTransform{
-    gz::math::Vector3d::Zero, gz::math::Quaterniond{0., GZ_PI / 2., 0.}};
-
   /// \brief Acoustic beams' targets
 public:
   std::vector<std::optional<ObjectTarget>> beamTargets;
@@ -503,6 +492,14 @@ public:
 public:
   void FillPointCloudMsg(const float * _rayBuffer);
 
+  /// \brief The sonar image message.
+public:
+  msgs::Image sonarImgMsg;
+
+  /// \brief The sonar image message.
+public:
+  marine_acoustic_msgs::ProjectedSonarImage sonarDataMsg;
+
   /// \brief Node to create a topic publisher with.
 public:
   gz::transport::Node node;
@@ -515,9 +512,21 @@ public:
 public:
   gz::transport::Node::Publisher pointFloatPub;
 
-  /// \brief Flag to indicate if sensor should be publishing estimates.
+  /// \brief Publisher for messages.
 public:
-  bool publishingEstimates = false;
+  gz::transport::Node::Publisher sonarImagePub;
+
+  /// \brief Publisher for messages.
+public:
+  gz::transport::Node::Publisher sonarDataPub;
+
+  /// \brief Flag to indicate if sensor should be publishing point cloud.
+public:
+  bool publishingPointCloud = false;
+
+  /// \brief Flag to indicate if sensor should be publishing sonar image.
+public:
+  bool publishingSonarImage = false;
 };
 
 //////////////////////////////////////////////////
@@ -899,7 +908,11 @@ void MultibeamSonarSensor::Implementation::OnNewFrame(
   // Copy the incoming scan data into the ray buffer
   memcpy(this->rayBuffer, _scan, rayBufferSize);
 
-  // Further processing of the point cloud can go here, if needed
+  // Fill point cloud with the ray buffer
+  this->dataPtr->FillPointCloudMsg(this->dataPtr->rayBuffer);
+
+  //! TODO sonar image calculation here
+
 }
 
 /////////////////////////////////////////////////
@@ -960,34 +973,13 @@ bool MultibeamSonarSensor::Update(const std::chrono::steady_clock::duration & _n
   // this->dataPtr->raySensor->SetLocalPose(beamsFramePose);
   // this->dataPtr->imageSensor->SetLocalPose(beamsFramePose);
 
-  // Generate sensor data
-  this->Render();
-
   if (this->dataPtr->pointPub.HasConnections())
   {
-    // Set the time stamp
-    *this->dataPtr->pointMsg.mutable_header()->mutable_stamp() = msgs::Convert(_now);
-    // Set frame_id
-    for (auto i = 0; i < this->dataPtr->pointMsg.mutable_header()->data_size(); ++i)
-    {
-      if (
-        this->dataPtr->pointMsg.mutable_header()->data(i).key() == "frame_id" &&
-        this->dataPtr->pointMsg.mutable_header()->data(i).value_size() > 0)
-      {
-        this->dataPtr->pointMsg.mutable_header()->mutable_data(i)->set_value(0, this->FrameId());
-      }
-    }
-
-    this->dataPtr->FillPointCloudMsg(this->dataPtr->rayBuffer);
-
-    // For the point cloud visualization in gazebo
-    // https://github.com/gazebosim/gz-gui/pull/346
-    {
-      this->AddSequence(this->dataPtr->pointMsg.mutable_header());
-      GZ_PROFILE("MultibeamSonarSensor::Update Publish point cloud");
-      this->dataPtr->pointPub.Publish(this->dataPtr->pointMsg);
-    }
+    this->dataPtr->publishingPointCloud = true;
   }
+
+  // Generate sensor data
+  this->Render();
 
   return true;
 }
@@ -1005,36 +997,28 @@ void MultibeamSonarSensor::PostUpdate(const std::chrono::steady_clock::duration 
   }
   rclcpp::spin_some(this->ros_node_);
 
-  for (size_t i = 0; i < this->dataPtr->beams.size(); ++i)
-  {
-    auto & beamTarget = this->dataPtr->beamTargets[i];
-    if (beamTarget)
+  if (this->dataPtr->publishingpointCloud)
+    // Set the time stamp
+    *this->dataPtr->pointMsg.mutable_header()->mutable_stamp() = msgs::Convert(_now);
+    // Set frame_id
+    for (auto i = 0; i < this->dataPtr->pointMsg.mutable_header()->data_size(); ++i)
     {
-      // TODO(hidmic): use shader to fetch target entity id
-      const gz::math::Vector2i pixel = this->dataPtr->imageSensor->Project(beamTarget->pose.Pos());
-      auto visual = this->dataPtr->imageSensor->VisualAt(pixel);
-      if (visual)
+      if (
+        this->dataPtr->pointMsg.mutable_header()->data(i).key() == "frame_id" &&
+        this->dataPtr->pointMsg.mutable_header()->data(i).value_size() > 0)
       {
-        if (visual->HasUserData("gazebo-entity"))
-        {
-          auto user_data = visual->UserData("gazebo-entity");
-          beamTarget->entity = std::get<uint64_t>(user_data);
-        }
-        else
-        {
-          gzdbg << "No entity associated to [" << visual->Name() << "]"
-                << " visual. Assuming it is static w.r.t. the world." << std::endl;
-        }
+        this->dataPtr->pointMsg.mutable_header()->mutable_data(i)->set_value(0, this->FrameId());
       }
     }
-  }
 
-  // auto * headerMessage = waterMassModeMessage.mutable_header();
-  // auto frame = headerMessage->add_data();
-  // frame->set_key("frame_id");
-  // frame->add_value(this->FrameId());
-  // this->AddSequence(headerMessage, "doppler_velocity_log");
-  // this->dataPtr->pointPub.Publish(waterMassModeMessage);
+    // For the point cloud visualization in gazebo
+    // https://github.com/gazebosim/gz-gui/pull/346
+    {
+      this->AddSequence(this->dataPtr->pointMsg.mutable_header());
+      GZ_PROFILE("MultibeamSonarSensor::Update Publish point cloud");
+      this->dataPtr->pointPub.Publish(this->dataPtr->pointMsg);
+    }
+  }
 }
 
 //////////////////////////////////////////////////
