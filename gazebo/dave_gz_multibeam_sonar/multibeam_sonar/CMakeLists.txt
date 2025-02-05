@@ -18,8 +18,8 @@ find_package(sensor_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(PCL REQUIRED)
 find_package(pcl_conversions REQUIRED)
-
 find_package(OpenCV REQUIRED)
+find_package(marine_acoustic_msgs REQUIRED)
 
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
@@ -75,6 +75,7 @@ ament_target_dependencies(${PROJECT_NAME}
   PCL
   pcl_conversions
   OpenCV
+  marine_acoustic_msgs
 )
 
 
