@@ -3,6 +3,12 @@ cmake_minimum_required(VERSION 3.8)
 #Define the project name
 project(dave_gz_world_plugins)
 
+# Suppress the parameter passing ABI warning
+add_compile_options(-Wno-psabi)
+
+# Define BOOST_BIND_GLOBAL_PLACEHOLDERS to suppress Boost deprecation warning
+add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
+
 find_package(ament_cmake REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
 find_package(gz-cmake3 REQUIRED)
