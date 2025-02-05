@@ -171,7 +171,8 @@ private:
 using AxisAlignedPatch2d = AxisAlignedPatch2<double>;
 using AxisAlignedPatch2i = AxisAlignedPatch2<int>;
 
-/// \brief Acoustic DVL beam, modelled as a circular cone with aperture
+/// \brief (Description inheried from generic DVL Plugin)
+/// Acoustic DVL beam, modelled as a circular cone with aperture
 /// angle α and its apex at the origin. Its axis of symmetry is nominally
 /// aligned with the x-axis of an x-forward, y-left, z-up frame
 /// (following usual Gazebo frame conventions, typically facing
@@ -258,7 +259,7 @@ private:
   AxisAlignedPatch2d sphericalFootprint;
 };
 
-/// \brief DVL acoustic beam reflecting target.
+/// \brief Acoustic beam reflecting target.
 ///
 /// Pose is defined w.r.t. to the beams frame.
 struct ObjectTarget
@@ -397,7 +398,7 @@ public:
 public:
   bool initialized = false;
 
-  /// \brief Initialize DVL sensor
+  /// \brief Initialize sensor
 public:
   bool Initialize(MultibeamSonarSensor * _sensor);
 
@@ -415,7 +416,7 @@ public:
   mutable std::mutex rayMutex;
   GZ_UTILS_WARN_RESUME__DLL_INTERFACE_MISSING
 
-  /// \brief Initialize beam arrangement for DVL sensor
+  /// \brief Initialize beam arrangement
   ///
   /// This primarily creates rendering sensors.
 public:
@@ -467,29 +468,29 @@ public:
 public:
   gz::common::ConnectionPtr sceneChangeConnection;
 
-  /// \brief DVL acoustic beams' description
+  /// \brief Acoustic beams' description
 public:
   std::vector<AcousticBeam> beams;
 
   /// \brief Rotation from sensor frame to reference frame.
   ///
-  /// Useful to cope with different DVL frame conventions.
+  /// Useful to cope with different frame conventions.
 public:
   gz::math::Quaterniond referenceFrameRotation;
 
   /// \brief Transform from sensor frame to acoustic beams' frame.
   ///
-  /// I.e. x-forward, y-left, z-up (dvl sensor frame) rotates to
+  /// I.e. x-forward, y-left, z-up (sensor frame) rotates to
   /// x-down, y-left, z-forward (acoustic beams' frame).
 public:
   const gz::math::Pose3d beamsFrameTransform{
     gz::math::Vector3d::Zero, gz::math::Quaterniond{0., GZ_PI / 2., 0.}};
 
-  /// \brief DVL acoustic beams' targets
+  /// \brief Acoustic beams' targets
 public:
   std::vector<std::optional<ObjectTarget>> beamTargets;
 
-  /// \brief DVL acoustic beams' patches in ray scan frame.
+  /// \brief Acoustic beams' patches in ray scan frame.
 public:
   std::vector<AxisAlignedPatch2i> beamScanPatches;
 
@@ -557,7 +558,7 @@ bool MultibeamSonarSensor::Load(const sdf::Sensor & _sdf)
   if (type != "multibeam_sonar")
   {
     gzerr << "Expected sensor [" << this->Name() << "] to be a "
-          << "DVL but it is of '" << type << "' type. Aborting load." << std::endl;
+          << "multibeam_sonar but it is of '" << type << "' type. Aborting load." << std::endl;
     return false;
   }
   if (!elem->HasElement("gz:multibeam_sonar"))
