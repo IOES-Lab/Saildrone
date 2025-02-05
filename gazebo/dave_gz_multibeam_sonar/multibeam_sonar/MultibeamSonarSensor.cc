@@ -61,7 +61,7 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <opencv2/core/core.hpp>
 
-#include "marine_acoustic_msgs/ProjectedSonarImage.h"
+// #include <marine_acoustic_msgs/ProjectedSonarImage.h>
 
 namespace gz
 {
@@ -475,6 +475,19 @@ public:
 public:
   std::vector<AcousticBeam> beams;
 
+  /// \brief Rotation from sensor frame to reference frame.
+  ///
+  /// Useful to cope with different DVL frame conventions.
+public: gz::math::Quaterniond referenceFrameRotation;
+
+  /// \brief Transform from sensor frame to acoustic beams' frame.
+  ///
+  /// I.e. x-forward, y-left, z-up (dvl sensor frame) rotates to
+  /// x-down, y-left, z-forward (acoustic beams' frame).
+public: const gz::math::Pose3d beamsFrameTransform{
+  gz::math::Vector3d::Zero,
+  gz::math::Quaterniond{0., GZ_PI/2., 0.}};
+
   /// \brief Acoustic beams' targets
 public:
   std::vector<std::optional<ObjectTarget>> beamTargets;
@@ -496,9 +509,9 @@ public:
 public:
   msgs::Image sonarImgMsg;
 
-  /// \brief The sonar image message.
-public:
-  marine_acoustic_msgs::ProjectedSonarImage sonarDataMsg;
+//   /// \brief The sonar image message.
+// public:
+//   marine_acoustic_msgs::ProjectedSonarImage sonarDataMsg;
 
   /// \brief Node to create a topic publisher with.
 public:
@@ -909,7 +922,7 @@ void MultibeamSonarSensor::Implementation::OnNewFrame(
   memcpy(this->rayBuffer, _scan, rayBufferSize);
 
   // Fill point cloud with the ray buffer
-  this->dataPtr->FillPointCloudMsg(this->dataPtr->rayBuffer);
+  this->FillPointCloudMsg(this->rayBuffer);
 
   //! TODO sonar image calculation here
 
@@ -997,7 +1010,7 @@ void MultibeamSonarSensor::PostUpdate(const std::chrono::steady_clock::duration 
   }
   rclcpp::spin_some(this->ros_node_);
 
-  if (this->dataPtr->publishingpointCloud)
+  if (this->dataPtr->publishingPointCloud) {
     // Set the time stamp
     *this->dataPtr->pointMsg.mutable_header()->mutable_stamp() = msgs::Convert(_now);
     // Set frame_id
