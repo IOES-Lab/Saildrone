@@ -5,13 +5,10 @@
   <description>TODO: Package description</description>
   <maintainer email="helenamoyen@usp.br">lena</maintainer>
   <maintainer email="gaurav.og.9920@gmail.com">Gaurav Kumar</maintainer>
-  <license>TODO: License declaration</license>
+  <license>Apache 2.0</license>
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>protobuf-dev</buildtool_depend>
   <build_depend>protobuf</build_depend>
-  <build_depend>gz_msgs</build_depend>
-  <build_depend>message_generation</build_depend>
-  <!-- <build_export_depend>protobuf</build_export_depend> -->
   <depend>rclcpp</depend>
   <depend>dave_interfaces</depend>
   <depend>dave_gz_world_plugins</depend>
@@ -19,8 +16,6 @@
   <depend>geometry_msgs</depend>
   <depend>std_msgs</depend>
   <exec_depend>protobuf</exec_depend>
-  <exec_depend>gz_msgs</exec_depend>
-  <exec_depend>message_runtime</exec_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
   <export>

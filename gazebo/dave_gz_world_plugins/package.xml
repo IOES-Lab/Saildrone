@@ -4,21 +4,14 @@
   <version>0.0.0</version>
   <description>The dave_gz_world_plugins</description>
   <maintainer email="gaurav.og.9920@gmail.com">Gaurav Kumar</maintainer>
-  <license>TODO: License declaration</license>
+  <license>Apache 2.0</license>
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <!-- <buildtool_depend>protobuf-dev</buildtool_depend> -->
   <build_depend>protobuf</build_depend>
   <build_depend>rosidl_default_generators</build_depend>
-  <build_export_depend>gz_ros</build_export_depend>
-  <!-- <build_export_depend>protobuf</build_export_depend> -->
-  <!-- new -->
   <build_depend>ament_index_cpp</build_depend>
   <exec_depend>ament_index_cpp</exec_depend>
-  <!-- new end -->
   <exec_depend>protobuf</exec_depend>
   <exec_depend>rosidl_default_runtime</exec_depend>
-  <depend>gz_dev</depend>
-  <depend>gz_msgs</depend>
   <depend>rclcpp</depend>
   <depend>std_msgs</depend>
   <depend>dave_interfaces</depend>
