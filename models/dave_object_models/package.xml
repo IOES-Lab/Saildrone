@@ -4,7 +4,7 @@
   <version>0.1.0</version>
   <description>Dave object model description files are placed here.</description>
   <maintainer email="rakeshvivek97@gmail.com">Rakesh Vivekanandan</maintainer>
-  <license>MIT</license>
+  <license>Apache 2.0</license>
   <buildtool_depend>ament_cmake</buildtool_depend>
   <export>
     <build_type>ament_cmake</build_type>

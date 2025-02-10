@@ -5,7 +5,7 @@
   <description>TODO: Package description</description>
   <maintainer email="helenamoyen@usp.br">lena</maintainer>
   <maintainer email="gaurav.og.9920@gmail.com">Gaurav Kumar</maintainer>
-  <license>TODO: License declaration</license>
+  <license>Apache 2.0</license>
   <buildtool_depend>ament_cmake</buildtool_depend>
   <depend>rclcpp</depend>
   <depend>std_msgs</depend>
