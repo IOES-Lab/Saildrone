@@ -105,7 +105,9 @@ ament_export_dependencies(
 )
 
 # Environment hooks
-ament_environment_hooks("${CMAKE_CURRENT_SOURCE_DIR}/hooks/${PROJECT_NAME}.dsv.in")
+ament_environment_hooks(
+  "${CMAKE_CURRENT_SOURCE_DIR}/hooks/${PROJECT_NAME}.dsv.in"
+)
 
 # Optional: Testing setup
 if(BUILD_TESTING)

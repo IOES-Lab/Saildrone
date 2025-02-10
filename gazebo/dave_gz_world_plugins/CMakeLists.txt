@@ -35,8 +35,9 @@ message(STATUS "compiling against Gazebo Harmonic")
 set(GZ_MSGS_VER ${gz-msgs10_VERSION_MAJOR})
 
 # Define a variable 'MSGS_PROTOS' listing the .proto files
-set(MSGS_PROTOS ${CMAKE_CURRENT_SOURCE_DIR}/proto/dave_gz_world_plugins_msgs/msgs/StratifiedCurrentVelocity.proto)
-
+set(MSGS_PROTOS
+    ${CMAKE_CURRENT_SOURCE_DIR}/proto/dave_gz_world_plugins_msgs/msgs/StratifiedCurrentVelocity.proto
+)
 gz_msgs_generate_messages(
   TARGET msgs
   PROTO_PACKAGE "dave_gz_world_plugins_msgs.msgs"
@@ -116,7 +117,11 @@ ament_target_dependencies(tidal_oscillation
 
 # Install targets
 install(
-  TARGETS OceanCurrentWorldPlugin gauss_markov_process tidal_oscillation dave_gz_world_plugins-msgs
+  TARGETS
+    OceanCurrentWorldPlugin
+    gauss_markov_process
+    tidal_oscillation
+    dave_gz_world_plugins-msgs
   EXPORT export_${PROJECT_NAME}
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
