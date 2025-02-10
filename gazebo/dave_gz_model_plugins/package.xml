@@ -7,7 +7,7 @@
   <license>Apache 2.0</license>
   <buildtool_depend>ament_cmake</buildtool_depend>
   <depend>dave_gz_world_plugins</depend>
-  <depend>dave_gz_ros_plugins</depend>
+  <depend>dave_ros_gz_plugins</depend>
   <depend>dave_interfaces</depend>
   <depend>rclcpp</depend>
   <depend>protobuf</depend>
