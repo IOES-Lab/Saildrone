@@ -35,9 +35,11 @@ message(STATUS "compiling against Gazebo Harmonic")
 set(GZ_MSGS_VER ${gz-msgs10_VERSION_MAJOR})
 
 # Define a variable 'MSGS_PROTOS' listing the .proto files
+# cmake-lint: disable=C0301
 set(MSGS_PROTOS
     ${CMAKE_CURRENT_SOURCE_DIR}/proto/dave_gz_world_plugins_msgs/msgs/StratifiedCurrentVelocity.proto
 )
+
 gz_msgs_generate_messages(
   TARGET msgs
   PROTO_PACKAGE "dave_gz_world_plugins_msgs.msgs"
