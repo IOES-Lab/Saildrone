@@ -85,6 +85,9 @@ ARG USER=docker
 ARG BRANCH="ros2"
 ARG ROS_DISTRO="jazzy"
 
+# Update OS
+RUN apt update && apt full-upgrade -y && apt autoremove -y
+
 # Install ROS-Gazebo framework
 ADD https://raw.githubusercontent.com/IOES-Lab/dave/$BRANCH/\
 extras/ros-jazzy-binary-gz-harmonic-source-install.sh install.sh
@@ -153,10 +156,10 @@ RUN echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc && \
     echo "source $DAVE_UNDERLAY/install/setup.bash" >> ~/.bashrc && \
     echo "export GEOGRAPHICLIB_GEOID_PATH=/usr/local/share/GeographicLib/geoids" >> ~/.bashrc && \
     echo "export PYTHONPATH=\$PYTHONPATH:/opt/gazebo/install/lib/python" >> ~/.bashrc && \
-    echo "export PATH=/home/$USER/ardupilot_dave/ardupilot/Tools/autotest:\$PATH" >> ~/.bashrc && \
-    echo "export PATH=/home/$USER/ardupilot_dave/ardupilot/build/sitl/bin:\$PATH" >> ~/.bashrc && \
-    echo "export GZ_SIM_SYSTEM_PLUGIN_PATH=/home/$USER/ardupilot_dave/ardupilot_gazebo/build:\$GZ_SIM_SYSTEM_PLUGIN_PATH" >> ~/.bashrc && \
-    echo "export GZ_SIM_RESOURCE_PATH=/home/$USER/ardupilot_dave/ardupilot_gazebo/models:/home/$USER/ardupilot_dave/ardupilot_gazebo/worlds:\$GZ_SIM_RESOURCE_PATH" >> ~/.bashrc && \
+    echo "export PATH=/home/$USER/ardupilot_ws/ardupilot/Tools/autotest:\$PATH" >> ~/.bashrc && \
+    echo "export PATH=/home/$USER/ardupilot_ws/ardupilot/build/sitl/bin:\$PATH" >> ~/.bashrc && \
+    echo "export GZ_SIM_SYSTEM_PLUGIN_PATH=/home/$USER/ardupilot_ws/ardupilot_gazebo/build:\$GZ_SIM_SYSTEM_PLUGIN_PATH" >> ~/.bashrc && \
+    echo "export GZ_SIM_RESOURCE_PATH=/home/$USER/ardupilot_ws/ardupilot_gazebo/models:/home/$USER/ardupilot_ws/ardupilot_gazebo/worlds:\$GZ_SIM_RESOURCE_PATH" >> ~/.bashrc && \
     echo "\n\n" >> ~/.bashrc && echo "if [ -d ~/HOST ]; then chown $USER:$USER ~/HOST; fi" >> ~/.bashrc  && \
     echo "\n\n" >> ~/.bashrc
 
