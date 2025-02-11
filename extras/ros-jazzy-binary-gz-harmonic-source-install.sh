@@ -70,6 +70,7 @@ sudo apt update && apt install -y \
     python3-rosdep \
     python3-rosinstall-generator \
     python3-colcon-common-extensions \
+    python3-colcon-alias \
     python3-vcstool \
     ros-$DIST-desktop \
     ros-$DIST-ros-gz \
