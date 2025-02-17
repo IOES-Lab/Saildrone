@@ -50,6 +50,7 @@
 #include <gz/sensors/RenderingSensor.hh>
 #include <gz/sensors/SensorTypes.hh>
 #include "MultibeamSonarSensor.hh"
+#include "sonar_calculation_cuda.cuh"
 
 #include <gz/transport/Node.hh>
 #include <rclcpp/rclcpp.hpp>
@@ -60,6 +61,7 @@
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <opencv2/core/core.hpp>
+#include <opencv2/imgproc.hpp>
 
 // #include <marine_acoustic_msgs/ProjectedSonarImage.h>
 
@@ -452,10 +454,81 @@ public:
   float * elevation_angles;
 
 public:
-  cv::Mat point_cloud_image_;  // Point cloud image
+  int nFreq;
 
 public:
-  cv::Mat point_cloud_normal_image_;  // Point cloud normal image
+  double sonarFreq;
+
+public:
+  double bandwidth;
+
+public:
+  double soundSpeed;
+
+public:
+  double maxDistance;
+
+public:
+  double sourceLevel;
+
+public:
+  double absorption;
+
+public:
+  double attenuation;
+
+public:
+  double verticalFOV;
+
+public:
+  float * window;
+
+public:
+  float plotScaler;
+
+public:
+  float sensorGain;
+
+public:
+  int raySkips;
+
+public:
+  float * rangeVector;
+
+public:
+  bool debugFlag;
+
+  /// \brief Constant reflectivity
+
+public:
+  bool constMu;
+
+public:
+private:
+  double mu;
+
+  /// \brief Beam corrector sum
+public:
+  float beamCorrectorSum;
+
+  /// \brief Beam corrector
+public:
+  float ** beamCorrector;
+
+  /// \brief Point cloud image
+public:
+  cv::Mat point_cloud_image_;
+
+  /// \brief Point cloud normal image
+public:
+  cv::Mat point_cloud_normal_image_;
+
+  /// \brief Reflectivity image
+public:
+  cv::Mat reflectivityImage;
+
+public:
+  cv::Mat rand_image;
 
 public:
   std::vector<float> azimuth_angles;
@@ -490,6 +563,12 @@ public:
 
 public:
   void ComputeSonarImage();
+
+public:
+  cv::Mat ComputeNormalImage(cv::Mat & depth);
+
+public:
+  void ComputeCorrector();
 
   /// \brief Connection from ray sensor with new ray data.
 public:
@@ -790,12 +869,22 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
 
   // Read ray definition from SDF
   sdf::ElementPtr rayElement = this->sensorSdf->GetElement("ray");
+  sdf::ElementPtr sensorElement = this->sensorSdf->GetElement("spec");
+
   if (!rayElement)
   {
     gzerr << "No beam properties(format of GPU Ray) specified for "
           << "[" << _sensor->Name() << "] sensor" << std::endl;
     return false;
   }
+
+  if (!sensorElement)
+  {
+    gzerr << "No sonar properties(format of GPU Ray) specified for "
+          << "[" << _sensor->Name() << "] sensor" << std::endl;
+    return false;
+  }
+
   const bool useDegrees = rayElement->Get("degrees", false).first;
   const gz::math::Angle angleUnit = useDegrees ? GZ_DTOR(1.) : 1.;
 
@@ -809,6 +898,44 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
   gzmsg << "Setting maximum range to " << this->maximumRange << " m for [" << _sensor->Name()
         << "] sensor." << std::endl;
   this->raySensor->SetFarClipPlane(this->maximumRange);
+
+  // Read sonar properties from model.sdf
+
+  this->verticalFOV = sensorElement->Get<double>("verticalFOV", 10).first;
+  gzmsg << "verticalFOV: " << this->verticalFOV << " degrees" << std::endl;
+  this->sonarFreq = sensorElement->Get<double>("sonarFreq", 900e3).first;
+  gzmsg << "sonarFreq: " << this->sonarFreq << " Hz" << std::endl;
+
+  this->bandwidth = sensorElement->Get<double>("bandwidth", 29.5e6).first;
+  gzmsg << "bandwidth: " << this->bandwidth << " Hz" << std::endl;
+
+  this->soundSpeed = sensorElement->Get<double>("soundSpeed", 1500).first;
+  gzmsg << "soundSpeed: " << this->soundSpeed << " m/s" << std::endl;
+
+  this->maxDistance = sensorElement->Get<double>("maxDistance", 60).first;
+  gzmsg << "maxDistance: " << this->maxDistance << " meters" << std::endl;
+
+  this->sourceLevel = sensorElement->Get<double>("sourceLevel", 220).first;
+  gzmsg << "sourceLevel: " << this->sourceLevel << " dB" << std::endl;
+
+  this->raySkips = sensorElement->Get<int>("raySkips", 10).first;
+  gzmsg << "raySkips: " << this->raySkips << std::endl;
+
+  this->plotScaler = sensorElement->Get<float>("plotScaler", 10).first;
+  gzmsg << "plotScaler: " << this->plotScaler << std::endl;
+
+  this->sensorGain = sensorElement->Get<float>("sensorGain", 0.02).first;
+  gzmsg << "sensorGain: " << this->sensorGain << std::endl;
+
+  this->debugFlag = sensorElement->Get<bool>("debugFlag", false).first;
+  gzmsg << "Debug: " << this->debugFlag << std::endl;
+
+  // Configure skips
+  if (this->raySkips == 0)
+  {
+    this->raySkips = 1;
+    gzmsg << "raySkips was 0, setting to 1." << std::endl;
+  }
 
   // Mask ranges outside of min/max to +/- inf, as per REP 117
   this->raySensor->SetClamp(false);
@@ -828,10 +955,11 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
   this->hFOV = horizAngleMax - horizAngleMin;        // Horizontal Field of View
   this->vFOV = verticalAngleMax - verticalAngleMin;  // Vertical Field of View
 
-  if (useDegrees == false)
+  // Ensure FOV is always in radians
+  if (useDegrees == true)
   {
-    this->hFOV = this->hFOV * (180.0 / M_PI);
-    this->vFOV = this->vFOV * (180.0 / M_PI);
+    this->hFOV = this->hFOV * (M_PI / 180.0);
+    this->vFOV = this->vFOV * (M_PI / 180.0);
   }
 
   // Gazebo debug output
@@ -976,6 +1104,68 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
   this->rayConnection = this->raySensor->ConnectNewGpuRaysFrame(std::bind(
     &MultibeamSonarSensor::Implementation::OnNewFrame, this, std::placeholders::_1,
     std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+
+  // Transmission path properties (typical model used here)
+  // More sophisticated model by Francois-Garrison model is available
+  this->absorption = 0.0354;  // [dB/m]
+  this->attenuation = this->absorption * log(10) / 20.0;
+
+  // Range vector
+  const float max_T = this->maxDistance * 2.0 / this->soundSpeed;
+  float delta_f = 1.0 / max_T;
+  const float delta_t = 1.0 / this->bandwidth;
+  this->nFreq = ceil(this->bandwidth / delta_f);
+  delta_f = this->bandwidth / this->nFreq;
+  const int nTime = nFreq;
+  this->rangeVector = new float[nTime];
+  for (int i = 0; i < nTime; i++)
+  {
+    this->rangeVector[i] = delta_t * i * this->soundSpeed / 2.0;
+  }
+  // -- Pre calculations for sonar -- //
+
+  // Random number generator
+  gzmsg << "Initializing random number generator..." << std::endl;
+  this->rand_image = cv::Mat(this->pointMsg.height(), this->pointMsg.width(), CV_32FC2);
+  uint64 randN = static_cast<uint64>(std::rand());
+  gzmsg << "Random seed: " << randN << std::endl;
+  cv::theRNG().state = randN;
+  cv::RNG rng = cv::theRNG();
+  rng.fill(this->rand_image, cv::RNG::NORMAL, 0.0f, 1.0f);
+  gzmsg << "Random image generated with normal distribution." << std::endl;
+
+  // Hamming window
+  gzmsg << "Computing Hamming window for " << this->nFreq << " frequencies." << std::endl;
+  this->window = new float[this->nFreq];
+  float windowSum = 0;
+
+  for (size_t f = 0; f < this->nFreq; f++)
+  {
+    this->window[f] = 0.54 - 0.46 * cos(2.0 * M_PI * (f + 1) / this->nFreq);
+    windowSum += pow(this->window[f], 2.0);
+    gzmsg << "Window[" << f << "] = " << this->window[f] << std::endl;
+  }
+
+  gzmsg << "Window sum before normalization: " << windowSum << std::endl;
+
+  for (size_t f = 0; f < this->nFreq; f++)
+  {
+    this->window[f] = this->window[f] / sqrt(windowSum);
+    // gzmsg << "Normalized Window[" << f << "] = " << this->window[f] << std::endl;
+  }
+
+  gzmsg << "Hamming window computation complete." << std::endl;
+
+  // Sonar corrector preallocation
+  this->beamCorrector = new float *[this->nBeams];
+  for (int i = 0; i < this->nBeams; i++)
+  {
+    this->beamCorrector[i] = new float[this->nBeams];
+  }
+  this->beamCorrectorSum = 0.0;
+
+  this->constMu = true;
+  this->mu = 1e-3;  // default constant mu
 
   return true;
 }
@@ -1204,6 +1394,78 @@ void MultibeamSonarSensor::Implementation::FillPointCloudMsg(const float * _rayB
   this->pointMsg.set_is_dense(isDense);
 }
 
+cv::Mat MultibeamSonarSensor::Implementation::ComputeNormalImage(cv::Mat & depth)
+
+{
+  // filters
+  cv::Mat_<float> f1 = (cv::Mat_<float>(3, 3) << 1, 2, 1, 0, 0, 0, -1, -2, -1) / 8;
+
+  cv::Mat_<float> f2 = (cv::Mat_<float>(3, 3) << 1, 0, -1, 2, 0, -2, 1, 0, -1) / 8;
+
+  cv::Mat f1m, f2m;
+  cv::flip(f1, f1m, 0);
+  cv::flip(f2, f2m, 1);
+
+  cv::Mat n1, n2;
+  cv::filter2D(depth, n1, -1, f1m, cv::Point(-1, -1), 0, cv::BORDER_REPLICATE);
+  cv::filter2D(depth, n2, -1, f2m, cv::Point(-1, -1), 0, cv::BORDER_REPLICATE);
+
+  cv::Mat no_readings;
+  cv::erode(depth == 0, no_readings, cv::Mat(), cv::Point(-1, -1), 2, 1, 1);
+  // cv::dilate(no_readings, no_readings, cv::Mat(),
+  //            cv::Point(-1, -1), 2, 1, 1);
+  n1.setTo(0, no_readings);
+  n2.setTo(0, no_readings);
+
+  std::vector<cv::Mat> images(3);
+  cv::Mat white = cv::Mat::ones(depth.rows, depth.cols, CV_32FC1);
+
+  // NOTE: with different focal lengths, the expression becomes
+  // (-dzx*fy, -dzy*fx, fx*fy)
+  images.at(0) = n1;  // for green channel
+  images.at(1) = n2;  // for red channel
+
+  // Calculate focal length (?) Not sure if this is the right way;
+  // I could not find in the original DAVE the definition of the focal length
+  double focal_length = (0.5 * this->pointMsg.width()) / tan(0.5 * this->hFOV);
+  images.at(2) = 1.0 / focal_length * depth;  // for blue channel
+
+  cv::Mat normal_image;
+  cv::merge(images, normal_image);
+
+  for (int i = 0; i < normal_image.rows; ++i)
+  {
+    for (int j = 0; j < normal_image.cols; ++j)
+    {
+      cv::Vec3f & n = normal_image.at<cv::Vec3f>(i, j);
+      n = cv::normalize(n);
+      float & d = depth.at<float>(i, j);
+    }
+  }
+
+  return normal_image;
+}
+
+// Precalculation of corrector sonar calculation
+void MultibeamSonarSensor::Implementation::ComputeCorrector()
+{
+  double hPixelSize = this->hFOV / (this->pointMsg.width() - 1);
+
+  // Beam culling correction precalculation
+  for (size_t beam = 0; beam < this->nBeams; beam++)
+  {
+    for (size_t beam_other = 0; beam_other < this->nBeams; beam_other++)
+    {
+      float azimuthBeamPattern = unnormalized_sinc(
+        M_PI * 0.884 / hPixelSize *
+        sin(this->azimuth_angles[beam] - this->azimuth_angles[beam_other]));
+      this->beamCorrector[beam][beam_other] = abs(azimuthBeamPattern);
+      this->beamCorrectorSum += pow(azimuthBeamPattern, 2);
+    }
+  }
+  this->beamCorrectorSum = sqrt(this->beamCorrectorSum);
+}
+
 // Compute sonar image from point cloud
 void MultibeamSonarSensor::Implementation::ComputeSonarImage()
 
@@ -1211,9 +1473,59 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
   this->lock_.lock();
 
   cv::Mat depth_image = this->point_cloud_image_;
+  cv::Mat normal_image = this->ComputeNormalImage(depth_image);
   double vPixelSize = this->vFOV / (this->pointMsg.height() - 1);
   double hPixelSize = this->hFOV / (this->pointMsg.width() - 1);
 
+  if (this->beamCorrectorSum == 0)
+  {
+    ComputeCorrector();
+  }
+
+  // Default value for reflectivity
+  if (this->reflectivityImage.rows == 0)
+  {
+    this->reflectivityImage =
+      cv::Mat(this->pointMsg.width(), this->pointMsg.height(), CV_32FC1, cv::Scalar(this->mu));
+  }
+
+  // For calc time measure
+  auto start = std::chrono::high_resolution_clock::now();
+  // ------------------------------------------------//
+  // --------      Sonar calculations       -------- //
+  // ------------------------------------------------//
+  CArray2D P_Beams = NpsGazeboSonar::sonar_calculation_wrapper(
+    depth_image,                  // cv::Mat& depth_image
+    normal_image,                 // cv::Mat& normal_image
+    rand_image,                   // cv::Mat& rand_image
+    hPixelSize,                   // hPixelSize
+    vPixelSize,                   // vPixelSize
+    this->hFOV,                   // hFOV
+    this->vFOV,                   // VFOV
+    hPixelSize,                   // _beam_azimuthAngleWidth
+    verticalFOV / 180 * M_PI,     // _beam_elevationAngleWidth
+    hPixelSize,                   // _ray_azimuthAngleWidth
+    this->elevation_angles,       // _ray_elevationAngles
+    vPixelSize * (raySkips + 1),  // _ray_elevationAngleWidth
+    this->soundSpeed,             // _soundSpeed
+    this->maxDistance,            // _maxDistance
+    this->sourceLevel,            // _sourceLevel
+    this->nBeams,                 // _nBeams
+    this->nRays,                  // _nRays
+    this->raySkips,               // _raySkips
+    this->sonarFreq,              // _sonarFreq
+    this->bandwidth,              // _bandwidth
+    this->nFreq,                  // _nFreq
+    this->reflectivityImage,      // reflectivity_image
+    this->attenuation,            // _attenuation
+    this->window,                 // _window
+    this->beamCorrector,          // _beamCorrector
+    this->beamCorrectorSum,       // _beamCorrectorSum
+    this->debugFlag);
+
+  // For calc time measure
+  auto stop = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
   this->lock_.unlock();
 }
 

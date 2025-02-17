@@ -2,9 +2,11 @@
 #define GZ_SENSORS_MULTIBEAMSONAR_HH_
 
 #include <chrono>
+#include <complex>
 #include <memory>
 #include <mutex>
 #include <unordered_map>
+#include <valarray>
 #include <vector>
 
 #include <gz/math/Pose3.hh>
@@ -17,10 +19,18 @@
 
 namespace gz
 {
+typedef std::complex<float> Complex;
+typedef std::valarray<Complex> CArray;
+typedef std::valarray<CArray> CArray2D;
+
+typedef std::valarray<float> Array;
+typedef std::valarray<Array> Array2D;
+
 namespace sensors
 {
 /// \brief Kinematic state for an entity in the world.
 ///
+
 /// All quantities are defined w.r.t. the world frame.
 struct EntityKinematicState
 {
@@ -102,6 +112,27 @@ private:
 
   void pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
 };
+
+///////////////////////////////////////////
+inline double unnormalized_sinc(double t)
+{
+  try
+  {
+    double results = sin(t) / t;
+    if (results != results)
+    {
+      return 1.0;
+    }
+    else
+    {
+      return sin(t) / t;
+    }
+  }
+  catch (int expn)
+  {
+    return 1.0;
+  }
+}
 
 }  // namespace sensors
 }  // namespace gz
