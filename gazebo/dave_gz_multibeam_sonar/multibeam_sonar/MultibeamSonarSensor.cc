@@ -703,6 +703,26 @@ void MultibeamSonarSensor::pointCloudCallback(const sensor_msgs::msg::PointCloud
            this->dataPtr->raySensor->VerticalAngleMin().Radian());
         gzmsg << "Elevation angle: = " << this->dataPtr->elevation_angles[j] << std::endl;
       }
+
+      for (int i = 0; i < this->dataPtr->nBeams; i++, ++iter_image)
+      {
+        pcl::PointXYZI point = pcl_pointcloud->at(width - i - 1, j);
+
+        this->point_cloud_image_.at<float>(j, i) =
+          sqrt(point.x * point.x + point.y * point.y + point.z * point.z);
+        if (angles_calculation_flag && j == 0)
+        {
+          const double Diff = this->dataPtr->raySensor->AngleMax().Radian() -
+                              this->dataPtr->raySensor->AngleMin().Radian();
+          this->azimuth_angles.push_back(
+            i * Diff / (this->dataPtr->nBeams - 1) + this->dataPtr->raySensor->AngleMin().Radian());
+        }
+
+        if (std::isnan(*iter_image))
+        {
+          *iter_image = 100000.0;
+        }
+      }
     }
   }
 
