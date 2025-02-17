@@ -88,6 +88,33 @@
                 <max>5.0</max>
             </range>
           </ray>
+          <spec>
+              <!-- Sonar properties -->
+            <verticalFOV>10</verticalFOV>
+            <sonarFreq>450e3</sonarFreq>
+            <bandwidth>29.9e3</bandwidth>
+            <soundSpeed>1500</soundSpeed>
+            <sourceLevel>220</sourceLevel>
+            <maxDistance>10</maxDistance>
+            <constantReflectivity>true</constantReflectivity>
+            <raySkips>10</raySkips>
+            <sensorGain>0.02</sensorGain>
+            <plotScaler>0</plotScaler>
+            <writeLog>false</writeLog>
+            <debugFlag>true</debugFlag>
+            <writeFrameInterval>5</writeFrameInterval>
+            <!-- This name is prepended to ROS topics -->
+            <cameraName>blueview_m450</cameraName>
+            <!-- ROS publication topics -->
+            <imageTopicName>image_raw</imageTopicName>
+            <cameraInfoTopicName>image_raw/camera_info</cameraInfoTopicName>
+            <pointCloudTopicName>point_cloud</pointCloudTopicName>
+            <depthImageTopicName>image_depth</depthImageTopicName>
+            <depthImageCameraInfoTopicName>image_depth/camera_info</depthImageCameraInfoTopicName>
+            <sonarImageRawTopicName>sonar_image_raw</sonarImageRawTopicName>
+            <sonarImageTopicName>sonar_image</sonarImageTopicName>
+            <frameName>forward_sonar_optical_link</frameName>
+          </spec>
         </gz:multibeam_sonar>
         <!-- <plugin
           filename="RosGzPointCloud"
