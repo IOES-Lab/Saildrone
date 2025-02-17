@@ -40,6 +40,8 @@ def launch_setup(context, *args, **kwargs):
     if debug.perform(context) == "true":
         gz_args.append(" -v ")
         gz_args.append(verbose.perform(context))
+    if verbose.perform(context) == "true":
+        gz_args.append(" --verbose")
 
     gz_sim_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -118,8 +120,8 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             "verbose",
-            default_value="0",
-            description="Adjust level of console verbosity",
+            default_value="false",
+            description="Enable verbose mode for Gazebo simulation",
         ),
         DeclareLaunchArgument(
             "world_name",
