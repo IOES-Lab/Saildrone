@@ -437,6 +437,19 @@ public:
 public:
   double vFOV;
 
+  /// \brief Vertical Ray Count
+public:
+  int nRays;
+
+  /// \brief Horizontal Ray Count
+public:
+  int nBeams;
+
+  /// \brief Elevation Angles
+public:
+  float * elevation_angles;
+  ;
+
   /// \brief State of the world.
 public:
   const WorldState * worldState;
@@ -653,11 +666,7 @@ void MultibeamSonarSensor::pointCloudCallback(const sensor_msgs::msg::PointCloud
 {
   this->lock_.lock();
 
-  gzmsg << "Callback POINTCLOUD started" << std::endl;
-
   pcl::PointCloud<pcl::PointXYZI>::Ptr pcl_pointcloud(new pcl::PointCloud<pcl::PointXYZI>);
-
-  gzmsg << "Converting ROS point cloud message to PCL format..." << std::endl;
 
   pcl::fromROSMsg(*msg, *pcl_pointcloud);
 
@@ -677,12 +686,27 @@ void MultibeamSonarSensor::pointCloudCallback(const sensor_msgs::msg::PointCloud
     this->point_cloud_image_.create(height, width, CV_32FC1);
     cv::MatIterator_<float> iter_image = this->point_cloud_image_.begin<float>();
 
-    gzmsg << "Point cloud image matrix created" << std::endl;
+    bool angles_calculation_flag = false;
+    if (this->azimuth_angles.size() == 0)
+    {
+      angles_calculation_flag = true;
+    }
+
+    for (int j = 0; j < this->dataPtr->nRays; j++)
+    {
+      if (angles_calculation_flag)
+      {
+        const double Diff = this->dataPtr->raySensor->VerticalAngleMax().Radian() -
+                            this->dataPtr->raySensor->VerticalAngleMin().Radian();
+        this->dataPtr->elevation_angles[j] =
+          (j * Diff / (this->dataPtr->nRays - 1) +
+           this->dataPtr->raySensor->VerticalAngleMin().Radian());
+        gzmsg << "Elevation angle: = " << this->dataPtr->elevation_angles[j] << std::endl;
+      }
+    }
   }
 
   this->lock_.unlock();
-
-  gzmsg << "Callback POINTCLOUD finished" << std::endl;
 }
 
 //////////////////////////////////////////////////
@@ -829,6 +853,7 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
     ++horizontalRayCount;  // ensure odd
   }
   this->raySensor->SetRayCount(horizontalRayCount);
+  this->nBeams = horizontalRayCount;
 
   this->raySensor->SetVerticalAngleMin(beamsSphericalFootprint.YMin());
   this->raySensor->SetVerticalAngleMax(beamsSphericalFootprint.YMax());
@@ -838,7 +863,26 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
     ++verticalRayCount;  // ensure odd
   }
 
+  // Currently, this->width equals # of beams, and this->height equals # of rays
+  // Each beam consists of (elevation,azimuth)=(this->height,1) rays
+  // Beam patterns
+
   this->raySensor->SetVerticalRayCount(verticalRayCount);
+  this->nRays = verticalRayCount;
+
+  // this->ray_nElevationRays = this->nRays;
+  // this->ray_nAzimuthRays = 1;
+  this->elevation_angles = new float[this->nRays];
+
+  gzmsg << "Horizontal Resolution " << this->raySensor->HorizontalResolution() << " px"
+        << std::endl;
+  gzmsg << "Vertical Resolution " << this->raySensor->VerticalResolution() << " px" << std::endl;
+
+  gzmsg << "Vertical Range " << this->raySensor->VerticalRangeCount() << " px" << std::endl;
+  gzmsg << "Horizontal Range " << this->raySensor->RangeCount() << " px" << std::endl;
+
+  gzmsg << "Vertical Ray " << this->raySensor->RayCount() << " px" << std::endl;
+  gzmsg << "Horizontal Ray " << this->raySensor->VerticalRayCount() << " px" << std::endl;
 
   auto & intrinsics = this->raySensorIntrinsics;
   intrinsics.offset.X(beamsSphericalFootprint.XMin());

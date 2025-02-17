@@ -108,6 +108,7 @@ private:
 private:
   cv::Mat point_cloud_image_;         // Point cloud image
   cv::Mat point_cloud_normal_image_;  // Point cloud normal image
+  std::vector<float> azimuth_angles;
 };
 
 }  // namespace sensors
