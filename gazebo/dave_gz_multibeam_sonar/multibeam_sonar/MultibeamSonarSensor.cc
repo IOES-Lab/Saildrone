@@ -389,6 +389,8 @@ using namespace gz::msgs;
 /// \brief Implementation for MultibeamSonarSensor
 class MultibeamSonarSensor::Implementation
 {
+public:
+  std::mutex lock_;
   /// \brief SDF DOM object
 public:
   sdf::ElementPtr sensorSdf;
@@ -448,7 +450,15 @@ public:
   /// \brief Elevation Angles
 public:
   float * elevation_angles;
-  ;
+
+public:
+  cv::Mat point_cloud_image_;  // Point cloud image
+
+public:
+  cv::Mat point_cloud_normal_image_;  // Point cloud normal image
+
+public:
+  std::vector<float> azimuth_angles;
 
   /// \brief State of the world.
 public:
@@ -475,6 +485,11 @@ public:
   void OnNewFrame(
     const float * _scan, unsigned int _width, unsigned int _height, unsigned int _channels,
     const std::string & /*_format*/);
+
+  /// \brief Compute sonar image function
+
+public:
+  void ComputeSonarImage();
 
   /// \brief Connection from ray sensor with new ray data.
 public:
@@ -664,7 +679,7 @@ bool MultibeamSonarSensor::Load(const sdf::Sensor & _sdf)
 
 void MultibeamSonarSensor::pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
 {
-  this->lock_.lock();
+  this->dataPtr->lock_.lock();
 
   pcl::PointCloud<pcl::PointXYZI>::Ptr pcl_pointcloud(new pcl::PointCloud<pcl::PointXYZI>);
 
@@ -683,11 +698,11 @@ void MultibeamSonarSensor::pointCloudCallback(const sensor_msgs::msg::PointCloud
 
     gzmsg << "Point cloud dimensions: width = " << width << ", height = " << height << std::endl;
 
-    this->point_cloud_image_.create(height, width, CV_32FC1);
-    cv::MatIterator_<float> iter_image = this->point_cloud_image_.begin<float>();
+    this->dataPtr->point_cloud_image_.create(height, width, CV_32FC1);
+    cv::MatIterator_<float> iter_image = this->dataPtr->point_cloud_image_.begin<float>();
 
     bool angles_calculation_flag = false;
-    if (this->azimuth_angles.size() == 0)
+    if (this->dataPtr->azimuth_angles.size() == 0)
     {
       angles_calculation_flag = true;
     }
@@ -708,13 +723,13 @@ void MultibeamSonarSensor::pointCloudCallback(const sensor_msgs::msg::PointCloud
       {
         pcl::PointXYZI point = pcl_pointcloud->at(width - i - 1, j);
 
-        this->point_cloud_image_.at<float>(j, i) =
+        this->dataPtr->point_cloud_image_.at<float>(j, i) =
           sqrt(point.x * point.x + point.y * point.y + point.z * point.z);
         if (angles_calculation_flag && j == 0)
         {
           const double Diff = this->dataPtr->raySensor->AngleMax().Radian() -
                               this->dataPtr->raySensor->AngleMin().Radian();
-          this->azimuth_angles.push_back(
+          this->dataPtr->azimuth_angles.push_back(
             i * Diff / (this->dataPtr->nBeams - 1) + this->dataPtr->raySensor->AngleMin().Radian());
         }
 
@@ -726,7 +741,7 @@ void MultibeamSonarSensor::pointCloudCallback(const sensor_msgs::msg::PointCloud
     }
   }
 
-  this->lock_.unlock();
+  this->dataPtr->lock_.unlock();
 }
 
 //////////////////////////////////////////////////
@@ -815,10 +830,16 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
 
   if (useDegrees == false)
   {
-    // Convert the FOV to degrees
-    this->hFOV *= (180.0 / M_PI);  // Convert horizontal FOV to degrees
-    this->vFOV *= (180.0 / M_PI);  // Convert vertical FOV to degrees
+    this->hFOV = this->hFOV * (180.0 / M_PI);
+    this->vFOV = this->vFOV * (180.0 / M_PI);
   }
+
+  // Gazebo debug output
+  gzmsg << "Debug Info: FOV Calculations" << std::endl;
+  gzmsg << "horizAngleMax: " << horizAngleMax << ", horizAngleMin: " << horizAngleMin
+        << ", hFOV (radians): " << this->hFOV << std::endl;
+  gzmsg << "verticalAngleMax: " << verticalAngleMax << ", verticalAngleMin: " << verticalAngleMin
+        << ", vFOV (radians): " << this->vFOV << std::endl;
 
   // ---- Construct AcousticBeam
   // Initialize beamId
@@ -988,6 +1009,11 @@ void MultibeamSonarSensor::Implementation::OnNewFrame(
 
   // Fill point cloud with the ray buffer
   this->FillPointCloudMsg(this->rayBuffer);
+
+  if (this->point_cloud_image_.size().width != 0)
+  {
+    this->ComputeSonarImage();
+  }
 
   //! TODO sonar image calculation here
 }
@@ -1176,6 +1202,19 @@ void MultibeamSonarSensor::Implementation::FillPointCloudMsg(const float * _rayB
     inclination += verticleAngleStep;
   }
   this->pointMsg.set_is_dense(isDense);
+}
+
+// Compute sonar image from point cloud
+void MultibeamSonarSensor::Implementation::ComputeSonarImage()
+
+{
+  this->lock_.lock();
+
+  cv::Mat depth_image = this->point_cloud_image_;
+  double vPixelSize = this->vFOV / (this->pointMsg.height() - 1);
+  double hPixelSize = this->hFOV / (this->pointMsg.width() - 1);
+
+  this->lock_.unlock();
 }
 
 }  // namespace sensors

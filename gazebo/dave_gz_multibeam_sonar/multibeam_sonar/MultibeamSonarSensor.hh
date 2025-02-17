@@ -93,9 +93,6 @@ private:
   class Implementation;
 
 private:
-  std::mutex lock_;
-
-private:
   std::unique_ptr<Implementation> dataPtr;
 
   // ROS node handle member
@@ -104,11 +101,6 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr pointCloudSub_;
 
   void pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
-
-private:
-  cv::Mat point_cloud_image_;         // Point cloud image
-  cv::Mat point_cloud_normal_image_;  // Point cloud normal image
-  std::vector<float> azimuth_angles;
 };
 
 }  // namespace sensors
