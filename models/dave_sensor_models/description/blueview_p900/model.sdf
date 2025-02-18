@@ -100,11 +100,11 @@
             <raySkips>10</raySkips>
             <sensorGain>0.02</sensorGain>
             <plotScaler>0</plotScaler>
-            <writeLog>false</writeLog>
+            <writeLog>true</writeLog>
             <debugFlag>true</debugFlag>
             <writeFrameInterval>5</writeFrameInterval>
             <!-- This name is prepended to ROS topics -->
-            <cameraName>blueview_m450</cameraName>
+            <cameraName>blueview_p900</cameraName>
             <!-- ROS publication topics -->
             <imageTopicName>image_raw</imageTopicName>
             <cameraInfoTopicName>image_raw/camera_info</cameraInfoTopicName>
