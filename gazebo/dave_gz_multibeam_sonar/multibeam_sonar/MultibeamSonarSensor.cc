@@ -61,6 +61,7 @@
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>  // Make sure this header is included
 #include <opencv2/imgproc.hpp>
 
 // #include <marine_acoustic_msgs/ProjectedSonarImage.h>
@@ -393,6 +394,10 @@ class MultibeamSonarSensor::Implementation
 {
 public:
   std::mutex lock_;
+
+public:
+  std::shared_ptr<rclcpp::Node> ros_node_;
+
   /// \brief SDF DOM object
 public:
   sdf::ElementPtr sensorSdf;
@@ -493,6 +498,12 @@ public:
   int raySkips;
 
 public:
+  int ray_nAzimuthRays;
+
+public:
+  int ray_nElevationRays;
+
+public:
   float * rangeVector;
 
 public:
@@ -504,7 +515,6 @@ public:
   bool constMu;
 
 public:
-private:
   double mu;
 
   /// \brief Beam corrector sum
@@ -648,6 +658,25 @@ public:
   /// \brief Flag to indicate if sensor should be publishing sonar image.
 public:
   bool publishingSonarImage = false;
+
+  /// \brief CSV log writing stream for verifications
+public:
+  std::ofstream writeLog;
+
+public:
+  u_int64_t writeCounter;
+
+public:
+  u_int64_t writeNumber;
+
+public:
+  u_int64_t writeInterval;
+
+public:
+  bool writeLogFlag;
+
+public:
+  double lastMeasurementTime;
 };
 
 //////////////////////////////////////////////////
@@ -658,6 +687,8 @@ MultibeamSonarSensor::~MultibeamSonarSensor()
 {
   this->dataPtr->rayConnection.reset();
   this->dataPtr->sceneChangeConnection.reset();
+  // CSV log write stream close
+  this->dataPtr->writeLog.close();
 }
 
 //////////////////////////////////////////////////
@@ -699,6 +730,9 @@ bool MultibeamSonarSensor::Load(const sdf::Sensor & _sdf)
     return false;
   }
   this->dataPtr->sensorSdf = elem->GetElement("gz:multibeam_sonar");
+  // for csv write logs
+  this->dataPtr->writeCounter = 0;
+  this->dataPtr->writeNumber = 1;
 
   // Initialize the point message.
   // \todo(anyone) The true value in the following function call forces
@@ -747,11 +781,12 @@ bool MultibeamSonarSensor::Load(const sdf::Sensor & _sdf)
     rclcpp::init(0, nullptr);
   }
 
-  this->ros_node_ = std::make_shared<rclcpp::Node>("multibeam_sonar_node");
+  this->dataPtr->ros_node_ = std::make_shared<rclcpp::Node>("multibeam_sonar_node");
 
-  this->pointCloudSub_ = this->ros_node_->create_subscription<sensor_msgs::msg::PointCloud2>(
-    "/sensor/multibeam_sonar/point_cloud", 10,
-    std::bind(&MultibeamSonarSensor::pointCloudCallback, this, std::placeholders::_1));
+  this->pointCloudSub_ =
+    this->dataPtr->ros_node_->create_subscription<sensor_msgs::msg::PointCloud2>(
+      "/sensor/multibeam_sonar/point_cloud", 10,
+      std::bind(&MultibeamSonarSensor::pointCloudCallback, this, std::placeholders::_1));
 
   return true;
 }
@@ -937,6 +972,33 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
     gzmsg << "raySkips was 0, setting to 1." << std::endl;
   }
 
+  this->writeLogFlag = sensorElement->Get<bool>("writeLog", false).first;
+
+  if (this->writeLogFlag)
+  {
+    this->writeInterval = sensorElement->Get<int>("writeFrameInterval", 10).first;
+
+    RCLCPP_INFO_STREAM(
+      this->ros_node_->get_logger(), "Raw data at " << "/tmp/SonarRawData_{numbers}.csv"
+                                                    << " every " << this->writeInterval
+                                                    << " frames");
+    RCLCPP_INFO_STREAM(
+      this->ros_node_->get_logger(), "Beam angles at /tmp/SonarRawData_beam_angles.csv");
+    RCLCPP_INFO_STREAM(this->ros_node_->get_logger(), "");
+
+    struct stat buffer;
+    std::string logfilename("/tmp/SonarRawData_000001.csv");
+    std::string logfilename_angles("/tmp/SonarRawData_beam_angles.csv");
+    if (stat(logfilename.c_str(), &buffer) == 0)
+    {
+      system("rm /tmp/SonarRawData*.csv");
+    }
+    if (stat(logfilename_angles.c_str(), &buffer) == 0)
+    {
+      system("rm /tmp/SonarRawData_beam_angles.csv");
+    }
+  }
+
   // Mask ranges outside of min/max to +/- inf, as per REP 117
   this->raySensor->SetClamp(false);
 
@@ -1039,8 +1101,8 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
   this->raySensor->SetVerticalRayCount(verticalRayCount);
   this->nRays = verticalRayCount;
 
-  // this->ray_nElevationRays = this->nRays;
-  // this->ray_nAzimuthRays = 1;
+  this->ray_nElevationRays = this->nRays;
+  this->ray_nAzimuthRays = 1;
   this->elevation_angles = new float[this->nRays];
 
   gzmsg << "Horizontal Resolution " << this->raySensor->HorizontalResolution() << " px"
@@ -1122,6 +1184,36 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
   {
     this->rangeVector[i] = delta_t * i * this->soundSpeed / 2.0;
   }
+
+  // Print sonar calculation settings
+  RCLCPP_INFO_STREAM(this->ros_node_->get_logger(), "");
+  RCLCPP_INFO_STREAM(
+    this->ros_node_->get_logger(), "==================================================");
+  RCLCPP_INFO_STREAM(
+    this->ros_node_->get_logger(), "============   SONAR PLUGIN LOADED   =============");
+  RCLCPP_INFO_STREAM(
+    this->ros_node_->get_logger(), "==================================================");
+  RCLCPP_INFO_STREAM(
+    this->ros_node_->get_logger(), "============       RAY VERSION       =============");
+  RCLCPP_INFO_STREAM(
+    this->ros_node_->get_logger(), "==================================================");
+  RCLCPP_INFO_STREAM(
+    this->ros_node_->get_logger(), "Maximum view range  [m] = " << this->maxDistance);
+  RCLCPP_INFO_STREAM(
+    this->ros_node_->get_logger(),
+    "Distance resolution [m] = " << this->soundSpeed * (1.0 / (this->nFreq * delta_f)));
+  RCLCPP_INFO_STREAM(this->ros_node_->get_logger(), "# of Beams = " << this->nBeams);
+  RCLCPP_INFO_STREAM(
+    this->ros_node_->get_logger(), "# of Rays / Beam (Elevation, Azimuth) = ("
+                                     << this->ray_nElevationRays << ", " << this->ray_nAzimuthRays
+                                     << ")");
+  RCLCPP_INFO_STREAM(
+    this->ros_node_->get_logger(), "Calculation skips (Elevation) = " << this->raySkips);
+  RCLCPP_INFO_STREAM(this->ros_node_->get_logger(), "# of Time data / Beam = " << this->nFreq);
+  RCLCPP_INFO_STREAM(
+    this->ros_node_->get_logger(), "==================================================");
+  RCLCPP_INFO_STREAM(this->ros_node_->get_logger(), "");
+
   // -- Pre calculations for sonar -- //
 
   // Random number generator
@@ -1187,6 +1279,8 @@ void MultibeamSonarSensor::Implementation::OnNewFrame(
   // Total number of points in the scan
   unsigned int samples = _width * _height * _channels;
   unsigned int rayBufferSize = samples * sizeof(float);
+
+  this->lastMeasurementTime = this->ros_node_->now().seconds();
 
   // Allocate memory for the ray buffer if not already allocated
   if (!this->rayBuffer)
@@ -1288,7 +1382,7 @@ void MultibeamSonarSensor::PostUpdate(const std::chrono::steady_clock::duration 
            << "cannot estimate velocities." << std::endl;
     return;
   }
-  rclcpp::spin_some(this->ros_node_);
+  rclcpp::spin_some(this->dataPtr->ros_node_);
 
   if (this->dataPtr->publishingPointCloud)
   {
@@ -1500,8 +1594,8 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
     rand_image,                   // cv::Mat& rand_image
     hPixelSize,                   // hPixelSize
     vPixelSize,                   // vPixelSize
-    this->hFOV,                   // hFOV
-    this->vFOV,                   // VFOV
+    hFOV,                         // hFOV
+    vFOV,                         // VFOV
     hPixelSize,                   // _beam_azimuthAngleWidth
     verticalFOV / 180 * M_PI,     // _beam_elevationAngleWidth
     hPixelSize,                   // _ray_azimuthAngleWidth
@@ -1526,6 +1620,72 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
   // For calc time measure
   auto stop = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+
+  if (debugFlag)
+  {
+    RCLCPP_INFO_STREAM(
+      this->ros_node_->get_logger(),
+      "GPU Sonar Frame Calc Time " << duration.count() / 10000 << "/100 [s]\n");
+  }
+
+  // CSV log write stream
+  // Each cols corresponds to each beams
+  if (this->writeLogFlag)
+  {
+    this->writeCounter = this->writeCounter + 1;
+    if (this->writeCounter == 1 || this->writeCounter % this->writeInterval == 0)
+    {
+      double time = this->lastMeasurementTime;
+      std::stringstream filename;
+      filename << "/tmp/SonarRawData_" << std::setw(6) << std::setfill('0') << this->writeNumber
+               << ".csv";
+      writeLog.open(filename.str().c_str(), std::ios_base::app);
+      filename.clear();
+      writeLog << "# Raw Sonar Data Log (Row: beams, Col: time series data)\n";
+      writeLog << "# First column is range vector\n";
+      writeLog << "#  nBeams : " << this->nBeams << "\n";
+      writeLog << "# Simulation time : " << time << "\n";
+      for (size_t i = 0; i < P_Beams[0].size(); i++)
+      {
+        // writing range vector at first column
+        writeLog << this->rangeVector[i];
+        for (size_t b = 0; b < this->nBeams; b++)
+        {
+          if (P_Beams[b][i].imag() > 0)
+          {
+            writeLog << "," << P_Beams[b][i].real() << "+" << P_Beams[b][i].imag() << "i";
+          }
+          else
+          {
+            writeLog << "," << P_Beams[b][i].real() << P_Beams[b][i].imag() << "i";
+          }
+        }
+        writeLog << "\n";
+      }
+      writeLog.close();
+
+      // write beam (azimuth) angles
+      if (this->writeNumber == 1)
+      {
+        std::stringstream filename_angle;
+        filename_angle << "/tmp/SonarRawData_beam_angles.csv";
+        writeLog.open(filename_angle.str().c_str(), std::ios_base::app);
+        filename_angle.clear();
+        writeLog << "# Raw Sonar Data Log \n";
+        writeLog << "# Beam (azimuth) angles of rays\n";
+        writeLog << "#  nBeams : " << nBeams << "\n";
+        writeLog << "# Simulation time : " << time << "\n";
+        for (size_t i = 0; i < this->azimuth_angles.size(); i++)
+        {
+          writeLog << this->azimuth_angles[i] << "\n";
+        }
+        writeLog.close();
+      }
+
+      this->writeNumber = this->writeNumber + 1;
+    }
+  }
+
   this->lock_.unlock();
 }
 

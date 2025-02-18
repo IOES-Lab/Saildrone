@@ -106,7 +106,6 @@ private:
   std::unique_ptr<Implementation> dataPtr;
 
   // ROS node handle member
-  std::shared_ptr<rclcpp::Node> ros_node_;
   // Subscription for PointCloud2 messages
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr pointCloudSub_;
 
