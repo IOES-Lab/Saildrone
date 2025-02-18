@@ -100,13 +100,13 @@ sed --in-place --expression \
 sed --in-place --expression \
 '$i export PYTHONPATH=\$PYTHONPATH:/opt/gazebo/install/lib/python' /ros_entrypoint.sh && \
 sed --in-place --expression \
-'$i export PATH=/opt/ardupilot_dave/ardupilot/build/sitl/bin:\$PATH' /ros_entrypoint.sh && \
+'$i export PATH=/opt/ardupilot_ws/ardupilot/build/sitl/bin:\$PATH' /ros_entrypoint.sh && \
 sed --in-place --expression \
-'$i export PATH=/opt/ardupilot_dave/ardupilot/Tools/autotest:\$PATH' /ros_entrypoint.sh && \
+'$i export PATH=/opt/ardupilot_ws/ardupilot/Tools/autotest:\$PATH' /ros_entrypoint.sh && \
 sed --in-place --expression \
-'$i export GZ_SIM_SYSTEM_PLUGIN_PATH=/opt/ardupilot_dave/ardupilot_gazebo/build:\$GZ_SIM_SYSTEM_PLUGIN_PATH' /ros_entrypoint.sh && \
+'$i export GZ_SIM_SYSTEM_PLUGIN_PATH=/opt/ardupilot_ws/ardupilot_gazebo/build:\$GZ_SIM_SYSTEM_PLUGIN_PATH' /ros_entrypoint.sh && \
 sed --in-place --expression \
-'$i export GZ_SIM_RESOURCE_PATH=/opt/ardupilot_dave/ardupilot_gazebo/models:/opt/ardupilot_dave/ardupilot_gazebo/worlds:\$GZ_SIM_RESOURCE_PATH' /ros_entrypoint.sh && \
+'$i export GZ_SIM_RESOURCE_PATH=/opt/ardupilot_ws/ardupilot_gazebo/models:/opt/ardupilot_ws/ardupilot_gazebo/worlds:\$GZ_SIM_RESOURCE_PATH' /ros_entrypoint.sh && \
 sed --in-place --expression \
 '$i printf '\''\\033[1;37m \n=====\n'\'' ' /ros_entrypoint.sh && \
 sed --in-place --expression \
