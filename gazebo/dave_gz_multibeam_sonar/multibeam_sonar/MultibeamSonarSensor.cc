@@ -61,7 +61,6 @@
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>  // Make sure this header is included
 #include <opencv2/imgproc.hpp>
 
 // #include <marine_acoustic_msgs/ProjectedSonarImage.h>
@@ -1298,8 +1297,6 @@ void MultibeamSonarSensor::Implementation::OnNewFrame(
   {
     this->ComputeSonarImage();
   }
-
-  //! TODO sonar image calculation here
 }
 
 /////////////////////////////////////////////////
