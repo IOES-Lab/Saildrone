@@ -1573,19 +1573,16 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
     ComputeCorrector();
   }
 
-  // Default value for reflectivity
   if (this->reflectivityImage.rows == 0)
   {
     this->reflectivityImage =
       cv::Mat(this->pointMsg.width(), this->pointMsg.height(), CV_32FC1, cv::Scalar(this->mu));
   }
 
-  // For calc time measure
   auto start = std::chrono::high_resolution_clock::now();
 
-  static int counter = 1;  // Initialize a static counter for filename increment
+  static int counter = 1;
 
-  // Save depth image to CSV with an incrementing number
   std::ofstream depth_file("depth_image_" + std::to_string(counter) + ".csv");
   for (int i = 0; i < depth_image.rows; i++)
   {
