@@ -846,7 +846,7 @@ void MultibeamSonarSensor::pointCloudCallback(const sensor_msgs::msg::PointCloud
             i * Diff / (this->dataPtr->nBeams - 1) + this->dataPtr->raySensor->AngleMin().Radian());
         }
 
-        if (std::isnan(*iter_image))
+        if (!std::isfinite(*iter_image) || std::isnan(*iter_image))
         {
           *iter_image = 100000.0;
         }
@@ -978,23 +978,23 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
     this->writeInterval = sensorElement->Get<int>("writeFrameInterval", 10).first;
 
     RCLCPP_INFO_STREAM(
-      this->ros_node_->get_logger(), "Raw data at " << "/tmp/SonarRawData_{numbers}.csv"
+      this->ros_node_->get_logger(), "Raw data at " << "/SonarRawData_{numbers}.csv"
                                                     << " every " << this->writeInterval
                                                     << " frames");
     RCLCPP_INFO_STREAM(
-      this->ros_node_->get_logger(), "Beam angles at /tmp/SonarRawData_beam_angles.csv");
+      this->ros_node_->get_logger(), "Beam angles at SonarRawData_beam_angles.csv");
     RCLCPP_INFO_STREAM(this->ros_node_->get_logger(), "");
 
     struct stat buffer;
-    std::string logfilename("/tmp/SonarRawData_000001.csv");
-    std::string logfilename_angles("/tmp/SonarRawData_beam_angles.csv");
+    std::string logfilename("SonarRawData_000001.csv");
+    std::string logfilename_angles("SonarRawData_beam_angles.csv");
     if (stat(logfilename.c_str(), &buffer) == 0)
     {
-      system("rm /tmp/SonarRawData*.csv");
+      system("rm SonarRawData*.csv");
     }
     if (stat(logfilename_angles.c_str(), &buffer) == 0)
     {
-      system("rm /tmp/SonarRawData_beam_angles.csv");
+      system("rm SonarRawData_beam_angles.csv");
     }
   }
 
@@ -1564,6 +1564,21 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
   this->lock_.lock();
 
   cv::Mat depth_image = this->point_cloud_image_;
+
+  // Replace +inf and -inf with 0
+  cv::patchNaNs(depth_image, 0.0f);  // replaces NaNs (not infs), but we still need to handle infs
+
+  for (int i = 0; i < depth_image.rows; ++i)
+  {
+    for (int j = 0; j < depth_image.cols; ++j)
+    {
+      float & val = depth_image.at<float>(i, j);
+      if (!std::isfinite(val))
+      {  // catches inf, -inf, and NaN
+        val = 0.0f;
+      }
+    }
+  }
   cv::Mat normal_image = this->ComputeNormalImage(depth_image);
   double vPixelSize = this->vFOV / (this->pointMsg.height() - 1);
   double hPixelSize = this->hFOV / (this->pointMsg.width() - 1);
@@ -1583,114 +1598,124 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
   // For calc time measure
   auto start = std::chrono::high_resolution_clock::now();
 
-  // static int counter = 1; // Initialize a static counter for filename increment
+  static int counter = 1;  // Initialize a static counter for filename increment
 
-  //   // Save depth image to CSV with an incrementing number
-  //   std::ofstream depth_file("depth_image_" + std::to_string(counter) + ".csv");
-  //   for (int i = 0; i < depth_image.rows; i++) {
-  //       for (int j = 0; j < depth_image.cols; j++) {
-  //           if (depth_image.type() == CV_32F) {
-  //               depth_file << depth_image.at<float>(i, j);
-  //           } else if (depth_image.type() == CV_8U) {
-  //               depth_file << static_cast<int>(depth_image.at<uchar>(i, j));
-  //           }
-  //           if (j < depth_image.cols - 1) {
-  //               depth_file << ", ";
-  //           }
-  //       }
-  //       depth_file << "\n";
-  //   }
-  //   depth_file.close();
-  //   std::cout << "Depth image saved to depth_image_" + std::to_string(counter) + ".csv" <<
-  //   std::endl;
-  //   // Save normal image to CSV
-  //   std::ofstream normal_file("normal_image_" + std::to_string(counter) + ".csv");
-  //   for (int i = 0; i < normal_image.rows; i++) {
-  //       for (int j = 0; j < normal_image.cols; j++) {
-  //           cv::Vec3f n = normal_image.at<cv::Vec3f>(i, j);
-  //           normal_file << n[0] << ", " << n[1] << ", " << n[2]; // Writing the three float
-  //           values
+  // Save depth image to CSV with an incrementing number
+  std::ofstream depth_file("depth_image_" + std::to_string(counter) + ".csv");
+  for (int i = 0; i < depth_image.rows; i++)
+  {
+    for (int j = 0; j < depth_image.cols; j++)
+    {
+      if (depth_image.type() == CV_32F)
+      {
+        depth_file << depth_image.at<float>(i, j);
+      }
+      else if (depth_image.type() == CV_8U)
+      {
+        depth_file << static_cast<int>(depth_image.at<uchar>(i, j));
+      }
+      if (j < depth_image.cols - 1)
+      {
+        depth_file << ", ";
+      }
+    }
+    depth_file << "\n";
+  }
+  depth_file.close();
+  std::cout << "Depth image saved to depth_image_" + std::to_string(counter) + ".csv" << std::endl;
+  // Save normal image to CSV
+  std::ofstream normal_file("normal_image_" + std::to_string(counter) + ".csv");
+  for (int i = 0; i < normal_image.rows; i++)
+  {
+    for (int j = 0; j < normal_image.cols; j++)
+    {
+      cv::Vec3f n = normal_image.at<cv::Vec3f>(i, j);
+      normal_file << n[0] << ", " << n[1] << ", " << n[2];  // Writing the three float values
 
-  //           if (j < normal_image.cols - 1) {
-  //               normal_file << ", ";
-  //           }
-  //       }
-  //       normal_file << "\n";
-  //   }
-  //   normal_file.close();
-  //   std::cout << "Normal image saved to normal_image_" + std::to_string(counter) + ".csv" <<
-  //   std::endl;
+      if (j < normal_image.cols - 1)
+      {
+        normal_file << ", ";
+      }
+    }
+    normal_file << "\n";
+  }
+  normal_file.close();
+  std::cout << "Normal image saved to normal_image_" + std::to_string(counter) + ".csv"
+            << std::endl;
 
-  // Increment the counter for the next save
-  // counter++;
+  counter++;
 
   // Debugging: Print parameters before calling the sonar_calculation_wrapper
-  // std::cout << "---------------------- Debug Information ----------------------" << std::endl;
+  std::cout << "---------------------- Debug Information ----------------------" << std::endl;
 
-  // // Print depth_image properties
-  // std::cout << "Depth Image Size: [" << depth_image.rows << " x " << depth_image.cols << "]" <<
-  // std::endl; std::cout << "Depth Image Type: " << depth_image.type() << std::endl;
+  // Print depth_image properties
+  std::cout << "Depth Image Size: [" << depth_image.rows << " x " << depth_image.cols << "]"
+            << std::endl;
+  std::cout << "Depth Image Type: " << depth_image.type() << std::endl;
 
-  // // Print normal_image properties
-  // std::cout << "Normal Image Size: [" << normal_image.rows << " x " << normal_image.cols << "]"
-  // << std::endl; std::cout << "Normal Image Type: " << normal_image.type() << std::endl;
+  // Print normal_image properties
+  std::cout << "Normal Image Size: [" << normal_image.rows << " x " << normal_image.cols << "]"
+            << std::endl;
+  std::cout << "Normal Image Type: " << normal_image.type() << std::endl;
 
-  // // Print rand_image properties
-  // std::cout << "Random Image Size: [" << rand_image.rows << " x " << rand_image.cols << "]" <<
-  // std::endl; std::cout << "Random Image Type: " << rand_image.type() << std::endl;
+  // Print rand_image properties
+  std::cout << "Random Image Size: [" << rand_image.rows << " x " << rand_image.cols << "]"
+            << std::endl;
+  std::cout << "Random Image Type: " << rand_image.type() << std::endl;
 
-  // // Print scalar parameters
-  // std::cout << "hPixelSize: " << hPixelSize << std::endl;
-  // std::cout << "vPixelSize: " << vPixelSize << std::endl;
-  // std::cout << "hFOV: " << hFOV << std::endl;
-  // std::cout << "vFOV: " << vFOV << std::endl;
+  // Print scalar parameters
+  std::cout << "hPixelSize: " << hPixelSize << std::endl;
+  std::cout << "vPixelSize: " << vPixelSize << std::endl;
+  std::cout << "hFOV: " << hFOV << std::endl;
+  std::cout << "vFOV: " << vFOV << std::endl;
 
-  // // Print beam-related parameters
-  // std::cout << "Beam Azimuth Angle Width: " << hPixelSize << std::endl;
-  // std::cout << "Beam Elevation Angle Width (radians): " << (verticalFOV / 180 * M_PI) <<
-  // std::endl; std::cout << "Ray Azimuth Angle Width: " << hPixelSize << std::endl; std::cout <<
-  // "Ray Elevation Angle Width: " << vPixelSize * (raySkips + 1) << std::endl;
+  // Print beam-related parameters
+  std::cout << "Beam Azimuth Angle Width: " << hPixelSize << std::endl;
+  std::cout << "Beam Elevation Angle Width (radians): " << (verticalFOV / 180 * M_PI) << std::endl;
+  std::cout << "Ray Azimuth Angle Width: " << hPixelSize << std::endl;
+  std::cout << "Ray Elevation Angle Width: " << vPixelSize * (raySkips + 1) << std::endl;
 
-  // // Print sonar-related parameters
-  // std::cout << "Sound Speed: " << this->soundSpeed << std::endl;
-  // std::cout << "Max Distance: " << this->maxDistance << std::endl;
-  // std::cout << "Source Level: " << this->sourceLevel << std::endl;
+  // Print sonar-related parameters
+  std::cout << "Sound Speed: " << this->soundSpeed << std::endl;
+  std::cout << "Max Distance: " << this->maxDistance << std::endl;
+  std::cout << "Source Level: " << this->sourceLevel << std::endl;
 
-  // // Print the number of beams and rays
-  // std::cout << "Number of Beams: " << this->nBeams << std::endl;
-  // std::cout << "Number of Rays: " << this->nRays << std::endl;
+  // Print the number of beams and rays
+  std::cout << "Number of Beams: " << this->nBeams << std::endl;
+  std::cout << "Number of Rays: " << this->nRays << std::endl;
 
-  // // Print ray skip
-  // std::cout << "Ray Skips: " << this->raySkips << std::endl;
+  // Print ray skip
+  std::cout << "Ray Skips: " << this->raySkips << std::endl;
 
-  // // Print sonar frequency and bandwidth
-  // std::cout << "Sonar Frequency: " << this->sonarFreq << std::endl;
-  // std::cout << "Bandwidth: " << this->bandwidth << std::endl;
+  // Print sonar frequency and bandwidth
+  std::cout << "Sonar Frequency: " << this->sonarFreq << std::endl;
+  std::cout << "Bandwidth: " << this->bandwidth << std::endl;
 
-  // // Print frequency count
-  // std::cout << "Number of Frequencies: " << this->nFreq << std::endl;
+  // Print frequency count
+  std::cout << "Number of Frequencies: " << this->nFreq << std::endl;
 
-  // // Print reflectivity image size and type
-  // std::cout << "Reflectivity Image Size: [" << this->reflectivityImage.rows << " x " <<
-  // this->reflectivityImage.cols << "]" << std::endl; std::cout << "Reflectivity Image Type: " <<
-  // this->reflectivityImage.type() << std::endl;
+  // Print reflectivity image size and type
+  std::cout << "Reflectivity Image Size: [" << this->reflectivityImage.rows << " x "
+            << this->reflectivityImage.cols << "]" << std::endl;
+  std::cout << "Reflectivity Image Type: " << this->reflectivityImage.type() << std::endl;
 
-  // // Print attenuation
-  // std::cout << "Attenuation: " << this->attenuation << std::endl;
+  // Print attenuation
+  std::cout << "Attenuation: " << this->attenuation << std::endl;
 
-  // // Print window size or properties (depending on what 'window' represents)
-  // std::cout << "Window: " << this->window << std::endl;
+  // Print window size or properties (depending on what 'window' represents)
+  std::cout << "Window: " << this->window << std::endl;
 
-  // // Print beam corrector and sum
-  // std::cout << "Beam Corrector: " << this->beamCorrector << std::endl;
-  // std::cout << "Beam Corrector Sum: " << this->beamCorrectorSum << std::endl;
+  // Print beam corrector and sum
+  std::cout << "Beam Corrector: " << this->beamCorrector << std::endl;
+  std::cout << "Beam Corrector Sum: " << this->beamCorrectorSum << std::endl;
 
-  // // Print debug flag
-  // std::cout << "Debug Flag: " << this->debugFlag << std::endl;
+  // Print debug flag
+  std::cout << "Debug Flag: " << this->debugFlag << std::endl;
 
   // ------------------------------------------------//
   // --------      Sonar calculations       -------- //
   // ------------------------------------------------//
+
   CArray2D P_Beams = NpsGazeboSonar::sonar_calculation_wrapper(
     depth_image,                  // cv::Mat& depth_image
     normal_image,                 // cv::Mat& normal_image
@@ -1740,7 +1765,7 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
     {
       double time = this->lastMeasurementTime;
       std::stringstream filename;
-      filename << "/tmp/SonarRawData_" << std::setw(6) << std::setfill('0') << this->writeNumber
+      filename << "SonarRawData_" << std::setw(6) << std::setfill('0') << this->writeNumber
                << ".csv";
       writeLog.open(filename.str().c_str(), std::ios_base::app);
       filename.clear();
@@ -1771,7 +1796,7 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
       if (this->writeNumber == 1)
       {
         std::stringstream filename_angle;
-        filename_angle << "/tmp/SonarRawData_beam_angles.csv";
+        filename_angle << "SonarRawData_beam_angles.csv";
         writeLog.open(filename_angle.str().c_str(), std::ios_base::app);
         filename_angle.clear();
         writeLog << "# Raw Sonar Data Log \n";
