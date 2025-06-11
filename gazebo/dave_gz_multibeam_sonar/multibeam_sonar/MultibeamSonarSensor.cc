@@ -1564,21 +1564,6 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
   this->lock_.lock();
 
   cv::Mat depth_image = this->point_cloud_image_;
-
-  // Replace +inf and -inf with 0
-  cv::patchNaNs(depth_image, 0.0f);  // replaces NaNs (not infs), but we still need to handle infs
-
-  for (int i = 0; i < depth_image.rows; ++i)
-  {
-    for (int j = 0; j < depth_image.cols; ++j)
-    {
-      float & val = depth_image.at<float>(i, j);
-      if (!std::isfinite(val))
-      {  // catches inf, -inf, and NaN
-        val = 0.0f;
-      }
-    }
-  }
   cv::Mat normal_image = this->ComputeNormalImage(depth_image);
   double vPixelSize = this->vFOV / (this->pointMsg.height() - 1);
   double hPixelSize = this->hFOV / (this->pointMsg.width() - 1);
