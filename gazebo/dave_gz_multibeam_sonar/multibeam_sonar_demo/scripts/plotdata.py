@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 titletext = "Ray Range Reduced/10m Range/512 Beams/300 Rays"
 clims_base = [-60, 0]
 nBeams = 512
-FOV = 90 * np.pi / 180
 maxRange = 5
 xPlotRange = 10
 yPlotRange = xPlotRange * np.cos(45 * np.pi / 180)
@@ -51,8 +50,7 @@ sonarBeams = sonarBeams.flatten()[: echo_data.shape[1]]
 
 range_grid, beam_grid = np.meshgrid(range_vector, sonarBeams, indexing="ij")
 x = range_grid * np.cos(beam_grid)
-y = range_grid * np.sin(beam_grid)
-
+y = -range_grid * np.sin(beam_grid)
 # -------------------------------------------
 # SCATTER PLOT
 # -------------------------------------------

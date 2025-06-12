@@ -36,7 +36,7 @@ def generate_launch_description():
             "namespace": "blueview_p900",
             "world_name": "dave_multibeam_sonar",
             "paused": "false",
-            "x": "6",
+            "x": "5.8",
             "z": "2",
             "yaw": "3.14",
         }.items(),
