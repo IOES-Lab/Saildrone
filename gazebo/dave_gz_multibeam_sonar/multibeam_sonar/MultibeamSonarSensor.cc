@@ -60,6 +60,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <marine_acoustic_msgs/msg/projected_sonar_image.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc.hpp>
 
@@ -218,12 +219,15 @@ public:
     const gz::math::Angle azimuthAngle = std::atan2(this->axis.Y(), this->axis.X());
     const gz::math::Angle inclinationAngle = std::atan2(
       this->axis.Z(), std::sqrt(std::pow(this->axis.X(), 2.) + std::pow(this->axis.Y(), 2.)));
+
     const gz::math::Vector2d topLeft{
       (azimuthAngle + _apertureAngle / 2.).Radian(),
       (inclinationAngle + _apertureAngle / 2.).Radian()};
     const gz::math::Vector2d bottomRight{
       (azimuthAngle - _apertureAngle / 2.).Radian(),
       (inclinationAngle - _apertureAngle / 2.).Radian()};
+    // gzmsg << "Bottom right " << bottomRight << std::endl;
+    // gzmsg << "Top left " << topLeft << std::endl;
     this->sphericalFootprint = AxisAlignedPatch2d{topLeft, bottomRight};
   }
 
@@ -627,8 +631,8 @@ public:
   msgs::Image sonarImgMsg;
 
   //   /// \brief The sonar image message.
-  // public:
-  //   marine_acoustic_msgs::ProjectedSonarImage sonarDataMsg;
+public:
+  marine_acoustic_msgs::msg::ProjectedSonarImage sonarDataMsg;
 
   /// \brief Node to create a topic publisher with.
 public:
@@ -644,7 +648,7 @@ public:
 
   /// \brief Publisher for messages.
 public:
-  gz::transport::Node::Publisher sonarImagePub;
+  rclcpp::Publisher<marine_acoustic_msgs::msg::ProjectedSonarImage>::SharedPtr sonarImageRawPub;
 
   /// \brief Publisher for messages.
 public:
@@ -751,6 +755,7 @@ bool MultibeamSonarSensor::Load(const sdf::Sensor & _sdf)
     this->dataPtr->node.Advertise<gz::msgs::PointCloudPacked>(this->Topic() + "/point_cloud");
   this->dataPtr->pointFloatPub =
     this->dataPtr->node.Advertise<gz::msgs::Float_V>(this->Topic() + "/point_cloud_float_vector");
+
   if (!this->dataPtr->pointPub)
   {
     gzerr << "Unable to create publisher on topic "
@@ -786,6 +791,10 @@ bool MultibeamSonarSensor::Load(const sdf::Sensor & _sdf)
     this->dataPtr->ros_node_->create_subscription<sensor_msgs::msg::PointCloud2>(
       "/sensor/multibeam_sonar/point_cloud", 10,
       std::bind(&MultibeamSonarSensor::pointCloudCallback, this, std::placeholders::_1));
+
+  this->dataPtr->sonarImageRawPub =
+    this->dataPtr->ros_node_->create_publisher<marine_acoustic_msgs::msg::ProjectedSonarImage>(
+      this->Topic() + "/sonar_image_raw", rclcpp::SystemDefaultsQoS());
 
   return true;
 }
@@ -1013,8 +1022,11 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
   const int rayCount = verticalElement->Get<int>("rays", 3).first;
 
   // Compute FOVs
-  this->hFOV = horizAngleMax - horizAngleMin;        // Horizontal Field of View
+  this->hFOV = horizAngleMax - horizAngleMin;  // Horizontal Field of View
+  gzmsg << "HFOV :" << this->hFOV << std::endl;
+
   this->vFOV = verticalAngleMax - verticalAngleMin;  // Vertical Field of View
+  gzmsg << "VFOV :" << this->vFOV << std::endl;
 
   // Ensure FOV is always in radians
   if (useDegrees == true)
@@ -1048,6 +1060,9 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
       gz::math::Angle beamTiltAngle =
         gz::math::Angle(verticalAngleMin + (v * (verticalAngleMax - verticalAngleMin) / rayCount)) *
         angleUnit;
+      // gzmsg << "Aperture " << beamApertureAngle << std::endl;
+      // gzmsg << "Rotation  " << beamRotationAngle << std::endl;
+      // gzmsg << "beamTiltAngle  " << beamTiltAngle << std::endl;
 
       // Normalize angles
       beamApertureAngle = beamApertureAngle.Normalized();
@@ -1075,8 +1090,13 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
   // Rendering sensors' FOV must be symmetric about its main axis
   beamsSphericalFootprint.Merge(beamsSphericalFootprint.Flip());
 
-  this->raySensor->SetAngleMin(beamsSphericalFootprint.XMin());
-  this->raySensor->SetAngleMax(beamsSphericalFootprint.XMax());
+  this->raySensor->SetAngleMin(horizAngleMin);
+  this->raySensor->SetAngleMax(horizAngleMax);
+  gzmsg << "Beams Angle Min: " << beamsSphericalFootprint.XMin() << std::endl;
+  gzmsg << "Beams Angle Max: " << beamsSphericalFootprint.XMax() << std::endl;
+  gzmsg << "V Angle Max: " << beamsSphericalFootprint.YMax() << std::endl;
+  gzmsg << "V Angle Min: " << beamsSphericalFootprint.YMin() << std::endl;
+
   auto horizontalRayCount = beamCount;
   if (horizontalRayCount % 2 == 0)
   {
@@ -1115,9 +1135,9 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
   gzmsg << "Horizontal Ray " << this->raySensor->VerticalRayCount() << " px" << std::endl;
 
   auto & intrinsics = this->raySensorIntrinsics;
-  intrinsics.offset.X(beamsSphericalFootprint.XMin());
+  intrinsics.offset.X(horizAngleMin);
   intrinsics.offset.Y(beamsSphericalFootprint.YMin());
-  intrinsics.step.X(beamsSphericalFootprint.XSize() / (horizontalRayCount - 1));
+  intrinsics.step.X(this->hFOV / (horizontalRayCount - 1));
   intrinsics.step.Y(beamsSphericalFootprint.YSize() / (verticalRayCount - 1));
 
   // Pre-compute scan indices covered by beam spherical
@@ -1795,6 +1815,15 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
       this->writeNumber = this->writeNumber + 1;
     }
   }
+  std::string frame_name_ = "sonar_frame";  // or your desired frame name
+
+  rclcpp::Time now = this->ros_node_->now();
+
+  // Set header fields properly:
+  this->sonarDataMsg.header.frame_id = frame_name_;
+
+  this->sonarDataMsg.header.stamp.sec = static_cast<int32_t>(now.seconds());
+  this->sonarDataMsg.header.stamp.nanosec = static_cast<uint32_t>(now.nanoseconds() % 1000000000);
 
   this->lock_.unlock();
 }
