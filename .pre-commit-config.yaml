@@ -71,7 +71,7 @@ repos:
     rev: 7.1.1
     hooks:
       - id: flake8
-        args: ["--extend-ignore=E501", "--exclude=tools/code_check"]
+        args: ["--extend-ignore=E501", "--exclude=tools/code_check", "--ignore=E203"]
 
   # CPP hooks
   - repo: https://github.com/pre-commit/mirrors-clang-format
