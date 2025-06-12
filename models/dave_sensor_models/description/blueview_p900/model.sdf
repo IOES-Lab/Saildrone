@@ -73,30 +73,30 @@
           <ray degrees="false">
             <scan>
                 <horizontal>
-                  <beams>1024</beams>
+                  <beams>512</beams>
                   <min_angle>-0.78539816339</min_angle>
                   <max_angle>0.78539816339</max_angle>
                 </horizontal>
                 <vertical>
-                  <rays>10</rays>
+                  <rays>300</rays>
                   <min_angle>-0.349066</min_angle>
                   <max_angle>0.349066</max_angle>
                 </vertical>
             </scan>
             <range>
                 <min>0.1</min>
-                <max>5.0</max>
+                <max>10.0</max>
             </range>
           </ray>
           <spec>
               <!-- Sonar properties -->
-            <verticalFOV>10</verticalFOV>
-            <sonarFreq>450e3</sonarFreq>
+            <verticalFOV>20</verticalFOV>
+            <sonarFreq>900e3</sonarFreq>
             <bandwidth>29.9e3</bandwidth>
             <soundSpeed>1500</soundSpeed>
             <sourceLevel>220</sourceLevel>
             <maxDistance>10</maxDistance>
-            <constantReflectivity>true</constantReflectivity>
+            <constantReflectivity>false</constantReflectivity>
             <raySkips>10</raySkips>
             <sensorGain>0.02</sensorGain>
             <plotScaler>0</plotScaler>
