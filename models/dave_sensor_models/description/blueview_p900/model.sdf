@@ -70,27 +70,27 @@
         <topic>/sensor/multibeam_sonar</topic>
         <visualize>true</visualize>
         <gz:multibeam_sonar>
-          <ray degrees="false">
-            <scan>
-                <horizontal>
-                  <beams>512</beams>
-                  <min_angle>-0.78539816339</min_angle>
-                  <max_angle>0.78539816339</max_angle>
-                </horizontal>
-                <vertical>
-                  <rays>300</rays>
-                  <min_angle>-0.349066</min_angle>
-                  <max_angle>0.349066</max_angle>
-                </vertical>
-            </scan>
-            <range>
-                <min>0.1</min>
-                <max>10.0</max>
-            </range>
-          </ray>
+        <ray degrees="false">
+          <scan>
+            <horizontal>
+              <beams>512</beams>
+              <min_angle>-1.13447</min_angle>
+              <max_angle>1.13447</max_angle>
+            </horizontal>
+            <vertical>
+              <rays>300</rays>
+              <min_angle>-0.10472</min_angle>
+              <max_angle>0.10472</max_angle>
+            </vertical>
+          </scan>
+          <range>
+            <min>0.1</min>
+            <max>10.0</max>
+          </range>
+        </ray>
           <spec>
               <!-- Sonar properties -->
-            <verticalFOV>20</verticalFOV>
+            <verticalFOV>12</verticalFOV>
             <sonarFreq>900e3</sonarFreq>
             <bandwidth>29.9e3</bandwidth>
             <soundSpeed>1500</soundSpeed>
