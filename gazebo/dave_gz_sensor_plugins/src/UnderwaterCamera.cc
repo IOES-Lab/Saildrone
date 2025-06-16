@@ -104,13 +104,6 @@ void UnderwaterCamera::Configure(
   gzdbg << "dave_gz_sensor_plugins::UnderwaterCamera::Configure on entity: " << _entity
         << std::endl;
 
-  if (!rclcpp::ok())
-  {
-    rclcpp::init(0, nullptr);
-  }
-
-  this->ros_node_ = std::make_shared<rclcpp::Node>("underwater_camera_node");
-
   auto rgbdCamera = _ecm.Component<gz::sim::components::RgbdCamera>(_entity);
   if (!rgbdCamera)
   {
@@ -132,6 +125,14 @@ void UnderwaterCamera::Configure(
           << "a null sensor." << std::endl;
     return;
   }
+
+  if (!rclcpp::ok())
+  {
+    rclcpp::init(0, nullptr);
+  }
+
+  std::string rosNodeName = sensorSdf.Name() + "_node";
+  this->ros_node_ = std::make_shared<rclcpp::Node>(rosNodeName);
 
   if (this->dataPtr->topic.empty())
   {
