@@ -50,7 +50,7 @@ sonarBeams = sonarBeams.flatten()[: echo_data.shape[1]]
 
 range_grid, beam_grid = np.meshgrid(range_vector, sonarBeams, indexing="ij")
 x = range_grid * np.cos(beam_grid)
-y = -range_grid * np.sin(beam_grid)
+y = range_grid * np.sin(beam_grid)
 # -------------------------------------------
 # SCATTER PLOT
 # -------------------------------------------

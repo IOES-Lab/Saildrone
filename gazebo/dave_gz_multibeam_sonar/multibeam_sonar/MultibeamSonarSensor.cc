@@ -60,9 +60,15 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <cv_bridge/cv_bridge.hpp>
+#include <geometry_msgs/msg/vector3.hpp>
+#include <marine_acoustic_msgs/msg/ping_info.hpp>
 #include <marine_acoustic_msgs/msg/projected_sonar_image.hpp>
+#include <marine_acoustic_msgs/msg/sonar_image_data.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/opencv.hpp>
+#include <sensor_msgs/msg/image.hpp>
 
 // #include <marine_acoustic_msgs/ProjectedSonarImage.h>
 
@@ -628,11 +634,11 @@ public:
 
   /// \brief The sonar image message.
 public:
-  msgs::Image sonarImgMsg;
+  sensor_msgs::msg::Image sonarImgMsg;
 
   //   /// \brief The sonar image message.
 public:
-  marine_acoustic_msgs::msg::ProjectedSonarImage sonarDataMsg;
+  marine_acoustic_msgs::msg::ProjectedSonarImage sonarRawDataMsg;
 
   /// \brief Node to create a topic publisher with.
 public:
@@ -652,7 +658,7 @@ public:
 
   /// \brief Publisher for messages.
 public:
-  gz::transport::Node::Publisher sonarDataPub;
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr sonarImagePub;
 
   /// \brief Flag to indicate if sensor should be publishing point cloud.
 public:
@@ -796,6 +802,10 @@ bool MultibeamSonarSensor::Load(const sdf::Sensor & _sdf)
     this->dataPtr->ros_node_->create_publisher<marine_acoustic_msgs::msg::ProjectedSonarImage>(
       this->Topic() + "/sonar_image_raw", rclcpp::SystemDefaultsQoS());
 
+  this->dataPtr->sonarImagePub =
+    this->dataPtr->ros_node_->create_publisher<sensor_msgs::msg::Image>(
+      this->Topic() + "/sonar_image", rclcpp::SystemDefaultsQoS());
+
   return true;
 }
 
@@ -838,7 +848,6 @@ void MultibeamSonarSensor::pointCloudCallback(const sensor_msgs::msg::PointCloud
         this->dataPtr->elevation_angles[j] =
           (j * Diff / (this->dataPtr->nRays - 1) +
            this->dataPtr->raySensor->VerticalAngleMin().Radian());
-        gzmsg << "Elevation angle: = " << this->dataPtr->elevation_angles[j] << std::endl;
       }
 
       for (int i = 0; i < this->dataPtr->nBeams; i++, ++iter_image)
@@ -1254,7 +1263,6 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
   {
     this->window[f] = 0.54 - 0.46 * cos(2.0 * M_PI * (f + 1) / this->nFreq);
     windowSum += pow(this->window[f], 2.0);
-    gzmsg << "Window[" << f << "] = " << this->window[f] << std::endl;
   }
 
   gzmsg << "Window sum before normalization: " << windowSum << std::endl;
@@ -1463,7 +1471,7 @@ void MultibeamSonarSensor::Implementation::FillPointCloudMsg(const float * _rayB
     for (uint32_t i = 0; i < width; ++i)
     {
       // Index of current point, and the depth value at that point
-      auto index = j * width * channels + i * channels;
+      auto index = j * width * channels + (width - 1 - i) * channels;
       float depth = _rayBuffer[index];
       // Validate Depth/Radius and update pointcloud density flag
       if (isDense)
@@ -1815,15 +1823,159 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
       this->writeNumber = this->writeNumber + 1;
     }
   }
-  std::string frame_name_ = "sonar_frame";  // or your desired frame name
+  std::string frame_name_ = "sonar_frame";
 
   rclcpp::Time now = this->ros_node_->now();
 
   // Set header fields properly:
-  this->sonarDataMsg.header.frame_id = frame_name_;
+  this->sonarRawDataMsg.header.frame_id = frame_name_;
 
-  this->sonarDataMsg.header.stamp.sec = static_cast<int32_t>(now.seconds());
-  this->sonarDataMsg.header.stamp.nanosec = static_cast<uint32_t>(now.nanoseconds() % 1000000000);
+  this->sonarRawDataMsg.header.stamp.sec = static_cast<int32_t>(now.seconds());
+  this->sonarRawDataMsg.header.stamp.nanosec =
+    static_cast<uint32_t>(now.nanoseconds() % 1000000000);
+
+  marine_acoustic_msgs::msg::PingInfo ping_info_msg_;
+
+  ping_info_msg_.frequency = this->sonarFreq;
+  ping_info_msg_.sound_speed = this->soundSpeed;
+  for (size_t beam = 0; beam < this->nBeams; beam++)
+  {
+    ping_info_msg_.rx_beamwidths.push_back(
+      static_cast<float>(hFOV / floor(this->nBeams * 2.0 - 2.0) * 2.0));
+    ping_info_msg_.tx_beamwidths.push_back(static_cast<float>(vFOV));
+  }
+
+  this->sonarRawDataMsg.ping_info = ping_info_msg_;
+
+  for (size_t beam = 0; beam < this->nBeams; beam++)
+  {
+    geometry_msgs::msg::Vector3 beam_direction;
+    beam_direction.x = cos(this->azimuth_angles[beam]);
+    beam_direction.y = sin(this->azimuth_angles[beam]);
+    beam_direction.z = 0.0;
+    this->sonarRawDataMsg.beam_directions.push_back(beam_direction);
+  }
+
+  std::vector<float> ranges;
+  for (size_t i = 0; i < P_Beams[0].size(); i++)
+  {
+    ranges.push_back(rangeVector[i]);
+  }
+
+  this->sonarRawDataMsg.ranges = ranges;
+  marine_acoustic_msgs::msg::SonarImageData sonar_image_data;
+  sonar_image_data.is_bigendian = false;
+  sonar_image_data.dtype = 0;  // DTYPE_UINT8
+  sonar_image_data.beam_count = this->nBeams;
+  // this->sonar_image_raw_msg_.data_size = 1;  // sizeof(float) * nFreq * nBeams;
+  std::vector<uchar> intensities;
+  int Intensity[this->nBeams][this->nFreq];
+
+  for (size_t f = 0; f < this->nFreq; f++)
+  {
+    for (size_t beam = 0; beam < this->nBeams; beam++)
+    {
+      Intensity[beam][f] = static_cast<int>(this->sensorGain * abs(P_Beams[beam][f]));
+      uchar counts = static_cast<uchar>(std::min(UCHAR_MAX, Intensity[beam][f]));
+      intensities.push_back(counts);
+    }
+  }
+  sonar_image_data.data = intensities;
+  this->sonarRawDataMsg.image = sonar_image_data;
+  this->sonarImageRawPub->publish(this->sonarRawDataMsg);
+
+  // Construct visual sonar image for rqt plot in sensor::image msg format
+  cv_bridge::CvImage img_bridge;
+
+  // Generate image of CV_8UC1
+  cv::Mat Intensity_image = cv::Mat::zeros(cv::Size(this->nBeams, this->nFreq), CV_8UC1);
+
+  const float rangeMax = this->maxDistance;
+  const float rangeRes = ranges[1] - ranges[0];
+  const int nEffectiveRanges = ceil(rangeMax / rangeRes);
+  const unsigned int radius = Intensity_image.size().height;
+  const cv::Point origin(Intensity_image.size().width / 2, Intensity_image.size().height);
+  const float binThickness = 2 * ceil(radius / nEffectiveRanges);
+
+  struct BearingEntry
+  {
+    float begin, center, end;
+    BearingEntry(float b, float c, float e) : begin(b), center(c), end(e) { ; }
+  };
+
+  std::vector<BearingEntry> angles;
+  angles.reserve(this->nBeams);
+
+  for (int b = 0; b < this->nBeams; ++b)
+  {
+    const float center = this->azimuth_angles[b];
+    float begin = 0.0, end = 0.0;
+    if (b == 0)
+    {
+      end = (this->azimuth_angles[b + 1] + center) / 2.0;
+      begin = 2 * center - end;
+    }
+    else if (b == this->nBeams - 1)
+    {
+      begin = angles[b - 1].end;
+      end = 2 * center - begin;
+    }
+    else
+    {
+      begin = angles[b - 1].end;
+      end = (this->azimuth_angles[b + 1] + center) / 2.0;
+    }
+    angles.push_back(BearingEntry(begin, center, end));
+  }
+
+  const float ThetaShift = 1.5 * M_PI;
+  for (int r = 0; r < ranges.size(); ++r)
+  {
+    if (ranges[r] > rangeMax)
+    {
+      continue;
+    }
+    for (int b = 0; b < this->nBeams; ++b)
+    {
+      const float range = ranges[r];
+      const int intensity = floor(10.0 * log(abs(P_Beams[this->nBeams - 1 - b][r])));
+      const float begin = angles[b].begin + ThetaShift, end = angles[b].end + ThetaShift;
+      const float rad = static_cast<float>(radius) * range / rangeMax;
+      // Assume angles are in image frame x-right, y-down
+      cv::ellipse(
+        Intensity_image, origin, cv::Size(rad, rad), 0.0, begin * 180.0 / M_PI, end * 180.0 / M_PI,
+        intensity, binThickness);
+    }
+  }
+
+  // Normlize and colorize
+  cv::normalize(
+    Intensity_image, Intensity_image, -255 + this->plotScaler / 10 * 255, 255, cv::NORM_MINMAX);
+  cv::Mat Itensity_image_color;
+  cv::applyColorMap(Intensity_image, Itensity_image_color, cv::COLORMAP_HOT);
+
+  now = this->ros_node_->now();
+  this->sonarImgMsg.header.frame_id = frame_name_;
+  this->sonarImgMsg.header.stamp.sec = static_cast<int32_t>(now.seconds());
+  this->sonarImgMsg.header.stamp.nanosec = static_cast<uint32_t>(now.nanoseconds() % 1000000000);
+
+  img_bridge = cv_bridge::CvImage(
+    this->sonarImgMsg.header, sensor_msgs::image_encodings::BGR8, Itensity_image_color);
+  // from cv_bridge to sensor_msgs::Image
+  img_bridge.toImageMsg(this->sonarImgMsg);
+
+  if (!Itensity_image_color.empty() && Itensity_image_color.channels() == 3)
+  {
+    cv_bridge::CvImage img_bridge(
+      this->sonarImgMsg.header, sensor_msgs::image_encodings::BGR8, Itensity_image_color);
+    img_bridge.toImageMsg(this->sonarImgMsg);
+
+    this->sonarImagePub->publish(this->sonarImgMsg);
+  }
+  else
+  {
+    gzmsg << "INVALID IMAGE" << std::endl;
+  }
 
   this->lock_.unlock();
 }

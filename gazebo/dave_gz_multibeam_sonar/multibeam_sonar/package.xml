@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?><package format="3">
+<package format="3">
   <name>multibeam_sonar</name>
   <version>0.0.1</version>
   <description>DAVE multibeam sonar sensor</description>
@@ -7,17 +7,16 @@
   <maintainer email="helenamoyen@gmail.com">Helena Moyen</maintainer>
   <maintainer email="gaurav.og.9920@gmail.com">Gaurav kumar</maintainer>
   <license>Apache 2.0</license>
+  <depend>ament_cmake</depend>
+  <depend>rclcpp</depend>
+  <depend>sensor_msgs</depend>
   <depend>geometry_msgs</depend>
-  <depend>pcl_conversions</depend>
-  <!-- From https://github.com/apl-ocean-engineering/marine_msgs -->
+  <depend>cv_bridge</depend>
+  <depend>image_transport</depend>
   <depend>marine_acoustic_msgs</depend>
-  <buildtool_depend>ament_cmake</buildtool_depend>
-  <build_depend>libpcl-all-dev</build_depend>
-  <build_depend>dave_interfaces</build_depend>
-  <build_depend>protobuf</build_depend>
-  <!-- <exec_depend>protobuf</exec_depend> -->
-  <exec_depend>dave_interfaces</exec_depend>
-  <exec_depend>libpcl-all</exec_depend>
+  <depend>pcl_conversions</depend>
+  <depend>dave_interfaces</depend>
+  <depend>protobuf</depend>
   <test_depend>ament_lint_auto</test_depend>
   <export>
     <build_type>ament_cmake</build_type>
