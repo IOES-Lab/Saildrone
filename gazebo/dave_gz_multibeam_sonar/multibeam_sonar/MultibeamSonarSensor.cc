@@ -636,7 +636,11 @@ public:
 public:
   sensor_msgs::msg::Image sonarImgMsg;
 
-  //   /// \brief The sonar image message.
+  /// \brief The normal image message.
+public:
+  sensor_msgs::msg::Image normalImgMsg;
+
+  /// \brief The raw sonar data message.
 public:
   marine_acoustic_msgs::msg::ProjectedSonarImage sonarRawDataMsg;
 
@@ -659,6 +663,10 @@ public:
   /// \brief Publisher for messages.
 public:
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr sonarImagePub;
+
+  /// \brief Publisher for messages.
+public:
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr normalImagePub;
 
   /// \brief Flag to indicate if sensor should be publishing point cloud.
 public:
@@ -805,6 +813,10 @@ bool MultibeamSonarSensor::Load(const sdf::Sensor & _sdf)
   this->dataPtr->sonarImagePub =
     this->dataPtr->ros_node_->create_publisher<sensor_msgs::msg::Image>(
       this->Topic() + "/sonar_image", rclcpp::SystemDefaultsQoS());
+
+  this->dataPtr->normalImagePub =
+    this->dataPtr->ros_node_->create_publisher<sensor_msgs::msg::Image>(
+      this->Topic() + "/normal_image", rclcpp::SystemDefaultsQoS());
 
   return true;
 }
@@ -1069,9 +1081,6 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
       gz::math::Angle beamTiltAngle =
         gz::math::Angle(verticalAngleMin + (v * (verticalAngleMax - verticalAngleMin) / rayCount)) *
         angleUnit;
-      // gzmsg << "Aperture " << beamApertureAngle << std::endl;
-      // gzmsg << "Rotation  " << beamRotationAngle << std::endl;
-      // gzmsg << "beamTiltAngle  " << beamTiltAngle << std::endl;
 
       // Normalize angles
       beamApertureAngle = beamApertureAngle.Normalized();
@@ -1284,7 +1293,7 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
   this->beamCorrectorSum = 0.0;
 
   this->constMu = true;
-  this->mu = 1e-3;  // default constant mu
+  this->mu = 1e-3;
 
   return true;
 }
@@ -1380,10 +1389,6 @@ bool MultibeamSonarSensor::Update(const std::chrono::steady_clock::duration & _n
     gzerr << "Ray (GpuRays) Sensor for Multibeam Sonar doesn't exist.\n";
     return false;
   }
-
-  // const gz::math::Pose3d beamsFramePose = this->Pose() * this->dataPtr->beamsFrameTransform;
-  // this->dataPtr->raySensor->SetLocalPose(beamsFramePose);
-  // this->dataPtr->imageSensor->SetLocalPose(beamsFramePose);
 
   if (this->dataPtr->pointPub.HasConnections())
   {
@@ -1608,52 +1613,6 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
   }
 
   auto start = std::chrono::high_resolution_clock::now();
-
-  static int counter = 1;
-
-  std::ofstream depth_file("depth_image_" + std::to_string(counter) + ".csv");
-  for (int i = 0; i < depth_image.rows; i++)
-  {
-    for (int j = 0; j < depth_image.cols; j++)
-    {
-      if (depth_image.type() == CV_32F)
-      {
-        depth_file << depth_image.at<float>(i, j);
-      }
-      else if (depth_image.type() == CV_8U)
-      {
-        depth_file << static_cast<int>(depth_image.at<uchar>(i, j));
-      }
-      if (j < depth_image.cols - 1)
-      {
-        depth_file << ", ";
-      }
-    }
-    depth_file << "\n";
-  }
-  depth_file.close();
-  std::cout << "Depth image saved to depth_image_" + std::to_string(counter) + ".csv" << std::endl;
-  // Save normal image to CSV
-  std::ofstream normal_file("normal_image_" + std::to_string(counter) + ".csv");
-  for (int i = 0; i < normal_image.rows; i++)
-  {
-    for (int j = 0; j < normal_image.cols; j++)
-    {
-      cv::Vec3f n = normal_image.at<cv::Vec3f>(i, j);
-      normal_file << n[0] << ", " << n[1] << ", " << n[2];  // Writing the three float values
-
-      if (j < normal_image.cols - 1)
-      {
-        normal_file << ", ";
-      }
-    }
-    normal_file << "\n";
-  }
-  normal_file.close();
-  std::cout << "Normal image saved to normal_image_" + std::to_string(counter) + ".csv"
-            << std::endl;
-
-  counter++;
 
   // Debugging: Print parameters before calling the sonar_calculation_wrapper
   std::cout << "---------------------- Debug Information ----------------------" << std::endl;
@@ -1963,19 +1922,22 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
     this->sonarImgMsg.header, sensor_msgs::image_encodings::BGR8, Itensity_image_color);
   // from cv_bridge to sensor_msgs::Image
   img_bridge.toImageMsg(this->sonarImgMsg);
+  this->sonarImagePub->publish(this->sonarImgMsg);
 
-  if (!Itensity_image_color.empty() && Itensity_image_color.channels() == 3)
-  {
-    cv_bridge::CvImage img_bridge(
-      this->sonarImgMsg.header, sensor_msgs::image_encodings::BGR8, Itensity_image_color);
-    img_bridge.toImageMsg(this->sonarImgMsg);
+  // ---------------------------------------- End of sonar calculation
 
-    this->sonarImagePub->publish(this->sonarImgMsg);
-  }
-  else
-  {
-    gzmsg << "INVALID IMAGE" << std::endl;
-  }
+  now = this->ros_node_->now();
+  this->normalImgMsg.header.frame_id = frame_name_;
+  this->normalImgMsg.header.stamp.sec = static_cast<int32_t>(now.seconds());
+  this->normalImgMsg.header.stamp.nanosec = static_cast<uint32_t>(now.nanoseconds() % 1000000000);
+
+  cv::Mat normal_image8;
+  normal_image.convertTo(normal_image8, CV_8UC3, 255.0);
+  img_bridge = cv_bridge::CvImage(
+    this->normalImgMsg.header, sensor_msgs::image_encodings::RGB8, normal_image8);
+  img_bridge.toImageMsg(this->normalImgMsg);
+  // from cv_bridge to sensor_msgs::Image
+  this->normalImagePub->publish(this->normalImgMsg);
 
   this->lock_.unlock();
 }
