@@ -70,8 +70,6 @@
 #include <opencv2/opencv.hpp>
 #include <sensor_msgs/msg/image.hpp>
 
-// #include <marine_acoustic_msgs/ProjectedSonarImage.h>
-
 namespace gz
 {
 namespace sensors
@@ -232,8 +230,6 @@ public:
     const gz::math::Vector2d bottomRight{
       (azimuthAngle - _apertureAngle / 2.).Radian(),
       (inclinationAngle - _apertureAngle / 2.).Radian()};
-    // gzmsg << "Bottom right " << bottomRight << std::endl;
-    // gzmsg << "Top left " << topLeft << std::endl;
     this->sphericalFootprint = AxisAlignedPatch2d{topLeft, bottomRight};
   }
 
@@ -1167,8 +1163,6 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
       AxisAlignedPatch2i{(beam.SphericalFootprint() - intrinsics.offset) / intrinsics.step});
   }
 
-  // _sensor->Scene()->RootVisual()->AddChild(this->raySensor);
-
   this->raySensor->SetVisibilityMask(GZ_VISIBILITY_ALL);
 
   _sensor->AddSensor(this->raySensor);
@@ -1614,73 +1608,6 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
 
   auto start = std::chrono::high_resolution_clock::now();
 
-  // Debugging: Print parameters before calling the sonar_calculation_wrapper
-  std::cout << "---------------------- Debug Information ----------------------" << std::endl;
-
-  // Print depth_image properties
-  std::cout << "Depth Image Size: [" << depth_image.rows << " x " << depth_image.cols << "]"
-            << std::endl;
-  std::cout << "Depth Image Type: " << depth_image.type() << std::endl;
-
-  // Print normal_image properties
-  std::cout << "Normal Image Size: [" << normal_image.rows << " x " << normal_image.cols << "]"
-            << std::endl;
-  std::cout << "Normal Image Type: " << normal_image.type() << std::endl;
-
-  // Print rand_image properties
-  std::cout << "Random Image Size: [" << rand_image.rows << " x " << rand_image.cols << "]"
-            << std::endl;
-  std::cout << "Random Image Type: " << rand_image.type() << std::endl;
-
-  // Print scalar parameters
-  std::cout << "hPixelSize: " << hPixelSize << std::endl;
-  std::cout << "vPixelSize: " << vPixelSize << std::endl;
-  std::cout << "hFOV: " << hFOV << std::endl;
-  std::cout << "vFOV: " << vFOV << std::endl;
-
-  // Print beam-related parameters
-  std::cout << "Beam Azimuth Angle Width: " << hPixelSize << std::endl;
-  std::cout << "Beam Elevation Angle Width (radians): " << (verticalFOV / 180 * M_PI) << std::endl;
-  std::cout << "Ray Azimuth Angle Width: " << hPixelSize << std::endl;
-  std::cout << "Ray Elevation Angle Width: " << vPixelSize * (raySkips + 1) << std::endl;
-
-  // Print sonar-related parameters
-  std::cout << "Sound Speed: " << this->soundSpeed << std::endl;
-  std::cout << "Max Distance: " << this->maxDistance << std::endl;
-  std::cout << "Source Level: " << this->sourceLevel << std::endl;
-
-  // Print the number of beams and rays
-  std::cout << "Number of Beams: " << this->nBeams << std::endl;
-  std::cout << "Number of Rays: " << this->nRays << std::endl;
-
-  // Print ray skip
-  std::cout << "Ray Skips: " << this->raySkips << std::endl;
-
-  // Print sonar frequency and bandwidth
-  std::cout << "Sonar Frequency: " << this->sonarFreq << std::endl;
-  std::cout << "Bandwidth: " << this->bandwidth << std::endl;
-
-  // Print frequency count
-  std::cout << "Number of Frequencies: " << this->nFreq << std::endl;
-
-  // Print reflectivity image size and type
-  std::cout << "Reflectivity Image Size: [" << this->reflectivityImage.rows << " x "
-            << this->reflectivityImage.cols << "]" << std::endl;
-  std::cout << "Reflectivity Image Type: " << this->reflectivityImage.type() << std::endl;
-
-  // Print attenuation
-  std::cout << "Attenuation: " << this->attenuation << std::endl;
-
-  // Print window size or properties (depending on what 'window' represents)
-  std::cout << "Window: " << this->window << std::endl;
-
-  // Print beam corrector and sum
-  std::cout << "Beam Corrector: " << this->beamCorrector << std::endl;
-  std::cout << "Beam Corrector Sum: " << this->beamCorrectorSum << std::endl;
-
-  // Print debug flag
-  std::cout << "Debug Flag: " << this->debugFlag << std::endl;
-
   // ------------------------------------------------//
   // --------      Sonar calculations       -------- //
   // ------------------------------------------------//
@@ -1786,7 +1713,6 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
 
   rclcpp::Time now = this->ros_node_->now();
 
-  // Set header fields properly:
   this->sonarRawDataMsg.header.frame_id = frame_name_;
 
   this->sonarRawDataMsg.header.stamp.sec = static_cast<int32_t>(now.seconds());
@@ -1888,6 +1814,24 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
   }
 
   const float ThetaShift = 1.5 * M_PI;
+
+  float max_power = 0.0f;
+
+  for (size_t r = 0; r < P_Beams[0].size(); ++r)
+  {
+    for (size_t b = 0; b < this->nBeams; ++b)
+    {
+      float power = std::abs(P_Beams[b][r]);
+      if (power > max_power)
+      {
+        max_power = power;
+      }
+    }
+  }
+
+  float max_dB = 20.0f * log10(max_power + 1e-10f);
+  float min_dB = max_dB - 60.0f;
+
   for (int r = 0; r < ranges.size(); ++r)
   {
     if (ranges[r] > rangeMax)
@@ -1897,7 +1841,8 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
     for (int b = 0; b < this->nBeams; ++b)
     {
       const float range = ranges[r];
-      const int intensity = floor(10.0 * log(abs(P_Beams[this->nBeams - 1 - b][r])));
+      const float power_dB = 20.0f * log10(std::abs(P_Beams[this->nBeams - 1 - b][r]) + 1e-10f);
+      int intensity = static_cast<int>(255.0f * (power_dB - min_dB) / (max_dB - min_dB));
       const float begin = angles[b].begin + ThetaShift, end = angles[b].end + ThetaShift;
       const float rad = static_cast<float>(radius) * range / rangeMax;
       // Assume angles are in image frame x-right, y-down
@@ -1907,9 +1852,6 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
     }
   }
 
-  // Normlize and colorize
-  cv::normalize(
-    Intensity_image, Intensity_image, -255 + this->plotScaler / 10 * 255, 255, cv::NORM_MINMAX);
   cv::Mat Itensity_image_color;
   cv::applyColorMap(Intensity_image, Itensity_image_color, cv::COLORMAP_HOT);
 
