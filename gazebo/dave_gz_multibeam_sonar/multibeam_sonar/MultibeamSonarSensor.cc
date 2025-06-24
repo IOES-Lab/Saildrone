@@ -797,11 +797,6 @@ bool MultibeamSonarSensor::Load(const sdf::Sensor & _sdf)
 
   this->dataPtr->ros_node_ = std::make_shared<rclcpp::Node>("multibeam_sonar_node");
 
-  this->pointCloudSub_ =
-    this->dataPtr->ros_node_->create_subscription<sensor_msgs::msg::PointCloud2>(
-      "/sensor/multibeam_sonar/point_cloud", 10,
-      std::bind(&MultibeamSonarSensor::pointCloudCallback, this, std::placeholders::_1));
-
   this->dataPtr->sonarImageRawPub =
     this->dataPtr->ros_node_->create_publisher<marine_acoustic_msgs::msg::ProjectedSonarImage>(
       this->Topic() + "/sonar_image_raw", rclcpp::SystemDefaultsQoS());
@@ -815,72 +810,6 @@ bool MultibeamSonarSensor::Load(const sdf::Sensor & _sdf)
       this->Topic() + "/normal_image", rclcpp::SystemDefaultsQoS());
 
   return true;
-}
-
-void MultibeamSonarSensor::pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
-{
-  this->dataPtr->lock_.lock();
-
-  pcl::PointCloud<pcl::PointXYZI>::Ptr pcl_pointcloud(new pcl::PointCloud<pcl::PointXYZI>);
-
-  pcl::fromROSMsg(*msg, *pcl_pointcloud);
-
-  gzmsg << "Point cloud converted. Number of points: " << pcl_pointcloud->size() << std::endl;
-
-  if (this->dataPtr->pointMsg.width() == 0 || this->dataPtr->pointMsg.height() == 0)
-  {
-    gzmsg << "Error: PointCloud2 message dimensions are zero!" << std::endl;
-  }
-  else
-  {
-    unsigned int width = this->dataPtr->pointMsg.width();
-    unsigned int height = this->dataPtr->pointMsg.height();
-
-    gzmsg << "Point cloud dimensions: width = " << width << ", height = " << height << std::endl;
-
-    this->dataPtr->point_cloud_image_.create(height, width, CV_32FC1);
-    cv::MatIterator_<float> iter_image = this->dataPtr->point_cloud_image_.begin<float>();
-
-    bool angles_calculation_flag = false;
-    if (this->dataPtr->azimuth_angles.size() == 0)
-    {
-      angles_calculation_flag = true;
-    }
-
-    for (int j = 0; j < this->dataPtr->nRays; j++)
-    {
-      if (angles_calculation_flag)
-      {
-        const double Diff = this->dataPtr->raySensor->VerticalAngleMax().Radian() -
-                            this->dataPtr->raySensor->VerticalAngleMin().Radian();
-        this->dataPtr->elevation_angles[j] =
-          (j * Diff / (this->dataPtr->nRays - 1) +
-           this->dataPtr->raySensor->VerticalAngleMin().Radian());
-      }
-
-      for (int i = 0; i < this->dataPtr->nBeams; i++, ++iter_image)
-      {
-        pcl::PointXYZI point = pcl_pointcloud->at(width - i - 1, j);
-
-        this->dataPtr->point_cloud_image_.at<float>(j, i) =
-          sqrt(point.x * point.x + point.y * point.y + point.z * point.z);
-        if (angles_calculation_flag && j == 0)
-        {
-          const double Diff = this->dataPtr->raySensor->AngleMax().Radian() -
-                              this->dataPtr->raySensor->AngleMin().Radian();
-          this->dataPtr->azimuth_angles.push_back(
-            i * Diff / (this->dataPtr->nBeams - 1) + this->dataPtr->raySensor->AngleMin().Radian());
-        }
-
-        if (!std::isfinite(*iter_image) || std::isnan(*iter_image))
-        {
-          *iter_image = 100000.0;
-        }
-      }
-    }
-  }
-
-  this->dataPtr->lock_.unlock();
 }
 
 //////////////////////////////////////////////////
@@ -1510,6 +1439,62 @@ void MultibeamSonarSensor::Implementation::FillPointCloudMsg(const float * _rayB
     inclination += verticleAngleStep;
   }
   this->pointMsg.set_is_dense(isDense);
+
+  // After filling pointMsg, compute point_cloud_image_ as well
+  this->lock_.lock();
+  this->point_cloud_image_.create(height, width, CV_32FC1);
+  cv::MatIterator_<float> iter_image = this->point_cloud_image_.begin<float>();
+
+  bool angles_calculation_flag = false;
+  if (this->azimuth_angles.size() == 0)
+  {
+    angles_calculation_flag = true;
+  }
+
+  // Vertical angle min and max
+  float elevation_min = this->raySensor->VerticalAngleMin().Radian();
+  float elevation_max = this->raySensor->VerticalAngleMax().Radian();
+  float elevation_step = verticleAngleStep;
+
+  // Horizontal angle min and max
+  float azimuth_min = this->raySensor->AngleMin().Radian();
+  float azimuth_max = this->raySensor->AngleMax().Radian();
+  float azimuth_step = angleStep;
+
+  for (uint32_t j = 0; j < height; ++j)
+  {
+    float inclination = elevation_min + j * elevation_step;
+
+    for (uint32_t i = 0; i < width; ++i, ++iter_image)
+    {
+      float azimuth = azimuth_min + i * azimuth_step;
+
+      // Index in _rayBuffer
+      auto index = j * width * channels + i * channels;
+      float depth = _rayBuffer[index];
+
+      float range = std::isfinite(depth) ? depth : 100000.0f;
+      *iter_image = range;
+
+      // Store azimuth angles on the first row only
+      if (angles_calculation_flag && j == 0)
+      {
+        this->azimuth_angles.push_back(azimuth);
+      }
+
+      // Store elevation angles on first column
+      if (angles_calculation_flag && i == 0)
+      {
+        this->elevation_angles[j] = inclination;
+      }
+
+      if (!std::isfinite(*iter_image) || std::isnan(*iter_image))
+      {
+        *iter_image = 100000.0f;
+      }
+    }
+  }
+  this->lock_.unlock();
 }
 
 cv::Mat MultibeamSonarSensor::Implementation::ComputeNormalImage(cv::Mat & depth)
@@ -1589,10 +1574,7 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
 
 {
   this->lock_.lock();
-
-  cv::Mat depth_image;
-  cv::flip(this->point_cloud_image_, depth_image, 1);
-  cv::Mat normal_image = this->ComputeNormalImage(depth_image);
+  cv::Mat normal_image = this->ComputeNormalImage(this->point_cloud_image_);
   double vPixelSize = this->vFOV / (this->pointMsg.height() - 1);
   double hPixelSize = this->hFOV / (this->pointMsg.width() - 1);
 
@@ -1614,7 +1596,7 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
   // ------------------------------------------------//
 
   CArray2D P_Beams = NpsGazeboSonar::sonar_calculation_wrapper(
-    depth_image,                  // cv::Mat& depth_image
+    this->point_cloud_image_,     // cv::Mat& depth_image (the point cloud image)
     normal_image,                 // cv::Mat& normal_image
     rand_image,                   // cv::Mat& rand_image
     hPixelSize,                   // hPixelSize
