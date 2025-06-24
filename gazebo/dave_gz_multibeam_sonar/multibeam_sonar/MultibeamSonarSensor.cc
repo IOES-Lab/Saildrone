@@ -1470,7 +1470,7 @@ void MultibeamSonarSensor::Implementation::FillPointCloudMsg(const float * _rayB
     for (uint32_t i = 0; i < width; ++i)
     {
       // Index of current point, and the depth value at that point
-      auto index = j * width * channels + (width - 1 - i) * channels;
+      auto index = j * width * channels + i * channels;
       float depth = _rayBuffer[index];
       // Validate Depth/Radius and update pointcloud density flag
       if (isDense)
@@ -1590,7 +1590,8 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
 {
   this->lock_.lock();
 
-  cv::Mat depth_image = this->point_cloud_image_;
+  cv::Mat depth_image;
+  cv::flip(this->point_cloud_image_, depth_image, 1);
   cv::Mat normal_image = this->ComputeNormalImage(depth_image);
   double vPixelSize = this->vFOV / (this->pointMsg.height() - 1);
   double hPixelSize = this->hFOV / (this->pointMsg.width() - 1);
