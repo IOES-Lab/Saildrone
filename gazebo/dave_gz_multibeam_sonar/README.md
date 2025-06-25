@@ -49,3 +49,5 @@ In the sonar SDF file (`dave/models/dave_sensor_models/description`), it is poss
     <frameName>forward_sonar_optical_link</frameName>
   </spec>
 ```
+
+When `writeLog` is set to `true`, CSV files of the raw sonar data will be generated in the directory where the simulation is run. You can visualize this data using the script `/scripts/plotdata.py` .
