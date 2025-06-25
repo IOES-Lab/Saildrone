@@ -1512,62 +1512,6 @@ void MultibeamSonarSensor::Implementation::FillPointCloudMsg(const float * _rayB
     }
   }
   this->lock_.unlock();
-
-  // After filling pointMsg, compute point_cloud_image_ as well
-  this->lock_.lock();
-  this->point_cloud_image_.create(height, width, CV_32FC1);
-  cv::MatIterator_<float> iter_image = this->point_cloud_image_.begin<float>();
-
-  bool angles_calculation_flag = false;
-  if (this->azimuth_angles.size() == 0)
-  {
-    angles_calculation_flag = true;
-  }
-
-  // Vertical angle min and max
-  float elevation_min = this->raySensor->VerticalAngleMin().Radian();
-  float elevation_max = this->raySensor->VerticalAngleMax().Radian();
-  float elevation_step = verticleAngleStep;
-
-  // Horizontal angle min and max
-  float azimuth_min = this->raySensor->AngleMin().Radian();
-  float azimuth_max = this->raySensor->AngleMax().Radian();
-  float azimuth_step = angleStep;
-
-  for (uint32_t j = 0; j < height; ++j)
-  {
-    float inclination = elevation_min + j * elevation_step;
-
-    for (uint32_t i = 0; i < width; ++i, ++iter_image)
-    {
-      float azimuth = azimuth_min + i * azimuth_step;
-
-      // Index in _rayBuffer
-      auto index = j * width * channels + i * channels;
-      float depth = _rayBuffer[index];
-
-      float range = std::isfinite(depth) ? depth : 100000.0f;
-      *iter_image = range;
-
-      // Store azimuth angles on the first row only
-      if (angles_calculation_flag && j == 0)
-      {
-        this->azimuth_angles.push_back(azimuth);
-      }
-
-      // Store elevation angles on first column
-      if (angles_calculation_flag && i == 0)
-      {
-        this->elevation_angles[j] = inclination;
-      }
-
-      if (!std::isfinite(*iter_image) || std::isnan(*iter_image))
-      {
-        *iter_image = 100000.0f;
-      }
-    }
-  }
-  this->lock_.unlock();
 }
 
 cv::Mat MultibeamSonarSensor::Implementation::ComputeNormalImage(cv::Mat & depth)
@@ -1648,7 +1592,6 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
 {
   this->lock_.lock();
   cv::Mat normal_image = this->ComputeNormalImage(this->point_cloud_image_);
-  cv::Mat normal_image = this->ComputeNormalImage(this->point_cloud_image_);
   double vPixelSize = this->vFOV / (this->pointMsg.height() - 1);
   double hPixelSize = this->hFOV / (this->pointMsg.width() - 1);
 
@@ -1670,7 +1613,6 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
   // ------------------------------------------------//
 
   CArray2D P_Beams = NpsGazeboSonar::sonar_calculation_wrapper(
-    this->point_cloud_image_,     // cv::Mat& depth_image (the point cloud image)
     this->point_cloud_image_,     // cv::Mat& depth_image (the point cloud image)
     normal_image,                 // cv::Mat& normal_image
     rand_image,                   // cv::Mat& rand_image
@@ -1767,10 +1709,11 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
       this->writeNumber = this->writeNumber + 1;
     }
   }
+  std::string frame_name_ = "sonar_frame";
 
   rclcpp::Time now = this->ros_node_->now();
 
-  this->sonarRawDataMsg.header.frame_id = this->frameName;
+  this->sonarRawDataMsg.header.frame_id = frame_name_;
 
   this->sonarRawDataMsg.header.stamp.sec = static_cast<int32_t>(now.seconds());
   this->sonarRawDataMsg.header.stamp.nanosec =
@@ -1913,7 +1856,7 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
   cv::applyColorMap(Intensity_image, Itensity_image_color, cv::COLORMAP_HOT);
 
   now = this->ros_node_->now();
-  this->sonarImgMsg.header.frame_id = this->frameName;
+  this->sonarImgMsg.header.frame_id = frame_name_;
   this->sonarImgMsg.header.stamp.sec = static_cast<int32_t>(now.seconds());
   this->sonarImgMsg.header.stamp.nanosec = static_cast<uint32_t>(now.nanoseconds() % 1000000000);
 
@@ -1926,7 +1869,7 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
   // ---------------------------------------- End of sonar calculation
 
   now = this->ros_node_->now();
-  this->normalImgMsg.header.frame_id = this->frameName;
+  this->normalImgMsg.header.frame_id = frame_name_;
   this->normalImgMsg.header.stamp.sec = static_cast<int32_t>(now.seconds());
   this->normalImgMsg.header.stamp.nanosec = static_cast<uint32_t>(now.nanoseconds() % 1000000000);
 
