@@ -497,6 +497,18 @@ public:
   float plotScaler;
 
 public:
+  std::string pointCloudTopicName;
+
+public:
+  std::string sonarImageRawTopicName;
+
+public:
+  std::string sonarImageTopicName;
+
+public:
+  std::string frameName;
+
+public:
   float sensorGain;
 
 public:
@@ -759,21 +771,6 @@ bool MultibeamSonarSensor::Load(const sdf::Sensor & _sdf)
      {"intensity", msgs::PointCloudPacked::Field::FLOAT32},
      {"ring", msgs::PointCloudPacked::Field::UINT16}});
 
-  // Instantiate interfaces
-  // Create the point cloud publisher
-  this->dataPtr->pointPub =
-    this->dataPtr->node.Advertise<gz::msgs::PointCloudPacked>(this->Topic() + "/point_cloud");
-  this->dataPtr->pointFloatPub =
-    this->dataPtr->node.Advertise<gz::msgs::Float_V>(this->Topic() + "/point_cloud_float_vector");
-
-  if (!this->dataPtr->pointPub)
-  {
-    gzerr << "Unable to create publisher on topic "
-          << "[" << this->Topic() << "] for sensor "
-          << "[" << this->Name() << "]" << std::endl;
-    return false;
-  }
-
   // Setup sensors
   if (this->Scene())
   {
@@ -787,27 +784,6 @@ bool MultibeamSonarSensor::Load(const sdf::Sensor & _sdf)
   gzmsg << "Loaded [" << this->Name() << "] Multibeam Sonar sensor." << std::endl;
   this->dataPtr->sceneChangeConnection = gz::sensors::RenderingEvents::ConnectSceneChangeCallback(
     std::bind(&MultibeamSonarSensor::SetScene, this, std::placeholders::_1));
-
-  // ROS Initialization
-
-  if (!rclcpp::ok())
-  {
-    rclcpp::init(0, nullptr);
-  }
-
-  this->dataPtr->ros_node_ = std::make_shared<rclcpp::Node>("multibeam_sonar_node");
-
-  this->dataPtr->sonarImageRawPub =
-    this->dataPtr->ros_node_->create_publisher<marine_acoustic_msgs::msg::ProjectedSonarImage>(
-      this->Topic() + "/sonar_image_raw", rclcpp::SystemDefaultsQoS());
-
-  this->dataPtr->sonarImagePub =
-    this->dataPtr->ros_node_->create_publisher<sensor_msgs::msg::Image>(
-      this->Topic() + "/sonar_image", rclcpp::SystemDefaultsQoS());
-
-  this->dataPtr->normalImagePub =
-    this->dataPtr->ros_node_->create_publisher<sensor_msgs::msg::Image>(
-      this->Topic() + "/normal_image", rclcpp::SystemDefaultsQoS());
 
   return true;
 }
@@ -918,6 +894,47 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
 
   this->debugFlag = sensorElement->Get<bool>("debugFlag", false).first;
   gzmsg << "Debug: " << this->debugFlag << std::endl;
+
+  this->pointCloudTopicName =
+    sensorElement->Get<std::string>("pointCloudTopicName", "point_cloud").first;
+  gzmsg << "pointCloudTopicName: " << this->pointCloudTopicName << std::endl;
+
+  this->sonarImageRawTopicName =
+    sensorElement->Get<std::string>("sonarImageRawTopicName", "sonar_image_raw").first;
+  gzmsg << "sonarImageRawTopicName: " << this->sonarImageRawTopicName << std::endl;
+
+  this->sonarImageTopicName =
+    sensorElement->Get<std::string>("sonarImageTopicName", "sonar_image").first;
+  gzmsg << "sonarImageTopicName: " << this->sonarImageTopicName << std::endl;
+
+  this->frameName =
+    sensorElement->Get<std::string>("frameName", "forward_sonar_optical_link").first;
+  gzmsg << "frameName: " << this->frameName << std::endl;
+
+  // ROS Initialization
+
+  if (!rclcpp::ok())
+  {
+    rclcpp::init(0, nullptr);
+  }
+
+  this->ros_node_ = std::make_shared<rclcpp::Node>("multibeam_sonar_node");
+
+  // Create the point cloud publisher
+  this->pointPub = this->node.Advertise<gz::msgs::PointCloudPacked>(
+    _sensor->Topic() + "/" + this->pointCloudTopicName);
+  this->pointFloatPub =
+    this->node.Advertise<gz::msgs::Float_V>(_sensor->Topic() + "/point_cloud_float_vector");
+
+  this->sonarImageRawPub =
+    this->ros_node_->create_publisher<marine_acoustic_msgs::msg::ProjectedSonarImage>(
+      _sensor->Topic() + "/" + this->sonarImageRawTopicName, rclcpp::SystemDefaultsQoS());
+
+  this->sonarImagePub = this->ros_node_->create_publisher<sensor_msgs::msg::Image>(
+    _sensor->Topic() + "/" + this->sonarImageTopicName, rclcpp::SystemDefaultsQoS());
+
+  this->normalImagePub = this->ros_node_->create_publisher<sensor_msgs::msg::Image>(
+    _sensor->Topic() + "/normal_image", rclcpp::SystemDefaultsQoS());
 
   // Configure skips
   if (this->raySkips == 0)
@@ -1495,6 +1512,62 @@ void MultibeamSonarSensor::Implementation::FillPointCloudMsg(const float * _rayB
     }
   }
   this->lock_.unlock();
+
+  // After filling pointMsg, compute point_cloud_image_ as well
+  this->lock_.lock();
+  this->point_cloud_image_.create(height, width, CV_32FC1);
+  cv::MatIterator_<float> iter_image = this->point_cloud_image_.begin<float>();
+
+  bool angles_calculation_flag = false;
+  if (this->azimuth_angles.size() == 0)
+  {
+    angles_calculation_flag = true;
+  }
+
+  // Vertical angle min and max
+  float elevation_min = this->raySensor->VerticalAngleMin().Radian();
+  float elevation_max = this->raySensor->VerticalAngleMax().Radian();
+  float elevation_step = verticleAngleStep;
+
+  // Horizontal angle min and max
+  float azimuth_min = this->raySensor->AngleMin().Radian();
+  float azimuth_max = this->raySensor->AngleMax().Radian();
+  float azimuth_step = angleStep;
+
+  for (uint32_t j = 0; j < height; ++j)
+  {
+    float inclination = elevation_min + j * elevation_step;
+
+    for (uint32_t i = 0; i < width; ++i, ++iter_image)
+    {
+      float azimuth = azimuth_min + i * azimuth_step;
+
+      // Index in _rayBuffer
+      auto index = j * width * channels + i * channels;
+      float depth = _rayBuffer[index];
+
+      float range = std::isfinite(depth) ? depth : 100000.0f;
+      *iter_image = range;
+
+      // Store azimuth angles on the first row only
+      if (angles_calculation_flag && j == 0)
+      {
+        this->azimuth_angles.push_back(azimuth);
+      }
+
+      // Store elevation angles on first column
+      if (angles_calculation_flag && i == 0)
+      {
+        this->elevation_angles[j] = inclination;
+      }
+
+      if (!std::isfinite(*iter_image) || std::isnan(*iter_image))
+      {
+        *iter_image = 100000.0f;
+      }
+    }
+  }
+  this->lock_.unlock();
 }
 
 cv::Mat MultibeamSonarSensor::Implementation::ComputeNormalImage(cv::Mat & depth)
@@ -1575,6 +1648,7 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
 {
   this->lock_.lock();
   cv::Mat normal_image = this->ComputeNormalImage(this->point_cloud_image_);
+  cv::Mat normal_image = this->ComputeNormalImage(this->point_cloud_image_);
   double vPixelSize = this->vFOV / (this->pointMsg.height() - 1);
   double hPixelSize = this->hFOV / (this->pointMsg.width() - 1);
 
@@ -1596,6 +1670,7 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
   // ------------------------------------------------//
 
   CArray2D P_Beams = NpsGazeboSonar::sonar_calculation_wrapper(
+    this->point_cloud_image_,     // cv::Mat& depth_image (the point cloud image)
     this->point_cloud_image_,     // cv::Mat& depth_image (the point cloud image)
     normal_image,                 // cv::Mat& normal_image
     rand_image,                   // cv::Mat& rand_image
@@ -1692,11 +1767,10 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
       this->writeNumber = this->writeNumber + 1;
     }
   }
-  std::string frame_name_ = "sonar_frame";
 
   rclcpp::Time now = this->ros_node_->now();
 
-  this->sonarRawDataMsg.header.frame_id = frame_name_;
+  this->sonarRawDataMsg.header.frame_id = this->frameName;
 
   this->sonarRawDataMsg.header.stamp.sec = static_cast<int32_t>(now.seconds());
   this->sonarRawDataMsg.header.stamp.nanosec =
@@ -1839,7 +1913,7 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
   cv::applyColorMap(Intensity_image, Itensity_image_color, cv::COLORMAP_HOT);
 
   now = this->ros_node_->now();
-  this->sonarImgMsg.header.frame_id = frame_name_;
+  this->sonarImgMsg.header.frame_id = this->frameName;
   this->sonarImgMsg.header.stamp.sec = static_cast<int32_t>(now.seconds());
   this->sonarImgMsg.header.stamp.nanosec = static_cast<uint32_t>(now.nanoseconds() % 1000000000);
 
@@ -1852,7 +1926,7 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
   // ---------------------------------------- End of sonar calculation
 
   now = this->ros_node_->now();
-  this->normalImgMsg.header.frame_id = frame_name_;
+  this->normalImgMsg.header.frame_id = this->frameName;
   this->normalImgMsg.header.stamp.sec = static_cast<int32_t>(now.seconds());
   this->normalImgMsg.header.stamp.nanosec = static_cast<uint32_t>(now.nanoseconds() % 1000000000);
 

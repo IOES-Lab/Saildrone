@@ -53,12 +53,6 @@
             <far>10.0</far>
           </clip>
         </camera>
-        <!-- <plugin
-          filename="RosGzPointCloud"
-          name="ros_gz_point_cloud::PointCloud">
-          <topic>/sensor/depth_camera/ros_gz_point_cloud</topic>
-          <frame_id>map</frame_id>
-        </plugin> -->
       </sensor>
 
 
@@ -99,30 +93,17 @@
             <constantReflectivity>false</constantReflectivity>
             <raySkips>10</raySkips>
             <sensorGain>0.02</sensorGain>
-            <plotScaler>0</plotScaler>
+            <plotScaler>10</plotScaler>
             <writeLog>true</writeLog>
             <debugFlag>true</debugFlag>
             <writeFrameInterval>5</writeFrameInterval>
-            <!-- This name is prepended to ROS topics -->
-            <cameraName>blueview_p900</cameraName>
             <!-- ROS publication topics -->
-            <imageTopicName>image_raw</imageTopicName>
-            <cameraInfoTopicName>image_raw/camera_info</cameraInfoTopicName>
             <pointCloudTopicName>point_cloud</pointCloudTopicName>
-            <depthImageTopicName>image_depth</depthImageTopicName>
-            <depthImageCameraInfoTopicName>image_depth/camera_info</depthImageCameraInfoTopicName>
             <sonarImageRawTopicName>sonar_image_raw</sonarImageRawTopicName>
             <sonarImageTopicName>sonar_image</sonarImageTopicName>
             <frameName>forward_sonar_optical_link</frameName>
           </spec>
         </gz:multibeam_sonar>
-        <!-- <plugin
-          filename="RosGzPointCloud"
-          name="ros_gz_point_cloud::PointCloud">
-          <namespace>/sensor/multibeam_sonar</namespace>
-          <topic>ros_gz_point_cloud</topic>
-          <frame_id>blueview_p900/blueview_p900_base_link</frame_id>
-        </plugin> -->
       </sensor>
 
       <self_collide>0</self_collide>
