@@ -11,7 +11,9 @@ The DAVE multibeam sonar plugin, adapted for ROS 2 Jazzy and Gazebo Harmonic, us
 
 Below is a diagram showing how the plugin is structured and how **CUDA** is utilized to perform the sonar calculations.
 
-![Diagrama em branco.png](docs/1883f90f-d599-4deb-b975-82b522213bc0.png)
+<p align="center">
+  <img src="docs/1883f90f-d599-4deb-b975-82b522213bc0.png" width="600"/>
+</p>
 
 **Original Research paper**
 
@@ -63,7 +65,9 @@ ros2 launch dave_multibeam_sonar_demo multibeam_sonar_demo.launch.py
 
 Both the point cloud and sonar image are available for visualization in **RViz2**. The default RViz file is configured to show the topic `/sensor/multibeam_sonar/point_cloud` and `/sensor/multibeam_sonar/sonar_image` .
 
-![Screenshot from 2025-06-25 19-51-53.png](docs/Screenshot_from_2025-06-25_19-51-53.png)
+<p align="center">
+  <img src="docs/Screenshot_from_2025-06-25_19-51-53.png" width="600"/>
+</p>
 
 ### 2. Launch example with `dave_sensor.launch.py`
 
@@ -75,7 +79,9 @@ ros2 launch dave_demos dave_sensor.launch.py namespace:=blueview_p900 world_name
 
 To check the sonar image, you can open RViz2 and add a view to the sonar image topic in the displays panel ( Add → By topic → `/sensor/multibeam_sonar/sonar_image` → Image):
 
-![Screencastfrom2025-06-2600-51-44-ezgif.com-crop.gif](docs/Screencastfrom2025-06-2600-51-44-ezgif.com-crop.gif)
+<p align="center">
+  <img src="docs/Screencastfrom2025-06-2600-51-44-ezgif.com-crop.gif" width="600"/>
+</p>
 
 ## Creating your own sonar
 
