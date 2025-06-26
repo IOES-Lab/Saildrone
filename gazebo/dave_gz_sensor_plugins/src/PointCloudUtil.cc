@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
-*/
+ */
 
 #include "PointCloudUtil.hh"
 
@@ -23,9 +23,9 @@ using namespace gz;
 using namespace sensors;
 
 //////////////////////////////////////////////////
-void PointCloudUtil::FillMsg(msgs::PointCloudPacked &_msg,
-    const math::Angle &_hfov, const unsigned char *_imageData,
-    const float *_depthData) const
+void PointCloudUtil::FillMsg(
+  msgs::PointCloudPacked & _msg, const math::Angle & _hfov, const unsigned char * _imageData,
+  const float * _depthData) const
 {
   // Fill message. Logic borrowed from
   // https://github.com/ros-simulation/gazebo_ros_pkgs/blob/kinetic-devel/gazebo_plugins/src/gazebo_ros_depth_camera.cpp
@@ -33,9 +33,9 @@ void PointCloudUtil::FillMsg(msgs::PointCloudPacked &_msg,
   uint32_t width = _msg.width();
   uint32_t height = _msg.height();
 
-  std::string *msgBuffer = _msg.mutable_data();
+  std::string * msgBuffer = _msg.mutable_data();
   msgBuffer->resize(_msg.row_step() * _msg.height());
-  char *msgBufferIndex = msgBuffer->data();
+  char * msgBufferIndex = msgBuffer->data();
 
   // For depth calculation from image
   double fl = width / (2.0 * std::tan(_hfov.Radian() / 2.0));
@@ -45,7 +45,9 @@ void PointCloudUtil::FillMsg(msgs::PointCloudPacked &_msg,
   {
     float pAngle = 0.0;
     if (fl > 0 && height > 1)
-      pAngle = std::atan2((height-j-1) - 0.5 * (height - 1), fl);
+    {
+      pAngle = std::atan2((height - j - 1) - 0.5 * (height - 1), fl);
+    }
 
     for (uint32_t i = 0; i < width; ++i)
     {
@@ -56,15 +58,14 @@ void PointCloudUtil::FillMsg(msgs::PointCloudPacked &_msg,
 
       float yAngle = 0.0;
       if (fl > 0 && width > 1)
+      {
         yAngle = std::atan2(0.5 * (width - 1) - i, fl);
+      }
 
-      *reinterpret_cast<float*>(msgBufferIndex +
-          _msg.field(fieldIndex++).offset()) = depth;
-      *reinterpret_cast<float*>(msgBufferIndex +
-          _msg.field(fieldIndex++).offset()) =
+      *reinterpret_cast<float *>(msgBufferIndex + _msg.field(fieldIndex++).offset()) = depth;
+      *reinterpret_cast<float *>(msgBufferIndex + _msg.field(fieldIndex++).offset()) =
         depth * std::tan(yAngle);
-      *reinterpret_cast<float*>(msgBufferIndex +
-          _msg.field(fieldIndex++).offset()) =
+      *reinterpret_cast<float *>(msgBufferIndex + _msg.field(fieldIndex++).offset()) =
         depth * std::tan(pAngle);
 
       int imgIndex = i * 3 + j * width * 3;
@@ -90,34 +91,31 @@ void PointCloudUtil::FillMsg(msgs::PointCloudPacked &_msg,
 }
 
 //////////////////////////////////////////////////
-void PointCloudUtil::FillMsg(msgs::PointCloudPacked &_msg,
-    const float *_xyzData, const unsigned char *_imageData) const
+void PointCloudUtil::FillMsg(
+  msgs::PointCloudPacked & _msg, const float * _xyzData, const unsigned char * _imageData) const
 {
   uint32_t width = _msg.width();
   uint32_t height = _msg.height();
 
-  std::string *msgBuffer = _msg.mutable_data();
+  std::string * msgBuffer = _msg.mutable_data();
   msgBuffer->resize(_msg.row_step() * _msg.height());
-  char *msgBufferIndex = msgBuffer->data();
+  char * msgBufferIndex = msgBuffer->data();
 
   // Iterate over scan and populate point cloud
   for (uint32_t j = 0; j < height; ++j)
   {
-    int step = j*width*3;
+    int step = j * width * 3;
     for (uint32_t i = 0; i < width; ++i)
     {
-      int index = step + i*3;
+      int index = step + i * 3;
       float x = _xyzData[index];
       float y = _xyzData[index + 1];
       float z = _xyzData[index + 2];
 
       int fieldIndex = 0;
-      *reinterpret_cast<float*>(msgBufferIndex +
-          _msg.field(fieldIndex++).offset()) = x;
-      *reinterpret_cast<float*>(msgBufferIndex +
-          _msg.field(fieldIndex++).offset()) = y;
-      *reinterpret_cast<float*>(msgBufferIndex +
-          _msg.field(fieldIndex++).offset()) = z;
+      *reinterpret_cast<float *>(msgBufferIndex + _msg.field(fieldIndex++).offset()) = x;
+      *reinterpret_cast<float *>(msgBufferIndex + _msg.field(fieldIndex++).offset()) = y;
+      *reinterpret_cast<float *>(msgBufferIndex + _msg.field(fieldIndex++).offset()) = z;
 
       uint8_t r = static_cast<uint8_t>(_imageData[index]);
       uint8_t g = static_cast<uint8_t>(_imageData[index + 1]);
@@ -145,38 +143,34 @@ void PointCloudUtil::FillMsg(msgs::PointCloudPacked &_msg,
 }
 
 //////////////////////////////////////////////////
-void PointCloudUtil::FillMsg(msgs::PointCloudPacked &_msg,
-    const float *_pointCloudData, bool _writeToBuffers,
-    unsigned char *_imageData,
-    float *_xyzData) const
+void PointCloudUtil::FillMsg(
+  msgs::PointCloudPacked & _msg, const float * _pointCloudData, bool _writeToBuffers,
+  unsigned char * _imageData, float * _xyzData) const
 {
   uint32_t width = _msg.width();
   uint32_t height = _msg.height();
 
-  std::string *msgBuffer = _msg.mutable_data();
+  std::string * msgBuffer = _msg.mutable_data();
   msgBuffer->resize(_msg.row_step() * _msg.height());
-  char *msgBufferIndex = msgBuffer->data();
+  char * msgBufferIndex = msgBuffer->data();
 
   // Iterate over scan and populate point cloud
   for (uint32_t j = 0; j < height; ++j)
   {
-    int pcStep = j*width*4;
-    int imgStep = j*width*3;
+    int pcStep = j * width * 4;
+    int imgStep = j * width * 3;
     for (uint32_t i = 0; i < width; ++i)
     {
-      int pcIndex = pcStep + i*4;
+      int pcIndex = pcStep + i * 4;
       float x = _pointCloudData[pcIndex];
       float y = _pointCloudData[pcIndex + 1];
       float z = _pointCloudData[pcIndex + 2];
       float rgba = _pointCloudData[pcIndex + 3];
 
       int fieldIndex = 0;
-      *reinterpret_cast<float*>(msgBufferIndex +
-          _msg.field(fieldIndex++).offset()) = x;
-      *reinterpret_cast<float*>(msgBufferIndex +
-          _msg.field(fieldIndex++).offset()) = y;
-      *reinterpret_cast<float*>(msgBufferIndex +
-          _msg.field(fieldIndex++).offset()) = z;
+      *reinterpret_cast<float *>(msgBufferIndex + _msg.field(fieldIndex++).offset()) = x;
+      *reinterpret_cast<float *>(msgBufferIndex + _msg.field(fieldIndex++).offset()) = y;
+      *reinterpret_cast<float *>(msgBufferIndex + _msg.field(fieldIndex++).offset()) = z;
 
       uint8_t r = 0u;
       uint8_t g = 0u;
@@ -220,20 +214,19 @@ void PointCloudUtil::FillMsg(msgs::PointCloudPacked &_msg,
   }
 }
 
-
 //////////////////////////////////////////////////
-void PointCloudUtil::RGBFromPointCloud(unsigned char *_imageData,
-    const float *_pointCloudData, unsigned int _width, unsigned int _height)
-    const
+void PointCloudUtil::RGBFromPointCloud(
+  unsigned char * _imageData, const float * _pointCloudData, unsigned int _width,
+  unsigned int _height) const
 {
   // Iterate over scan and populate image data
   for (uint32_t j = 0; j < _height; ++j)
   {
-    int pcStep = j*_width*4;
-    int imgStep = j*_width*3;
+    int pcStep = j * _width * 4;
+    int imgStep = j * _width * 3;
     for (uint32_t i = 0; i < _width; ++i)
     {
-      int pcIndex = pcStep + i*4;
+      int pcIndex = pcStep + i * 4;
       float rgba = _pointCloudData[pcIndex + 3];
       uint8_t r = 0u;
       uint8_t g = 0u;
@@ -249,18 +242,17 @@ void PointCloudUtil::RGBFromPointCloud(unsigned char *_imageData,
 }
 
 //////////////////////////////////////////////////
-void PointCloudUtil::XYZFromPointCloud(float *_xyzData,
-    const float *_pointCloudData, unsigned int _width, unsigned int _height)
-    const
+void PointCloudUtil::XYZFromPointCloud(
+  float * _xyzData, const float * _pointCloudData, unsigned int _width, unsigned int _height) const
 {
   // Iterate over scan and populate image data
   for (uint32_t j = 0; j < _height; ++j)
   {
-    int pcStep = j*_width*4;
-    int imgStep = j*_width*3;
+    int pcStep = j * _width * 4;
+    int imgStep = j * _width * 3;
     for (uint32_t i = 0; i < _width; ++i)
     {
-      int pcIndex = pcStep + i*4;
+      int pcIndex = pcStep + i * 4;
       int imgIndex = imgStep + i * 3;
       _xyzData[imgIndex] = _pointCloudData[pcIndex];
       _xyzData[imgIndex + 1] = _pointCloudData[pcIndex + 1];
@@ -270,10 +262,10 @@ void PointCloudUtil::XYZFromPointCloud(float *_xyzData,
 }
 
 //////////////////////////////////////////////////
-void PointCloudUtil::DecodeRGBAFromFloat(float _rgba,
-  uint8_t &_r, uint8_t &_g, uint8_t &_b, uint8_t &_a) const
+void PointCloudUtil::DecodeRGBAFromFloat(
+  float _rgba, uint8_t & _r, uint8_t & _g, uint8_t & _b, uint8_t & _a) const
 {
-  uint32_t *rgba = reinterpret_cast<uint32_t *>(&_rgba);
+  uint32_t * rgba = reinterpret_cast<uint32_t *>(&_rgba);
   _r = static_cast<uint8_t>(*rgba >> 24 & 0xFF);
   _g = static_cast<uint8_t>(*rgba >> 16 & 0xFF);
   _b = static_cast<uint8_t>(*rgba >> 8 & 0xFF);

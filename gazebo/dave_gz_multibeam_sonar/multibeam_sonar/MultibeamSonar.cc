@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
-*/
+ */
 
 #include <math.h>
 
@@ -29,13 +29,13 @@
 using namespace custom;
 
 //////////////////////////////////////////////////
-bool MultibeamSonar::Load(const sdf::Sensor &_sdf)
+bool MultibeamSonar::Load(const sdf::Sensor & _sdf)
 {
   auto type = gz::sensors::customType(_sdf);
   if ("multibeam_sonar" != type)
   {
-    gzerr << "Trying to load [multibeam_sonar] sensor, but got type ["
-           << type << "] instead." << std::endl;
+    gzerr << "Trying to load [multibeam_sonar] sensor, but got type [" << type << "] instead."
+          << std::endl;
     return false;
   }
 
@@ -47,8 +47,7 @@ bool MultibeamSonar::Load(const sdf::Sensor &_sdf)
 
   if (!_sdf.Element()->HasElement("gz:multibeam_sonar"))
   {
-    gzdbg << "No custom configuration for [" << this->Topic() << "]"
-           << std::endl;
+    gzdbg << "No custom configuration for [" << this->Topic() << "]" << std::endl;
     return true;
   }
 
@@ -74,7 +73,7 @@ bool MultibeamSonar::Load(const sdf::Sensor &_sdf)
 }
 
 //////////////////////////////////////////////////
-bool MultibeamSonar::Update(const std::chrono::steady_clock::duration &_now)
+bool MultibeamSonar::Update(const std::chrono::steady_clock::duration & _now)
 {
   gz::msgs::Double msg;
   *msg.mutable_header()->mutable_stamp() = gz::msgs::Convert(_now);
@@ -93,7 +92,7 @@ bool MultibeamSonar::Update(const std::chrono::steady_clock::duration &_now)
 }
 
 //////////////////////////////////////////////////
-void MultibeamSonar::NewPosition(const gz::math::Vector3d &_pos)
+void MultibeamSonar::NewPosition(const gz::math::Vector3d & _pos)
 {
   if (!isnan(this->prevPos.X()))
   {
@@ -103,7 +102,4 @@ void MultibeamSonar::NewPosition(const gz::math::Vector3d &_pos)
 }
 
 //////////////////////////////////////////////////
-const gz::math::Vector3d &MultibeamSonar::Position() const
-{
-  return this->prevPos;
-}
+const gz::math::Vector3d & MultibeamSonar::Position() const { return this->prevPos; }
