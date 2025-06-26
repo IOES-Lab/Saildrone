@@ -1709,11 +1709,10 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
       this->writeNumber = this->writeNumber + 1;
     }
   }
-  std::string frame_name_ = "sonar_frame";
 
   rclcpp::Time now = this->ros_node_->now();
 
-  this->sonarRawDataMsg.header.frame_id = frame_name_;
+  this->sonarRawDataMsg.header.frame_id = this->frameName;
 
   this->sonarRawDataMsg.header.stamp.sec = static_cast<int32_t>(now.seconds());
   this->sonarRawDataMsg.header.stamp.nanosec =
@@ -1856,7 +1855,7 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
   cv::applyColorMap(Intensity_image, Itensity_image_color, cv::COLORMAP_HOT);
 
   now = this->ros_node_->now();
-  this->sonarImgMsg.header.frame_id = frame_name_;
+  this->sonarImgMsg.header.frame_id = this->frameName;
   this->sonarImgMsg.header.stamp.sec = static_cast<int32_t>(now.seconds());
   this->sonarImgMsg.header.stamp.nanosec = static_cast<uint32_t>(now.nanoseconds() % 1000000000);
 
@@ -1869,7 +1868,7 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
   // ---------------------------------------- End of sonar calculation
 
   now = this->ros_node_->now();
-  this->normalImgMsg.header.frame_id = frame_name_;
+  this->normalImgMsg.header.frame_id = this->frameName;
   this->normalImgMsg.header.stamp.sec = static_cast<int32_t>(now.seconds());
   this->normalImgMsg.header.stamp.nanosec = static_cast<uint32_t>(now.nanoseconds() % 1000000000);
 
