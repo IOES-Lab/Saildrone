@@ -31,7 +31,6 @@
 
 #include <gz/msgs/float_v.pb.h>
 #include <gz/msgs/image.pb.h>
-#include <gz/msgs/pointcloud_packed.pb.h>
 #include <gz/msgs/PointCloudPackedUtils.hh>
 #include <gz/msgs/Utility.hh>
 
