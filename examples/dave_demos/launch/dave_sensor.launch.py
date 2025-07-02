@@ -12,7 +12,7 @@ def launch_setup(context, *args, **kwargs):
     use_sim_time = LaunchConfiguration("use_sim_time")
     debug = LaunchConfiguration("debug")
     headless = LaunchConfiguration("headless")
-    verbose = LaunchConfiguration("verbose")
+    verbosity_level = LaunchConfiguration("verbosity_level")
     namespace = LaunchConfiguration("namespace")
     world_name = LaunchConfiguration("world_name")
     x = LaunchConfiguration("x")
@@ -38,10 +38,7 @@ def launch_setup(context, *args, **kwargs):
     if paused.perform(context) == "false":
         gz_args.append(" -r")
     if debug.perform(context) == "true":
-        gz_args.append(" -v ")
-        gz_args.append(verbose.perform(context))
-    if verbose.perform(context) == "true":
-        gz_args.append(" --verbose")
+        gz_args.append(f"-v {verbosity_level.perform(context)}")
 
     gz_sim_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -119,9 +116,9 @@ def generate_launch_description():
             description="Flag to enable the gazebo headless mode",
         ),
         DeclareLaunchArgument(
-            "verbose",
-            default_value="false",
-            description="Enable verbose mode for Gazebo simulation",
+            "verbosity_level",
+            default_value="1",
+            description="Verbosity level for Gazebo if debug is enabled (0-4)",
         ),
         DeclareLaunchArgument(
             "world_name",
