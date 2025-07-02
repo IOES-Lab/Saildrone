@@ -42,13 +42,11 @@
 			filename="gz-sim-scene-broadcaster-system"
 			name="gz::sim::systems::SceneBroadcaster">
 		</plugin>
-		<!-- <plugin filename="gz-sim-contact-system"
-				name="gz::sim::systems::Contact">
-		</plugin> -->
 		<plugin
 			filename="gz-sim-sensors-system"
 			name="gz::sim::systems::Sensors">
-    	</plugin>
+			<render_engine>ogre2</render_engine>
+		</plugin>
 		<plugin
 			filename="gz-sim-dvl-system"
 			name="gz::sim::systems::DopplerVelocityLogSystem">
@@ -82,7 +80,7 @@
 		<!-- Virtual north, east and down frame -->
 		<include>
 			<uri>
-				https://fuel.gazebosim.org/1.0/hmoyen/models/North-East-Down frame
+				https://fuel.gazebosim.org/1.0/hmoyen/models/North East Down frame
 			</uri>
 			<pose>0 0 0 0 0 0</pose>
 		</include>
@@ -112,7 +110,7 @@
 				<scene>scene</scene>
 				<ambient_light>0.4 0.4 0.4</ambient_light>
 				<background_color>0.8 0.8 0.8</background_color>
-				<camera_pose>18.7 3.77 -97.5 0 0.29 -0.715</camera_pose>
+				<camera_pose>-36.5 41.5 -24 0 0.29 -0.715</camera_pose>
 				<camera_clip>
 					<near>0.25</near>
 					<far>2500</far>
