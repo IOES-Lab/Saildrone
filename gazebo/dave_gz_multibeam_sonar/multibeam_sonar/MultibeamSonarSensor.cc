@@ -1,4 +1,9 @@
 /*
+
+ * Authors:
+ *   Helena Moyen helenamoyen@gmail.com
+ *   Woen-Sug Choi woensug.choi@gmail.com
+ *
  * Copyright (C) 2022 Open Source Robotics Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,10 +20,6 @@
  *
  */
 
-#include <optional>
-#include <unordered_map>
-#include <vector>
-
 // TODO(hidmic): implement SVD in gazebo?
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/SVD>
@@ -27,9 +28,6 @@
 #include <gz/common/Event.hh>
 #include <gz/common/Profiler.hh>
 #include <gz/math/Helpers.hh>
-#include <gz/math/Quaternion.hh>
-#include <gz/math/Vector2.hh>
-#include <gz/math/Vector3.hh>
 
 #include <gz/msgs/float_v.pb.h>
 #include <gz/msgs/image.pb.h>
@@ -47,13 +45,9 @@
 #include <gz/sensors/Manager.hh>
 #include <gz/sensors/Noise.hh>
 #include <gz/sensors/RenderingEvents.hh>
-#include <gz/sensors/RenderingSensor.hh>
 #include <gz/sensors/SensorTypes.hh>
 #include "MultibeamSonarSensor.hh"
 #include "sonar_calculation_cuda.cuh"
-
-#include <gz/transport/Node.hh>
-#include <rclcpp/rclcpp.hpp>
 
 #include <pcl/features/normal_3d.h>
 #include <pcl/io/pcd_io.h>
@@ -63,12 +57,9 @@
 #include <cv_bridge/cv_bridge.hpp>
 #include <geometry_msgs/msg/vector3.hpp>
 #include <marine_acoustic_msgs/msg/ping_info.hpp>
-#include <marine_acoustic_msgs/msg/projected_sonar_image.hpp>
 #include <marine_acoustic_msgs/msg/sonar_image_data.hpp>
-#include <opencv2/core/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/opencv.hpp>
-#include <sensor_msgs/msg/image.hpp>
 
 namespace gz
 {
@@ -76,209 +67,6 @@ namespace sensors
 {
 namespace
 {
-
-using RowMajorMatrix3d = Eigen::Matrix<double, 3, 3, Eigen::RowMajor>;
-
-/// \brief Axis-aligned patch on a plane, using image frame conventions.
-template <typename T>
-class AxisAlignedPatch2
-{
-public:
-  AxisAlignedPatch2() = default;
-
-public:
-  AxisAlignedPatch2(
-    const gz::math::Vector2<T> & _topLeft, const gz::math::Vector2<T> & _bottomRight)
-  : topLeft(_topLeft), bottomRight(_bottomRight)
-  {
-  }
-
-  /// \brief Scalar converting copy constructor
-public:
-  template <typename U>
-  // cppcheck-suppress noExplicitConstructor
-  AxisAlignedPatch2(const AxisAlignedPatch2<U> & _other)
-  {
-    this->topLeft.X(static_cast<T>(_other.XMax()));
-    this->topLeft.Y(static_cast<T>(_other.YMax()));
-    this->bottomRight.X(static_cast<T>(_other.XMin()));
-    this->bottomRight.Y(static_cast<T>(_other.YMin()));
-  }
-
-public:
-  T XMax() const { return this->topLeft.X(); }
-
-public:
-  T XMin() const { return this->bottomRight.X(); }
-
-public:
-  T XSize() const { return this->XMax() - this->XMin(); }
-
-public:
-  T YMax() const { return this->topLeft.Y(); }
-
-public:
-  T YMin() const { return this->bottomRight.Y(); }
-
-public:
-  T YSize() const { return this->YMax() - this->YMin(); }
-
-  /// \brief Merge patch with `_other`.
-  /// \return a patch that includes both.
-public:
-  AxisAlignedPatch2<T> & Merge(const AxisAlignedPatch2<T> & _other)
-  {
-    this->topLeft.Set(
-      std::max(this->topLeft.X(), _other.topLeft.X()),
-      std::max(this->topLeft.Y(), _other.topLeft.Y()));
-    this->bottomRight.Set(
-      std::min(this->bottomRight.X(), _other.bottomRight.X()),
-      std::min(this->bottomRight.Y(), _other.bottomRight.Y()));
-    return *this;
-  }
-
-  /// \brief Flip patch, sending each corner to the opposite quadrant.
-public:
-  AxisAlignedPatch2<T> Flip() const { return {-this->bottomRight, -this->topLeft}; }
-
-  /// \brief Broadcast multiply corner coordinates by `_vector`
-  /// coordinates.
-  const AxisAlignedPatch2<T> operator*(gz::math::Vector2<T> _vector) const
-  {
-    return {this->topLeft * _vector, this->bottomRight * _vector};
-  }
-
-  /// \brief Broadcast divide corner coordinates by `_vector`
-  /// coordinates.
-  const AxisAlignedPatch2<T> operator/(gz::math::Vector2<T> _vector) const
-  {
-    return {this->topLeft / _vector, this->bottomRight / _vector};
-  }
-
-  /// \brief Broadcast sum corner coordinates with `_vector` coordinates.
-  const AxisAlignedPatch2<T> operator+(gz::math::Vector2<T> _vector) const
-  {
-    return {this->topLeft + _vector, this->bottomRight + _vector};
-  }
-
-  /// \brief Broadcast subtract corner coordinate with `_vector`
-  /// coordinates.
-  const AxisAlignedPatch2<T> operator-(gz::math::Vector2<T> _vector) const
-  {
-    return {this->topLeft - _vector, this->bottomRight - _vector};
-  }
-
-  /// \brief Upper-left corner i.e. (x, y) maxima
-private:
-  gz::math::Vector2<T> topLeft;
-
-  /// \brief Bottom-right corner i.e (x, y) minima
-private:
-  gz::math::Vector2<T> bottomRight;
-};
-
-// Handy type definitions
-using AxisAlignedPatch2d = AxisAlignedPatch2<double>;
-using AxisAlignedPatch2i = AxisAlignedPatch2<int>;
-
-/// \brief (Description inheried from generic DVL Plugin)
-/// Acoustic DVL beam, modelled as a circular cone with aperture
-/// angle α and its apex at the origin. Its axis of symmetry is nominally
-/// aligned with the x-axis of an x-forward, y-left, z-up frame
-/// (following usual Gazebo frame conventions, typically facing
-/// downwards).
-///
-///          +            The cone may be tilted w.r.t. the x-axis
-///         /|\           and rotated about the same to accommodate
-///        / | \          different beam arrangements, in that order.
-///       /  |  \         That is, an extrinsic XY rotation applies.
-///      /   v   \        /
-///         x
-///      |-------|
-///          α
-class AcousticBeam
-{
-  /// \brief Acoustic beam constructor.
-  /// \param[in] _id ID of the beam. Ought to be unique.
-  /// \param[in] _apertureAngle Aperture angle α of the beam.
-  /// \param[in] _rotationAngle Rotation angle ψ of the beam
-  /// i.e. a rotation about the x-axis of its frame.
-  /// \param[in] _tiltAngle Tilt angle φ of the
-  /// beam i.e. a rotation about the y-axis of its frame,
-  /// away from the x-axis. Must lie in the (-90, 90) degrees
-  /// interval.
-public:
-  AcousticBeam(
-    const int _id, const gz::math::Angle _apertureAngle, const gz::math::Angle _rotationAngle,
-    const gz::math::Angle _tiltAngle)
-  : id(_id),
-    apertureAngle(_apertureAngle),
-    normalizedRadius(std::atan(_apertureAngle.Radian() / 2.))
-  {
-    // Use extrinsic XY convention (as it is easier to reason about)
-    using Quaterniond = gz::math::Quaterniond;
-    this->transform.Rot() = Quaterniond::EulerToQuaternion(_rotationAngle.Radian(), 0., 0.) *
-                            Quaterniond::EulerToQuaternion(0., _tiltAngle.Radian(), 0.);
-    this->axis = this->transform.Rot() * gz::math::Vector3d::UnitX;
-    const gz::math::Angle azimuthAngle = std::atan2(this->axis.Y(), this->axis.X());
-    const gz::math::Angle inclinationAngle = std::atan2(
-      this->axis.Z(), std::sqrt(std::pow(this->axis.X(), 2.) + std::pow(this->axis.Y(), 2.)));
-
-    const gz::math::Vector2d topLeft{
-      (azimuthAngle + _apertureAngle / 2.).Radian(),
-      (inclinationAngle + _apertureAngle / 2.).Radian()};
-    const gz::math::Vector2d bottomRight{
-      (azimuthAngle - _apertureAngle / 2.).Radian(),
-      (inclinationAngle - _apertureAngle / 2.).Radian()};
-    this->sphericalFootprint = AxisAlignedPatch2d{topLeft, bottomRight};
-  }
-
-public:
-  int Id() const { return this->id; }
-
-public:
-  const gz::math::Pose3d & Transform() const { return this->transform; }
-
-public:
-  const gz::math::Vector3d & Axis() const { return this->axis; }
-
-public:
-  double NormalizedRadius() const { return this->normalizedRadius; }
-
-public:
-  const gz::math::Angle & ApertureAngle() const { return this->apertureAngle; }
-
-public:
-  const AxisAlignedPatch2d & SphericalFootprint() const { return this->sphericalFootprint; }
-
-private:
-  int id;
-
-private:
-  gz::math::Angle apertureAngle;
-
-private:
-  double normalizedRadius;
-
-private:
-  gz::math::Pose3d transform;
-
-private:
-  gz::math::Vector3d axis;
-
-private:
-  AxisAlignedPatch2d sphericalFootprint;
-};
-
-/// \brief Acoustic beam reflecting target.
-///
-/// Pose is defined w.r.t. to the beams frame.
-struct ObjectTarget
-{
-  gz::math::Pose3d pose;
-  uint64_t entity;
-  std::string name;
-};
 
 /// \brief A time-varying vector field built on
 /// per-axis time-varying volumetric data grids
@@ -393,316 +181,6 @@ private:
 }  // namespace
 
 using namespace gz::msgs;
-
-/// \brief Implementation for MultibeamSonarSensor
-class MultibeamSonarSensor::Implementation
-{
-public:
-  std::mutex lock_;
-
-public:
-  std::shared_ptr<rclcpp::Node> ros_node_;
-
-  /// \brief SDF DOM object
-public:
-  sdf::ElementPtr sensorSdf;
-
-  /// \brief Sensor entity ID (for world state lookup)
-public:
-  uint64_t entityId{0};
-
-  /// \brief true if Load() has been called and was successful
-public:
-  bool initialized = false;
-
-  /// \brief Initialize sensor
-public:
-  bool Initialize(MultibeamSonarSensor * _sensor);
-
-  /// \brief Raw buffer of ray data.
-public:
-  float * rayBuffer = nullptr;
-
-  /// \brief Number of channels of the raw ray buffer
-public:
-  const unsigned int kChannelCount = 3u;
-
-  GZ_UTILS_WARN_IGNORE__DLL_INTERFACE_MISSING
-  /// \brief Just a mutex for thread safety
-public:
-  mutable std::mutex rayMutex;
-  GZ_UTILS_WARN_RESUME__DLL_INTERFACE_MISSING
-
-  /// \brief Initialize beam arrangement
-  ///
-  /// This primarily creates rendering sensors.
-public:
-  bool InitializeBeamArrangement(MultibeamSonarSensor * _sensor);
-
-  /// \brief Maximum range for beams.
-public:
-  double maximumRange;
-
-  /// \brief Horizontal FOV
-public:
-  double hFOV;
-
-  /// \brief Vertical FOV
-public:
-  double vFOV;
-
-  /// \brief Vertical Ray Count
-public:
-  int nRays;
-
-  /// \brief Horizontal Ray Count
-public:
-  int nBeams;
-
-  /// \brief Elevation Angles
-public:
-  float * elevation_angles;
-
-public:
-  int nFreq;
-
-public:
-  double sonarFreq;
-
-public:
-  double bandwidth;
-
-public:
-  double soundSpeed;
-
-public:
-  double maxDistance;
-
-public:
-  double sourceLevel;
-
-public:
-  double absorption;
-
-public:
-  double attenuation;
-
-public:
-  double verticalFOV;
-
-public:
-  float * window;
-
-public:
-  float plotScaler;
-
-public:
-  std::string pointCloudTopicName;
-
-public:
-  std::string sonarImageRawTopicName;
-
-public:
-  std::string sonarImageTopicName;
-
-public:
-  std::string frameName;
-
-public:
-  float sensorGain;
-
-public:
-  int raySkips;
-
-public:
-  int ray_nAzimuthRays;
-
-public:
-  int ray_nElevationRays;
-
-public:
-  float * rangeVector;
-
-public:
-  bool debugFlag;
-
-  /// \brief Constant reflectivity
-
-public:
-  bool constMu;
-
-public:
-  double mu;
-
-  /// \brief Beam corrector sum
-public:
-  float beamCorrectorSum;
-
-  /// \brief Beam corrector
-public:
-  float ** beamCorrector;
-
-  /// \brief Point cloud image
-public:
-  cv::Mat point_cloud_image_;
-
-  /// \brief Point cloud normal image
-public:
-  cv::Mat point_cloud_normal_image_;
-
-  /// \brief Reflectivity image
-public:
-  cv::Mat reflectivityImage;
-
-public:
-  cv::Mat rand_image;
-
-public:
-  std::vector<float> azimuth_angles;
-
-  /// \brief State of the world.
-public:
-  const WorldState * worldState;
-
-  /// \brief Ray sensor (i.e. a GPU raytracing sensor).
-public:
-  gz::rendering::GpuRaysPtr raySensor;
-
-  /// \brief Image sensor (i.e. a camera sensor) to aid ray queries.
-public:
-  gz::rendering::CameraPtr imageSensor;
-
-  /// \brief Ray sensor intrinsic constants
-public:
-  struct
-  {
-    gz::math::Vector2d offset;  ///<! Azimuth and elevation offsets
-    gz::math::Vector2d step;    ///<! Azimuth and elevation steps
-  } raySensorIntrinsics;
-
-  /// \brief Callback for rendering sensor frames
-public:
-  void OnNewFrame(
-    const float * _scan, unsigned int _width, unsigned int _height, unsigned int _channels,
-    const std::string & /*_format*/);
-
-  /// \brief Compute sonar image function
-
-public:
-  void ComputeSonarImage();
-
-public:
-  cv::Mat ComputeNormalImage(cv::Mat & depth);
-
-public:
-  void ComputeCorrector();
-
-  /// \brief Connection from ray sensor with new ray data.
-public:
-  gz::common::ConnectionPtr rayConnection;
-
-  /// \brief Connection to the Manager's scene change event.
-public:
-  gz::common::ConnectionPtr sceneChangeConnection;
-
-  /// \brief Acoustic beams' description
-public:
-  std::vector<AcousticBeam> beams;
-
-  /// \brief Rotation from sensor frame to reference frame.
-  ///
-  /// Useful to cope with different DVL frame conventions.
-public:
-  gz::math::Quaterniond referenceFrameRotation;
-
-  /// \brief Transform from sensor frame to acoustic beams' frame.
-  ///
-  /// I.e. x-forward, y-left, z-up (dvl sensor frame) rotates to
-  /// x-down, y-left, z-forward (acoustic beams' frame).
-public:
-  const gz::math::Pose3d beamsFrameTransform{
-    gz::math::Vector3d::Zero, gz::math::Quaterniond{0., GZ_PI / 2., 0.}};
-
-  /// \brief Acoustic beams' targets
-public:
-  std::vector<std::optional<ObjectTarget>> beamTargets;
-
-  /// \brief Acoustic beams' patches in ray scan frame.
-public:
-  std::vector<AxisAlignedPatch2i> beamScanPatches;
-
-  /// \brief The point cloud message.
-public:
-  msgs::PointCloudPacked pointMsg;
-
-  /// \brief Fill the point cloud packed message
-  /// \param[in] _rayBuffer Ray data buffer.
-public:
-  void FillPointCloudMsg(const float * _rayBuffer);
-
-  /// \brief The sonar image message.
-public:
-  sensor_msgs::msg::Image sonarImgMsg;
-
-  /// \brief The normal image message.
-public:
-  sensor_msgs::msg::Image normalImgMsg;
-
-  /// \brief The raw sonar data message.
-public:
-  marine_acoustic_msgs::msg::ProjectedSonarImage sonarRawDataMsg;
-
-  /// \brief Node to create a topic publisher with.
-public:
-  gz::transport::Node node;
-
-  /// \brief Publisher for messages.
-public:
-  gz::transport::Node::Publisher pointPub;
-
-  /// \brief Publisher for messages.
-public:
-  gz::transport::Node::Publisher pointFloatPub;
-
-  /// \brief Publisher for messages.
-public:
-  rclcpp::Publisher<marine_acoustic_msgs::msg::ProjectedSonarImage>::SharedPtr sonarImageRawPub;
-
-  /// \brief Publisher for messages.
-public:
-  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr sonarImagePub;
-
-  /// \brief Publisher for messages.
-public:
-  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr normalImagePub;
-
-  /// \brief Flag to indicate if sensor should be publishing point cloud.
-public:
-  bool publishingPointCloud = false;
-
-  /// \brief Flag to indicate if sensor should be publishing sonar image.
-public:
-  bool publishingSonarImage = false;
-
-  /// \brief CSV log writing stream for verifications
-public:
-  std::ofstream writeLog;
-
-public:
-  u_int64_t writeCounter;
-
-public:
-  u_int64_t writeNumber;
-
-public:
-  u_int64_t writeInterval;
-
-public:
-  bool writeLogFlag;
-
-public:
-  double lastMeasurementTime;
-};
 
 //////////////////////////////////////////////////
 MultibeamSonarSensor::MultibeamSonarSensor() : dataPtr(new Implementation()) {}
@@ -1195,12 +673,12 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
 
   // Random number generator
   gzmsg << "Initializing random number generator..." << std::endl;
-  this->rand_image = cv::Mat(this->pointMsg.height(), this->pointMsg.width(), CV_32FC2);
+  this->randImage = cv::Mat(this->pointMsg.height(), this->pointMsg.width(), CV_32FC2);
   uint64 randN = static_cast<uint64>(std::rand());
   gzmsg << "Random seed: " << randN << std::endl;
   cv::theRNG().state = randN;
   cv::RNG rng = cv::theRNG();
-  rng.fill(this->rand_image, cv::RNG::NORMAL, 0.0f, 1.0f);
+  rng.fill(this->randImage, cv::RNG::NORMAL, 0.0f, 1.0f);
   gzmsg << "Random image generated with normal distribution." << std::endl;
 
   // Hamming window
@@ -1270,7 +748,7 @@ void MultibeamSonarSensor::Implementation::OnNewFrame(
   // Fill point cloud with the ray buffer
   this->FillPointCloudMsg(this->rayBuffer);
 
-  if (this->point_cloud_image_.size().width != 0)
+  if (this->pointCloudImage.size().width != 0)
   {
     this->ComputeSonarImage();
   }
@@ -1457,10 +935,10 @@ void MultibeamSonarSensor::Implementation::FillPointCloudMsg(const float * _rayB
   }
   this->pointMsg.set_is_dense(isDense);
 
-  // After filling pointMsg, compute point_cloud_image_ as well
+  // After filling pointMsg, compute pointCloudImage as well
   this->lock_.lock();
-  this->point_cloud_image_.create(height, width, CV_32FC1);
-  cv::MatIterator_<float> iter_image = this->point_cloud_image_.begin<float>();
+  this->pointCloudImage.create(height, width, CV_32FC1);
+  cv::MatIterator_<float> iter_image = this->pointCloudImage.begin<float>();
 
   bool angles_calculation_flag = false;
   if (this->azimuth_angles.size() == 0)
@@ -1591,7 +1069,7 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
 
 {
   this->lock_.lock();
-  cv::Mat normal_image = this->ComputeNormalImage(this->point_cloud_image_);
+  cv::Mat normal_image = this->ComputeNormalImage(this->pointCloudImage);
   double vPixelSize = this->vFOV / (this->pointMsg.height() - 1);
   double hPixelSize = this->hFOV / (this->pointMsg.width() - 1);
 
@@ -1613,9 +1091,9 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
   // ------------------------------------------------//
 
   CArray2D P_Beams = NpsGazeboSonar::sonar_calculation_wrapper(
-    this->point_cloud_image_,     // cv::Mat& depth_image (the point cloud image)
+    this->pointCloudImage,        // cv::Mat& depth_image (the point cloud image)
     normal_image,                 // cv::Mat& normal_image
-    rand_image,                   // cv::Mat& rand_image
+    this->randImage,              // cv::Mat& rand_image
     hPixelSize,                   // hPixelSize
     vPixelSize,                   // vPixelSize
     hFOV,                         // hFOV
