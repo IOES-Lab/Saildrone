@@ -12,8 +12,6 @@
   <test_depend>ament_lint_auto</test_depend>
   <build_depend>dave_interfaces</build_depend>
   <build_depend>protobuf</build_depend>
-  <!-- <build_depend>marine_acoustic_msgs</build_depend>
-  <build_depend>pcl_ros</build_depend> -->
   <exec_depend>protobuf</exec_depend>
   <exec_depend>dave_interfaces</exec_depend>
   <depend>rclcpp</depend>
