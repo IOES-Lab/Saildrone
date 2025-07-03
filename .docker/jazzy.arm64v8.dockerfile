@@ -193,7 +193,7 @@ RUN touch /home/docker/.sudo_as_admin_successful
 # hadolint ignore=SC3037
 RUN echo "[Desktop Entry]\nType=Application" \
     > /home/docker/.config/autostart/terminal.desktop && \
-    echo "Exec=gnome-terminal -- bash -c 'cat ~/.hi; cd ~/HOST; exec bash'" \
+    echo "Exec=gnome-terminal -- bash -c 'cat ~/.hi; exec bash'" \
     >> /home/docker/.config/autostart/terminal.desktop && \
     echo -e "X-GNOME-Autostart-enabled=true" \
     >> /home/docker/.config/autostart/terminal.desktop
