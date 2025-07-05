@@ -56,7 +56,7 @@ RUN apt-get update && \
     && rm -rf /tmp/*
 WORKDIR /opt/mavros_ws
 RUN wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh && \
-    bash ./install_geographiclib_datasets.sh   
+    bash ./install_geographiclib_datasets.sh
 
 # Set up Dave workspace
 ENV DAVE_WS=/opt/dave_ws
