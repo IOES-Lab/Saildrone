@@ -1,6 +1,6 @@
 ARG ROS_DISTRO="jazzy"
 FROM osrf/ros:$ROS_DISTRO-desktop-full
-ARG BRANCH="ros2"
+ARG BRANCH="Docker_image_fix"
 
 # Install Utilities
 # hadolint ignore=DL3008
@@ -41,16 +41,16 @@ RUN apt-get update && \
 RUN locale-gen en_US en_US.UTF-8 && update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 && \
     export LANG=en_US.UTF-8
 
-# Make user (assume host user has 1000:1000 permission)
-ARG USER=docker
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-RUN adduser --shell /bin/bash --disabled-password --gecos '' $USER \
-    && echo "$USER:$USER" | chpasswd && adduser $USER sudo \
-    && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+# # Make user (assume host user has 1000:1000 permission)
+# ARG USER=docker
+# SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+# RUN adduser --shell /bin/bash --disabled-password --gecos '' $USER \
+#     && echo "$USER:$USER" | chpasswd && adduser $USER sudo \
+#     && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
-# Install ROS-Gazebo framework
+Install ROS-Gazebo framework
 ADD https://raw.githubusercontent.com/IOES-Lab/dave/$BRANCH/\
-extras/ros-jazzy-binary-gz-harmonic-source-install.sh install.sh
+extras/ros-jazzy-gz-harmonic-binary-install.sh install.sh
 RUN bash install.sh
 
 # Install Ardupilot - Ardusub
@@ -58,9 +58,9 @@ ADD https://raw.githubusercontent.com/IOES-Lab/dave/$BRANCH/\
 extras/ardusub-ubuntu-install.sh install.sh
 RUN bash install.sh
 # Install mavros
-ADD https://raw.githubusercontent.com/IOES-Lab/dave/$BRANCH/\
-extras/mavros-ubuntu-install.sh install.sh
-RUN bash install.sh
+RUN apt-get update && \
+    apt-get -y install --no-install-recommends ros-jazzy-mavros* \
+    && rm -rf /tmp/*
 
 # Set up Dave workspace
 ENV DAVE_WS=/opt/dave_ws
@@ -69,15 +69,6 @@ WORKDIR $DAVE_WS/src
 ADD https://raw.githubusercontent.com/IOES-Lab/dave/$BRANCH/\
 extras/repos/dave.$ROS_DISTRO.repos $DAVE_WS/dave.repos
 RUN vcs import --shallow --input $DAVE_WS/dave.repos
-
-# FIX ROS GPG KEY error (may be temporary)
-RUN rm /etc/apt/sources.list.d/ros2.list && apt update && apt install -y jq && rm -rf /var/lib/apt/lists/
-RUN UBUNTU_CODENAME=noble && \
-    ROS_APT_SOURCE_VERSION=$(curl -s https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest | jq -r '.tag_name') && \
-    curl -L -o /tmp/ros2-apt-source.deb \
-    "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-apt-source_${ROS_APT_SOURCE_VERSION}.${UBUNTU_CODENAME}_all.deb" && \
-    apt-get install -y /tmp/ros2-apt-source.deb && \
-    rm -f /tmp/ros2-apt-source.deb
 
 # Install dave dependencies
 RUN apt-get update && rosdep update && \
@@ -88,59 +79,40 @@ RUN apt-get update && rosdep update && \
 WORKDIR $DAVE_WS
 RUN . "/opt/ros/${ROS_DISTRO}/setup.sh" && \
     colcon build
+WORKDIR /
 
-# source entrypoint setup
-RUN touch /ros_entrypoint.sh && sed --in-place --expression \
-    '$i source "/opt/dave_ws/install/setup.bash"' /ros_entrypoint.sh \
-    && sed --in-place --expression \
-    '$i cd /root' /ros_entrypoint.sh
+# Set up bashrc for root
+RUN echo "source /opt/ros/jazzy/setup.bash" >> /root/.bashrc && \
+    echo "source /opt/gazebo/install/setup.bash" >> /root/.bashrc && \
+    echo "source /opt/mavros/install/setup.bash" >> /root/.bashrc && \
+    echo "source /opt/dave_ws/install/setup.bash" >> /root/.bashrc && \
+    echo "export GEOGRAPHICLIB_GEOID_PATH=/usr/local/share/GeographicLib/geoids" >> /root/.bashrc && \
+    echo "export PYTHONPATH=\$PYTHONPATH:/opt/gazebo/install/lib/python" >> /root/.bashrc && \
+    echo "export PATH=/opt/ardupilot_ws/ardupilot/Tools/autotest:\$PATH" >> /root/.bashrc && \
+    echo "export PATH=/opt/ardupilot_ws/ardupilot/build/sitl/bin:\$PATH" >> /root/.bashrc && \
+    echo "export GZ_SIM_SYSTEM_PLUGIN_PATH=/opt/ardupilot_ws/ardupilot_gazebo/build:\$GZ_SIM_SYSTEM_PLUGIN_PATH" >> /root/.bashrc && \
+    echo "export GZ_SIM_RESOURCE_PATH=/opt/ardupilot_ws/ardupilot_gazebo/models:/opt/ardupilot_ws/ardupilot_gazebo/worlds:\$GZ_SIM_RESOURCE_PATH" >> /root/.bashrc
 
-RUN cp /home/docker/.bashrc ~/.bashrc
+# set up bashrc for root (the entry)
+RUN cp /root/.bashrc ~/.bashrc && \
+    echo 'if [ "$(id -u)" = "0" ]; then su docker; fi' >> ~/.bashrc
 
-# Source ROS and Gazebo
-RUN sed --in-place --expression \
-'$i source "/opt/ros/jazzy/setup.bash"' /ros_entrypoint.sh && \
-sed --in-place --expression \
-'$i source "/opt/gazebo/install/setup.bash"' /ros_entrypoint.sh && \
-sed --in-place --expression \
-'$i source "/opt/mavros/install/setup.bash"' /ros_entrypoint.sh && \
-sed --in-place --expression \
-'$i export GEOGRAPHICLIB_GEOID_PATH=/usr/local/share/GeographicLib/geoids' /ros_entrypoint.sh && \
-sed --in-place --expression \
-'$i export PYTHONPATH=\$PYTHONPATH:/opt/gazebo/install/lib/python' /ros_entrypoint.sh && \
-sed --in-place --expression \
-'$i export PATH=/opt/ardupilot_ws/ardupilot/build/sitl/bin:\$PATH' /ros_entrypoint.sh && \
-sed --in-place --expression \
-'$i export PATH=/opt/ardupilot_ws/ardupilot/Tools/autotest:\$PATH' /ros_entrypoint.sh && \
-sed --in-place --expression \
-'$i export GZ_SIM_SYSTEM_PLUGIN_PATH=/opt/ardupilot_ws/ardupilot_gazebo/build:\$GZ_SIM_SYSTEM_PLUGIN_PATH' /ros_entrypoint.sh && \
-sed --in-place --expression \
-'$i export GZ_SIM_RESOURCE_PATH=/opt/ardupilot_ws/ardupilot_gazebo/models:/opt/ardupilot_ws/ardupilot_gazebo/worlds:\$GZ_SIM_RESOURCE_PATH' /ros_entrypoint.sh && \
-sed --in-place --expression \
-'$i printf '\''\\033[1;37m \n=====\n'\'' ' /ros_entrypoint.sh && \
-sed --in-place --expression \
-'$i printf '\''  ____    ___     _______      _                     _   _      \n'\'' ' /ros_entrypoint.sh && \
-sed --in-place --expression \
-'$i printf '\'' |  _ \\  / \\ \\   / | ____|    / \\   __ _ _   _  __ _| |_(_) ___ \n'\'' ' /ros_entrypoint.sh && \
-sed --in-place --expression \
-'$i printf '\'' | | | |/ _ \\ \\ / /|  _|     / _ \\ / _` | | | |/ _` | __| |/ __|\n'\'' ' /ros_entrypoint.sh && \
-sed --in-place --expression \
-'$i printf '\'' | |_| / ___ \\ V / | |___   / ___ \\ (_| | |_| | (_| | |_| | (__ \n'\'' ' /ros_entrypoint.sh && \
-sed --in-place --expression \
-'$i printf '\'' |____/_/   \\_\\_/  |_____| /_/   \\_\\__, |\\__,_|\\__,_|\\__|_|\\___|\n'\'' ' /ros_entrypoint.sh && \
-sed --in-place --expression \
-'$i printf '\'' __     ___      _               _     _____            _       \n'\'' ' /ros_entrypoint.sh && \
-sed --in-place --expression \
-'$i printf '\'' \\ \\   / (_)_ __| |_ _   _  __ _| |   | ____|_ ____   _(_)_ __  \n'\'' ' /ros_entrypoint.sh && \
-sed --in-place --expression \
-'$i printf '\''  \\ \\ / /| | `__| __| | | |/ _` | |   |  _| | `_ \\ \\ / | | `__| \n'\'' ' /ros_entrypoint.sh && \
-sed --in-place --expression \
-'$i printf '\''   \\ V / | | |  | |_| |_| | (_| | |   | |___| | | \\ V /| | |_   \n'\'' ' /ros_entrypoint.sh && \
-sed --in-place --expression \
-'$i printf '\''    \\_/  |_|_|   \\__|\\__,_|\\__,_|_|   |_____|_| |_|\\_/ |_|_(_)  \n\\033[0m'\'' ' /ros_entrypoint.sh && \
-sed --in-place --expression \
-'$i printf '\''\\033[1;32m\n =====\\033[0m\n'\'' ' /ros_entrypoint.sh && \
-sed --in-place --expression \
-'$i printf '\''\\033[1;32m 👋 Hi! This is Docker virtual environment for DAVE\n\\033[0m'\'' ' /ros_entrypoint.sh && \
-sed --in-place --expression \
-'$i printf '\''\\033[1;33m\tROS2 Jazzy - Gazebo Harmonic (w ardupilot(ardusub) + mavros)\n\n\\033[0m'\'' ' /ros_entrypoint.sh
+RUN touch /root/.dave_entrypoint && printf '\033[1;37m =====\n' >> /root/.dave_entrypoint && \
+    printf '  ____    ___     _______      _                     _   _      \n' >> /root/.dave_entrypoint && \
+    printf ' |  _ \  / \ \   / | ____|    / \   __ _ _   _  __ _| |_(_) ___ \n' >> /root/.dave_entrypoint && \
+    printf ' | | | |/ _ \ \ / /|  _|     / _ \ / _` | | | |/ _` | __| |/ __|\n' >> /root/.dave_entrypoint && \
+    printf ' | |_| / ___ \ V / | |___   / ___ | (_| | |_| | (_| | |_| | (__ \n' >> /root/.dave_entrypoint && \
+    printf ' |____/_/   \_\_/  |_____| /_/   \_\__, |\__,_|\__,_|\__|_|\___|\n' >> /root/.dave_entrypoint && \
+    printf ' __     ___      _               _     _____            _       \n' >> /root/.dave_entrypoint && \
+    printf ' \ \   / (_)_ __| |_ _   _  __ _| |   | ____|_ ____   _(_)_ __  \n' >> /root/.dave_entrypoint && \
+    printf '  \ \ / /| | `__| __| | | |/ _` | |   |  _| | `_ \ \ / | | `__| \n' >> /root/.dave_entrypoint && \
+    printf '   \ V / | | |  | |_| |_| | (_| | |   | |___| | | \ V /| | |_   \n' >> /root/.dave_entrypoint && \
+    printf '    \_/  |_|_|   \__|\__,_|\__,_|_|   |_____|_| |_|\_/ |_|_(_)  \n\033[0m' >> /root/.dave_entrypoint && \
+    printf '\033[1;32m\n =====\n\033[0m' >> /root/.dave_entrypoint && \
+    printf "\\033[1;32m 👋 Hi! This is Docker virtual environment for DAVE\n\\033[0m" \
+    >> /root/.dave_entrypoint && \
+    printf "\\033[1;33m\tROS2 Jazzy - Gazebo Harmonic (w ardupilot(ardusub) + mavros)\n\n\\033[0m" \
+    >> /root/.dave_entrypoint && \
+    echo 'cat /root/.dave_entrypoint' >> /root/.bashrc
+
+WORKDIR /root

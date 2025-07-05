@@ -10,7 +10,7 @@ echo -e "\033[94m============================================================\03
 echo
 echo -e "\033[96m(1/4) -------------    Updating the System  ----------------\033[0m"
 echo "Performing full system upgrade (this might take a while)..."
-sudo sudo apt update && apt full-upgrade -y
+sudo apt update && apt full-upgrade -y
 
 echo
 echo -e "\033[96m(2/4) ------------    Install Dependencies   ---------------\033[0m"
@@ -49,17 +49,16 @@ sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
 sudo wget https://packages.osrfoundation.org/gazebo.gpg \
     -O /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg
 
-ARCH=$(dpkg --print-architecture)
-# shellcheck disable=SC1091
-UBUNTU_CODENAME=$( . /etc/os-release && echo "$UBUNTU_CODENAME")
-REPO="deb [arch=$ARCH signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] \
-http://packages.ros.org/ros2/ubuntu $UBUNTU_CODENAME main"
-echo "$REPO" | sudo tee /etc/apt/sources.list.d/ros2.list >/dev/null
+sudo apt update && sudo apt install -y jq
+UBUNTU_CODENAME=noble && \
+    ROS_APT_SOURCE_VERSION=$(curl -s https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest | jq -r '.tag_name') && \
+    curl -L -o /tmp/ros2-apt-source.deb \
+    "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-apt-source_${ROS_APT_SOURCE_VERSION}.${UBUNTU_CODENAME}_all.deb" && \
+    apt-get install -y /tmp/ros2-apt-source.deb && \
+    rm -f /tmp/ros2-apt-source.deb
 
-DISTRO=$(lsb_release -cs)
-REPO="deb [arch=$ARCH signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] \
-http://packages.osrfoundation.org/gazebo/ubuntu-stable $DISTRO main"
-echo "$REPO" | sudo tee /etc/apt/sources.list.d/gazebo-stable.list >/dev/null
+sudo curl https://packages.osrfoundation.org/gazebo.gpg --output /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/gazebo-stable.list > /dev/null
 
 echo
 echo -e "\033[96m(4/4) ------------     Install ROS-Gazebo    ---------------\033[0m"
@@ -87,31 +86,18 @@ sudo apt update && apt install -y \
     ros-$DIST-ros2-controllers \
     ros-$DIST-teleop-tools \
     ros-$DIST-urdfdom-py \
-    ros-dev-tools
+    ros-dev-tools \
+    gz-harmonic
 
 echo
-echo -e "\033[34mSetting up Gazebo source directory...\033[0m"
-mkdir -p /opt/gazebo/src && cd /opt/gazebo/src || exit
-curl -O https://raw.githubusercontent.com/gazebo-tooling/gazebodistro/master/collection-harmonic.yaml
-vcs import < collection-harmonic.yaml
-
-echo -e "\033[34mUpdating package list and installing dependencies...\033[0m"
-# shellcheck disable=SC2046,SC2006
-sudo apt -y install $(sort -u $(find . -iname 'packages-'`lsb_release -cs`'.apt' -o -iname 'packages.apt' | grep -v '/\.git/') | sed '/gz\|sdf/d' | tr '\n' ' ')
-
-echo -e "\033[34mBuilding the project with colcon...\033[0m"
-cd /opt/gazebo || exit
-# Build gz-physics with limited cores to avoid memory issues
-MAKEFLAGS="-j 2" colcon build --cmake-args -DBUILD_TESTING=OFF --merge-install --packages-up-to gz-physics7
-# Full build
-colcon build --cmake-args -DBUILD_TESTING=OFF --merge-install
+echo -e "\033[34mSetting up Gazebo...\033[0m"
 
 echo
 echo -e "\033[32m============================================================\033[0m"
 echo -e "\033[32mROS-Gazebo Framework Installation completed. Awesome! 🤘🚀 \033[0m"
 echo -e "Following command will set-up ROS-Gazebo environment variables to run it"
 echo -e "\033[95msource /opt/ros/jazzy/setup.bash\033[0m"
-echo -e "\033[95msource /opt/gazebo/install/setup.bash\033[0m"
-echo -e "\033[95mexport PYTHONPATH=\$PYTHONPATH:/opt/gazebo/install/lib/python\033[0m"
-echo -e "You may check ROS, and Gazebo version installed with \033[33mprintenv ROS_DISTRO\033[0m and \033[33mecho \$GZ_VERSION\033[0m"
+# echo -e "\033[95msource /opt/gazebo/install/setup.bash\033[0m"
+# echo -e "\033[95mexport PYTHONPATH=\$PYTHONPATH:/opt/gazebo/install/lib/python\033[0m"
+echo -e "You may check ROS, and Gazebo version installed with \033[33mROS2 Jazzy(LTS)\033[0m and \033[33mGazebo Harmonic(LTS)\033[0m"
 echo
