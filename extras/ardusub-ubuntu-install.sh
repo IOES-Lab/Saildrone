@@ -3,8 +3,6 @@
 # Source Ros and Gazebo
 # shellcheck source=/dev/null
 source /opt/ros/jazzy/setup.bash
-# shellcheck source=/dev/null
-source /opt/gazebo/install/setup.bash
 
 # Really should do version pinning but Sub-4.5 is waaaay behind master
 # (e.g. it doesn't know about "noble" yet)

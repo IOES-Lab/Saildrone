@@ -48,9 +48,9 @@ RUN locale-gen en_US en_US.UTF-8 && update-locale LC_ALL=en_US.UTF-8 LANG=en_US.
 #     && echo "$USER:$USER" | chpasswd && adduser $USER sudo \
 #     && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
-Install ROS-Gazebo framework
+# Install ROS-Gazebo framework
 ADD https://raw.githubusercontent.com/IOES-Lab/dave/$BRANCH/\
-extras/ros-jazzy-gz-harmonic-binary-install.sh install.sh
+extras/ros-jazzy-gz-harmonic-install.sh install.sh
 RUN bash install.sh
 
 # Install Ardupilot - Ardusub
@@ -94,8 +94,7 @@ RUN echo "source /opt/ros/jazzy/setup.bash" >> /root/.bashrc && \
     echo "export GZ_SIM_RESOURCE_PATH=/opt/ardupilot_ws/ardupilot_gazebo/models:/opt/ardupilot_ws/ardupilot_gazebo/worlds:\$GZ_SIM_RESOURCE_PATH" >> /root/.bashrc
 
 # set up bashrc for root (the entry)
-RUN cp /root/.bashrc ~/.bashrc && \
-    echo 'if [ "$(id -u)" = "0" ]; then su docker; fi' >> ~/.bashrc
+RUN cp /root/.bashrc ~/.bashrc
 
 RUN touch /root/.dave_entrypoint && printf '\033[1;37m =====\n' >> /root/.dave_entrypoint && \
     printf '  ____    ___     _______      _                     _   _      \n' >> /root/.dave_entrypoint && \

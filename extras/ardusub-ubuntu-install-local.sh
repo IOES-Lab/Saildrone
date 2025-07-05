@@ -3,8 +3,6 @@
 # Source Ros and Gazebo
 # shellcheck source=/dev/null
 source /opt/ros/jazzy/setup.bash
-# shellcheck source=/dev/null
-source /opt/gazebo/install/setup.bash
 
 export USER=docker
 
