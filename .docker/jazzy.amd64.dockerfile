@@ -41,13 +41,6 @@ RUN apt-get update && \
 RUN locale-gen en_US en_US.UTF-8 && update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 && \
     export LANG=en_US.UTF-8
 
-# # Make user (assume host user has 1000:1000 permission)
-# ARG USER=docker
-# SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-# RUN adduser --shell /bin/bash --disabled-password --gecos '' $USER \
-#     && echo "$USER:$USER" | chpasswd && adduser $USER sudo \
-#     && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-
 # Install ROS-Gazebo framework
 ADD https://raw.githubusercontent.com/IOES-Lab/dave/$BRANCH/\
 extras/ros-jazzy-gz-harmonic-install.sh install.sh
@@ -61,6 +54,9 @@ RUN bash install.sh
 RUN apt-get update && \
     apt-get -y install --no-install-recommends ros-jazzy-mavros* \
     && rm -rf /tmp/*
+WORKDIR /opt/mavros_ws
+RUN wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh && \
+    bash ./install_geographiclib_datasets.sh   
 
 # Set up Dave workspace
 ENV DAVE_WS=/opt/dave_ws
