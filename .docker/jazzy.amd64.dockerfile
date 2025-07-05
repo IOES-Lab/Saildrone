@@ -83,18 +83,11 @@ WORKDIR /
 
 # Set up bashrc for root
 RUN echo "source /opt/ros/jazzy/setup.bash" >> /root/.bashrc && \
-    echo "source /opt/gazebo/install/setup.bash" >> /root/.bashrc && \
-    echo "source /opt/mavros/install/setup.bash" >> /root/.bashrc && \
     echo "source /opt/dave_ws/install/setup.bash" >> /root/.bashrc && \
-    echo "export GEOGRAPHICLIB_GEOID_PATH=/usr/local/share/GeographicLib/geoids" >> /root/.bashrc && \
-    echo "export PYTHONPATH=\$PYTHONPATH:/opt/gazebo/install/lib/python" >> /root/.bashrc && \
     echo "export PATH=/opt/ardupilot_ws/ardupilot/Tools/autotest:\$PATH" >> /root/.bashrc && \
     echo "export PATH=/opt/ardupilot_ws/ardupilot/build/sitl/bin:\$PATH" >> /root/.bashrc && \
     echo "export GZ_SIM_SYSTEM_PLUGIN_PATH=/opt/ardupilot_ws/ardupilot_gazebo/build:\$GZ_SIM_SYSTEM_PLUGIN_PATH" >> /root/.bashrc && \
     echo "export GZ_SIM_RESOURCE_PATH=/opt/ardupilot_ws/ardupilot_gazebo/models:/opt/ardupilot_ws/ardupilot_gazebo/worlds:\$GZ_SIM_RESOURCE_PATH" >> /root/.bashrc
-
-# set up bashrc for root (the entry)
-RUN cp /root/.bashrc ~/.bashrc
 
 RUN touch /root/.dave_entrypoint && printf '\033[1;37m =====\n' >> /root/.dave_entrypoint && \
     printf '  ____    ___     _______      _                     _   _      \n' >> /root/.dave_entrypoint && \
