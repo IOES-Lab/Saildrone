@@ -4,7 +4,7 @@
  *   Helena Moyen helenamoyen@gmail.com
  *   Woen-Sug Choi woensug.choi@gmail.com
  *
- * Copyright (C) 2022 Open Source Robotics Foundation
+ * Copyright (C) 2025 Open Source Robotics Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -595,28 +595,6 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
   this->pointMsg.set_height(this->raySensor->VerticalRangeCount());
   this->pointMsg.set_row_step(this->pointMsg.point_step() * this->pointMsg.width());
 
-  this->imageSensor = _sensor->Scene()->CreateCamera(_sensor->Name() + "_image_sensor");
-  if (!this->imageSensor)
-  {
-    gzerr << "Failed to create image sensor for "
-          << "for [" << _sensor->Name() << "] sensor." << std::endl;
-    return false;
-  }
-
-  this->imageSensor->SetImageWidth(horizontalRayCount);
-  this->imageSensor->SetImageHeight(verticalRayCount);
-
-  this->imageSensor->SetNearClipPlane(minimumRange);
-  this->imageSensor->SetFarClipPlane(this->maximumRange);
-  this->imageSensor->SetAntiAliasing(2);
-
-  this->imageSensor->SetAspectRatio(
-    beamsSphericalFootprint.XSize() / beamsSphericalFootprint.YSize());
-  this->imageSensor->SetHFOV(beamsSphericalFootprint.XSize());
-  this->imageSensor->SetVisibilityMask(~GZ_VISIBILITY_GUI);
-
-  _sensor->AddSensor(this->imageSensor);
-
   this->rayConnection = this->raySensor->ConnectNewGpuRaysFrame(std::bind(
     &MultibeamSonarSensor::Implementation::OnNewFrame, this, std::placeholders::_1,
     std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
@@ -718,7 +696,7 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
 //////////////////////////////////////////////////
 std::vector<gz::rendering::SensorPtr> MultibeamSonarSensor::RenderingSensors() const
 {
-  return {this->dataPtr->raySensor, this->dataPtr->imageSensor};
+  return {this->dataPtr->raySensor};
 }
 
 // Simplified function to only process point cloud
@@ -761,7 +739,6 @@ void MultibeamSonarSensor::SetScene(gz::rendering::ScenePtr _scene)
   {
     // TODO(anyone) Remove camera from scene
     this->dataPtr->raySensor = nullptr;
-    this->dataPtr->imageSensor = nullptr;
     if (this->dataPtr->rayBuffer)
     {
       delete[] this->dataPtr->rayBuffer;
