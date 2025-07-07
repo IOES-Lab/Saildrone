@@ -91,7 +91,7 @@ RUN apt update && apt full-upgrade -y && apt autoremove -y
 # Install ROS-Gazebo framework
 ADD https://raw.githubusercontent.com/IOES-Lab/dave/$BRANCH/\
 extras/ros-jazzy-gz-harmonic-install.sh install.sh
-RUN bash install.sh
+RUN sudo bash install.sh
 
 # Prereqs for Ardupilot - Ardusub
 ENV DEBIAN_FRONTEND=noninteractive
