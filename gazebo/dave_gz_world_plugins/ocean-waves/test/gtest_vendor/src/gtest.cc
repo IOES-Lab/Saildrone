@@ -2910,7 +2910,7 @@ Result HandleExceptionsInMethodIfSupported(T * object, Result (T::*method)(), co
     }
     catch (const AssertionException &)
     {  // NOLINT
-      // This failure was reported already.
+       // This failure was reported already.
     }
     catch (const internal::GoogleTestFailureException &)
     {  // NOLINT
