@@ -49,17 +49,16 @@ sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
 sudo wget https://packages.osrfoundation.org/gazebo.gpg \
     -O /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg
 
-ARCH=$(dpkg --print-architecture)
-# shellcheck disable=SC1091
-UBUNTU_CODENAME=$( . /etc/os-release && echo "$UBUNTU_CODENAME")
-REPO="deb [arch=$ARCH signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] \
-http://packages.ros.org/ros2/ubuntu $UBUNTU_CODENAME main"
-echo "$REPO" | sudo tee /etc/apt/sources.list.d/ros2.list >/dev/null
+sudo apt update && sudo apt install -y jq
+UBUNTU_CODENAME=noble && \
+    ROS_APT_SOURCE_VERSION=$(curl -s https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest | jq -r '.tag_name') && \
+    curl -L -o /tmp/ros2-apt-source.deb \
+    "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-apt-source_${ROS_APT_SOURCE_VERSION}.${UBUNTU_CODENAME}_all.deb" && \
+    apt-get install -y /tmp/ros2-apt-source.deb && \
+    rm -f /tmp/ros2-apt-source.deb
 
-DISTRO=$(lsb_release -cs)
-REPO="deb [arch=$ARCH signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] \
-http://packages.osrfoundation.org/gazebo/ubuntu-stable $DISTRO main"
-echo "$REPO" | sudo tee /etc/apt/sources.list.d/gazebo-stable.list >/dev/null
+sudo curl https://packages.osrfoundation.org/gazebo.gpg --output /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/gazebo-stable.list > /dev/null
 
 echo
 echo -e "\033[96m(4/4) ------------     Install ROS-Gazebo    ---------------\033[0m"
@@ -70,6 +69,8 @@ echo -e "\033[34mInstalling ROS Gazebo framework...\033[0m"
 sudo apt update && apt install -y \
     python3-rosdep \
     python3-rosinstall-generator \
+    python3-colcon-core \
+    python3-colcon-common-extensions \
     python3-vcstool \
     $GAZEBO \
     ros-$DIST-desktop-full \
