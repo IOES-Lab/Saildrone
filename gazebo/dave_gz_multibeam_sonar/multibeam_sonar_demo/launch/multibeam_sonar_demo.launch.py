@@ -54,38 +54,10 @@ def generate_launch_description():
         condition=IfCondition(LaunchConfiguration("rviz")),
     )
 
-    # Bridge
-    bridge = Node(
-        package="ros_gz_bridge",
-        executable="parameter_bridge",
-        arguments=[
-            "/sensor/camera@sensor_msgs/msg/Image@gz.msgs.Image",
-            "/sensor/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo",
-            "/sensor/depth_camera@sensor_msgs/msg/Image@gz.msgs.Image",
-            "/sensor/multibeam_sonar/point_cloud@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked",
-        ],
-        output="screen",
-    )
-
-    # ! TODO: Add a static transform publisher for the multibeam sonar
-    # TF (Not sure about this....)
-    tf_node = Node(
-        package="tf2_ros",
-        executable="static_transform_publisher",
-        arguments=[
-            "--frame-id",
-            "world",
-            "--child-frame-id",
-            "blueview_p900/blueview_p900_base_link/multibeam_sonar",
-        ],
-    )
-
     return LaunchDescription(
         [
             multibeam_sonar_sim,
             DeclareLaunchArgument("rviz", default_value="true", description="Open RViz."),
-            bridge,
             rviz,
-            tf_node,
         ]
     )
