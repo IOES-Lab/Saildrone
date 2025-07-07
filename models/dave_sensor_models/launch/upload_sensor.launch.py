@@ -1,10 +1,16 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, RegisterEventHandler, LogInfo
+from launch.actions import (
+    DeclareLaunchArgument,
+    RegisterEventHandler,
+    LogInfo,
+    IncludeLaunchDescription,
+)
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch.conditions import IfCondition
 from launch_ros.substitutions import FindPackageShare
 from launch.event_handlers import OnProcessExit
 from launch_ros.actions import Node
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 
 def generate_launch_description():
@@ -76,7 +82,7 @@ def generate_launch_description():
         [
             FindPackageShare("dave_sensor_models"),
             "description",
-            namespace,
+            LaunchConfiguration("namespace"),
             "model.sdf",
         ]
     )
@@ -126,6 +132,22 @@ def generate_launch_description():
         parameters=[{"use_sim_time": use_sim_time}],
     )
 
+    sensor_config = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution(
+                [
+                    FindPackageShare("dave_sensor_models"),
+                    "config",
+                    LaunchConfiguration("namespace"),
+                    "sensor_config.py",
+                ]
+            )
+        ),
+        launch_arguments={
+            "namespace": namespace,
+        }.items(),
+    )
+
     nodes = [tf2_spawner, gz_spawner]
 
     event_handlers = [
@@ -134,4 +156,4 @@ def generate_launch_description():
         )
     ]
 
-    return LaunchDescription(args + nodes + event_handlers)
+    return LaunchDescription(args + nodes + event_handlers + [sensor_config])
