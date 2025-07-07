@@ -212,9 +212,9 @@
           <izz>0.0151357</izz>
         </inertia>
       </inertial>
-      <velocity_decay/>
+      <velocity_decay />
       <gravity>1</gravity>
-      <velocity_decay/>
+      <velocity_decay />
 
       <sensor
         name="nortek_dvl500_300" type="custom"
@@ -810,6 +810,16 @@
     <plugin
       filename="gz-sim-hydrodynamics-system"
       name="gz::sim::systems::Hydrodynamics">
+
+      <!-- adding for ocean current force application -->
+      <!-- <namespace>rexrov</namespace> -->
+
+      <disable_coriolis>false</disable_coriolis>
+      <disable_added_mass>false</disable_added_mass>
+
+      <water_density>1028</water_density>
+
+      <!-- till here -->
       <link_name>base_link</link_name>
       <!-- Added mass -->
       <!-- Using values of LRAUV -->
@@ -867,10 +877,16 @@
       name="gz::sim::systems::JointStatePublisher">
     </plugin>
 
+    <plugin
+      filename="DVLBridge"
+      name="dave_ros_gz_plugins::DVLBridge">
+      <topic>/model/rexrov/dvl/velocity</topic>
+    </plugin>
+
     <!-- Sea Pressure Sensor Plugin -->
     <plugin
       filename="sea_pressure_sensor"
-      name=" dave_gz_sensor_plugins::SubseaPressureSensorPlugin">
+      name="dave_gz_sensor_plugins::SubseaPressureSensorPlugin">
       <namespace>rexrov</namespace>
       <topic>sea_pressure</topic>
       <update_rate>10</update_rate>
@@ -880,11 +896,37 @@
       <kPa_per_meter>9.80638</kPa_per_meter>
     </plugin>
 
-    <plugin
-      filename="DVLBridge"
-      name="dave_ros_gz_plugins::DVLBridge">
-      <topic>/model/rexrov/dvl/velocity</topic>
-    </plugin>
+    <!-- Dave Transient Current Plugin -->
+    <!-- <plugin
+      filename="OceanCurrentModelPlugin"
+      name="dave_gz_model_plugins::OceanCurrentModelPlugin">
+      <namespace>rexrov</namespace>
+      <flow_velocity_topic>ocean_current</flow_velocity_topic>
+      <link_name>base_link</link_name>
+      <base_link_name>$(arg namespace)/base_link</base_link_name>
+      <transient_current>
+        <topic_stratified>hydrodynamics/stratified_current_velocity_topic_database</topic_stratified>
+        <velocity_north>
+          <mean>1.0</mean>
+          <mu>0.0</mu>
+          <noiseAmp>0.3</noiseAmp>
+          <noiseFreq>0.0</noiseFreq>
+        </velocity_north>
+        <velocity_east>
+          <mean>1.0</mean>
+          <mu>0.0</mu>
+          <noiseAmp>0.3</noiseAmp>
+          <noiseFreq>0.0</noiseFreq>
+        </velocity_east>
+        <velocity_down>
+          <mean>1.0</mean>
+          <mu>0.0</mu>
+          <noiseAmp>0.3</noiseAmp>
+          <noiseFreq>0.0</noiseFreq>
+        </velocity_down>
+      </transient_current>
+      <tide_oscillation>false</tide_oscillation>
+    </plugin> -->
 
   </model>
 </sdf>
