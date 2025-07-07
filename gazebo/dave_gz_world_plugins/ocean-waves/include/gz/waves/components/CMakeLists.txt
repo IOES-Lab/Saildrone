@@ -1,7 +1,7 @@
 file(GLOB component_headers *.hh)
 
-set (component_includes "")
-foreach (header_full ${component_headers})
+set(component_includes "")
+foreach(header_full ${component_headers})
   get_filename_component(header ${header_full} NAME)
   set(component_includes "${component_includes}#include <gz/waves/components/${header}>\n")
 endforeach()

@@ -115,7 +115,7 @@ gz_find_package(GzOGRE2 VERSION 2.3
     PRIVATE_FOR ogre2
     QUIET)
 
-if ("${OGRE2-PlanarReflections}" STREQUAL "OGRE2-PlanarReflections-NOTFOUND")
+if("${OGRE2-PlanarReflections}" STREQUAL "OGRE2-PlanarReflections-NOTFOUND")
   message(STATUS "PlanarReflections component was not found. Try looking without it:")
   gz_find_package(GzOGRE2 VERSION 2.3
     COMPONENTS HlmsPbs HlmsUnlit Overlay
@@ -123,7 +123,7 @@ if ("${OGRE2-PlanarReflections}" STREQUAL "OGRE2-PlanarReflections-NOTFOUND")
     PRIVATE_FOR ogre2)
 endif()
 
-if (OGRE2_FOUND)
+if(OGRE2_FOUND)
   set(HAVE_OGRE2 TRUE)
 endif()
 
@@ -152,7 +152,7 @@ endif()
 
 # message("CGAL_VERSION_MAJOR: ${CGAL_VERSION_MAJOR}")
 
-if (${CGAL_VERSION_MAJOR} LESS 6)
+if(${CGAL_VERSION_MAJOR} LESS 6)
   # include helper file
   include(${CGAL_USE_FILE})
 endif()
@@ -192,7 +192,7 @@ set(FFT_LIBRARIES ${FFTW3-3_LIBRARY})
 
 # Location of "fake install folder" used in tests
 # Defined here at root scope so it is available for tests in src and test folders
-set(FAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/fake/install")
+# set(FAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/fake/install")
 
 #============================================================================
 # Configure the build
