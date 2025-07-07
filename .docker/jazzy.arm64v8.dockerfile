@@ -161,7 +161,7 @@ RUN echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc && \
     echo "export GZ_SIM_SYSTEM_PLUGIN_PATH=/home/$USER/ardupilot_ws/ardupilot_gazebo/build:\$GZ_SIM_SYSTEM_PLUGIN_PATH" >> ~/.bashrc && \
     echo "export GZ_SIM_RESOURCE_PATH=/home/$USER/ardupilot_ws/ardupilot_gazebo/models:/home/$USER/ardupilot_ws/ardupilot_gazebo/worlds:\$GZ_SIM_RESOURCE_PATH" >> ~/.bashrc && \
     echo "\n\n" >> ~/.bashrc && echo "if [ -d ~/HOST ]; then chown $USER:$USER ~/HOST; fi" >> ~/.bashrc  && \
-    echo "\n\n" >> ~/.bashrc
+    echo "export PS1='\[\e[1;36m\]\u@DAVE_docker\[\e[0m\]\[\e[1;34m\](\$(hostname | cut -c1-12))\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ '" >>  ~/.bashrc
 
 # Other environment variables
 RUN echo "export XDG_RUNTIME_DIR=~/.xdg_log" >> ~/.bashrc && \
@@ -169,7 +169,7 @@ RUN echo "export XDG_RUNTIME_DIR=~/.xdg_log" >> ~/.bashrc && \
 
 # Create and write the welcome message to a new file
 RUN mkdir -p /home/docker/.config/autostart && \
-    printf '\033[1;37m =====\n' >> ~/.hi && \
+    printf '\033[1;36m =====\n' >> ~/.hi && \
     printf '  ____    ___     _______      _                     _   _      \n' >> ~/.hi && \
     printf ' |  _ \  / \ \   / | ____|    / \   __ _ _   _  __ _| |_(_) ___ \n' >> ~/.hi && \
     printf ' | | | |/ _ \ \ / /|  _|     / _ \ / _` | | | |/ _` | __| |/ __|\n' >> ~/.hi && \
@@ -186,14 +186,14 @@ RUN mkdir -p /home/docker/.config/autostart && \
     printf "\\033[1;33m\tROS2 Jazzy - Gazebo Harmonic (w ardupilot(ardusub) + mavros)\n\n\n\\033[0m" \
     >> ~/.hi
 
-    # Remove sudo message
+# Remove sudo message
 RUN touch /home/docker/.sudo_as_admin_successful
 
 # Autostart terminal
 # hadolint ignore=SC3037
 RUN echo "[Desktop Entry]\nType=Application" \
     > /home/docker/.config/autostart/terminal.desktop && \
-    echo "Exec=gnome-terminal -- bash -c 'cat ~/.hi; cd ~/HOST; exec bash'" \
+    echo "Exec=gnome-terminal -- bash -c 'cat ~/.hi; exec bash'" \
     >> /home/docker/.config/autostart/terminal.desktop && \
     echo -e "X-GNOME-Autostart-enabled=true" \
     >> /home/docker/.config/autostart/terminal.desktop
