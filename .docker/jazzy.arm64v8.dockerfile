@@ -90,7 +90,7 @@ RUN apt update && apt full-upgrade -y && apt autoremove -y
 
 # Install ROS-Gazebo framework
 ADD https://raw.githubusercontent.com/IOES-Lab/dave/$BRANCH/\
-extras/ros-jazzy-binary-gz-harmonic-source-install.sh install.sh
+extras/ros-jazzy-gz-harmonic-install.sh install.sh
 RUN bash install.sh
 
 # Prereqs for Ardupilot - Ardusub
@@ -108,9 +108,12 @@ RUN wget https://packages.osrfoundation.org/gazebo.gpg -O /usr/share/keyrings/pk
     gstreamer1.0-plugins-bad gstreamer1.0-libav gstreamer1.0-gl \
     && rm -rf /var/lib/apt/lists/
 # Install mavros
-ADD https://raw.githubusercontent.com/IOES-Lab/dave/$BRANCH/\
-extras/mavros-ubuntu-install.sh install.sh
-RUN bash install.sh
+RUN apt-get update && \
+    apt-get -y install --no-install-recommends ros-jazzy-mavros* \
+    && rm -rf /tmp/*
+WORKDIR /opt/mavros_ws
+RUN wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh && \
+    bash ./install_geographiclib_datasets.sh
 
 # Download the background image from GitHub raw content URL
 # hadolint ignore=DL3047
