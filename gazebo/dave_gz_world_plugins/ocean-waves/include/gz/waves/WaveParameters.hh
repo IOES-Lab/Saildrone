@@ -41,7 +41,7 @@ class WaveParametersPrivate;
 /// \brief Parameters for generating a wave in a wave field.
 class WaveParameters
 {
- public:
+public:
   /// \brief Destructor.
   ~WaveParameters();
 
@@ -51,17 +51,17 @@ class WaveParameters
   /// \brief Populate the message with the wave parameters.
   ///
   /// \param[out] msg  The message to be populated (a vector of parameters).
-  void FillMsg(msgs::Param_V& msg) const;
+  void FillMsg(msgs::Param_V & msg) const;
 
   /// \brief Set the parameters from a message.
   ///
   /// \param[in] msg   The message containing the wave parameters.
-  void SetFromMsg(const msgs::Param_V& msg);
+  void SetFromMsg(const msgs::Param_V & msg);
 
   /// \brief Set the parameters from an SDF Element tree.
   ///
   /// \param[in] sdf   The SDF Element tree containing the wave parameters.
-  void SetFromSDF(sdf::Element& sdf);
+  void SetFromSDF(sdf::Element & sdf);
 
   /// \brief The wave algorithm (options are: 'sinusoid', 'trochoid', 'fft').
   std::string Algorithm() const;
@@ -124,7 +124,7 @@ class WaveParameters
   ///        'trochoid', 'fft').
   ///
   /// \param[in] value  The wave algorithm.
-  void SetAlgorithm(const std::string& value);
+  void SetAlgorithm(const std::string & value);
 
   /// \brief Set the size of the wave tile (m).
   ///
@@ -192,12 +192,12 @@ class WaveParameters
   ///
   /// \param[in] value  The direction parameter,
   ///            a two component vector.
-  void SetDirection(const math::Vector2d& value);
+  void SetDirection(const math::Vector2d & value);
 
   /// \brief Set the horizontal wind velocity.
   ///
   /// \param[in] value  The wind velocity, a two component vector.
-  void SetWindVelocity(const math::Vector2d& value);
+  void SetWindVelocity(const math::Vector2d & value);
 
   /// \brief Set the scalar wind speed and downwind angle
   ///        at 10m above MSL (m/s).
@@ -207,27 +207,27 @@ class WaveParameters
   void SetWindSpeedAndAngle(double wind_speed, double wind_angle_rad);
 
   /// \brief Access the component angular frequencies (rad/s).
-  const std::vector<double>& AngularFrequency_V() const;
+  const std::vector<double> & AngularFrequency_V() const;
 
   /// \brief Access the component amplitudes (m).
-  const std::vector<double>& Amplitude_V() const;
+  const std::vector<double> & Amplitude_V() const;
 
   /// \brief Access the component phases.
-  const std::vector<double>& Phase_V() const;
+  const std::vector<double> & Phase_V() const;
 
   /// \brief Access the steepness components.
-  const std::vector<double>& Steepness_V() const;
+  const std::vector<double> & Steepness_V() const;
 
   /// \brief Access the component wavenumbers (rad/m).
-  const std::vector<double>& Wavenumber_V() const;
+  const std::vector<double> & Wavenumber_V() const;
 
   /// \brief Access the component directions.
-  const std::vector<math::Vector2d>& Direction_V() const;
+  const std::vector<math::Vector2d> & Direction_V() const;
 
   /// \brief Print a summary of the wave parameters to the msg stream.
   void DebugPrint() const;
 
- private:
+private:
   /// \internal Private implementation.
   std::shared_ptr<WaveParametersPrivate> impl_;
 };

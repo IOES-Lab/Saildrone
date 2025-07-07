@@ -24,60 +24,50 @@ namespace gz
 {
 namespace waves
 {
-class LinearRandomFFTWaveSimulationRef :
-    public IWaveSimulation
+class LinearRandomFFTWaveSimulationRef : public IWaveSimulation
 {
- public:
-    virtual ~LinearRandomFFTWaveSimulationRef();
+public:
+  virtual ~LinearRandomFFTWaveSimulationRef();
 
-    LinearRandomFFTWaveSimulationRef(double lx, double ly,
-        Index nx, Index ny);
+  LinearRandomFFTWaveSimulationRef(double lx, double ly, Index nx, Index ny);
 
-    void SetLambda(double lambda);
+  void SetLambda(double lambda);
 
-    void SetWindVelocity(double ux, double uy) override;
+  void SetWindVelocity(double ux, double uy) override;
 
-    void SetSteepness(double value) override;
+  void SetSteepness(double value) override;
 
-    void SetTime(double value) override;
+  void SetTime(double value) override;
 
-    Index SizeX() const override;
+  Index SizeX() const override;
 
-    Index SizeY() const override;
+  Index SizeY() const override;
 
-    Index SizeZ() const override;
+  Index SizeZ() const override;
 
-    void ElevationAt(
-        Eigen::Ref<Eigen::ArrayXXd> h) const override;
+  void ElevationAt(Eigen::Ref<Eigen::ArrayXXd> h) const override;
 
-    void ElevationDerivAt(
-        Eigen::Ref<Eigen::ArrayXXd> dhdx,
-        Eigen::Ref<Eigen::ArrayXXd> dhdy) const override;
+  void ElevationDerivAt(
+    Eigen::Ref<Eigen::ArrayXXd> dhdx, Eigen::Ref<Eigen::ArrayXXd> dhdy) const override;
 
-    void DisplacementAt(
-        Eigen::Ref<Eigen::ArrayXXd> sx,
-        Eigen::Ref<Eigen::ArrayXXd> sy) const override;
+  void DisplacementAt(
+    Eigen::Ref<Eigen::ArrayXXd> sx, Eigen::Ref<Eigen::ArrayXXd> sy) const override;
 
-    void DisplacementDerivAt(
-        Eigen::Ref<Eigen::ArrayXXd> dsxdx,
-        Eigen::Ref<Eigen::ArrayXXd> dsydy,
-        Eigen::Ref<Eigen::ArrayXXd> dsxdy) const override;
+  void DisplacementDerivAt(
+    Eigen::Ref<Eigen::ArrayXXd> dsxdx, Eigen::Ref<Eigen::ArrayXXd> dsydy,
+    Eigen::Ref<Eigen::ArrayXXd> dsxdy) const override;
 
-    void DisplacementAndDerivAt(
-        Eigen::Ref<Eigen::ArrayXXd> h,
-        Eigen::Ref<Eigen::ArrayXXd> sx,
-        Eigen::Ref<Eigen::ArrayXXd> sy,
-        Eigen::Ref<Eigen::ArrayXXd> dhdx,
-        Eigen::Ref<Eigen::ArrayXXd> dhdy,
-        Eigen::Ref<Eigen::ArrayXXd> dsxdx,
-        Eigen::Ref<Eigen::ArrayXXd> dsydy,
-        Eigen::Ref<Eigen::ArrayXXd> dsxdy) const override;
+  void DisplacementAndDerivAt(
+    Eigen::Ref<Eigen::ArrayXXd> h, Eigen::Ref<Eigen::ArrayXXd> sx, Eigen::Ref<Eigen::ArrayXXd> sy,
+    Eigen::Ref<Eigen::ArrayXXd> dhdx, Eigen::Ref<Eigen::ArrayXXd> dhdy,
+    Eigen::Ref<Eigen::ArrayXXd> dsxdx, Eigen::Ref<Eigen::ArrayXXd> dsydy,
+    Eigen::Ref<Eigen::ArrayXXd> dsxdy) const override;
 
   // public class declaration - for testing
   class Impl;
 
- private:
-    std::unique_ptr<Impl> impl_;
+private:
+  std::unique_ptr<Impl> impl_;
 };
 }  // namespace waves
 }  // namespace gz

@@ -34,15 +34,15 @@ class WavefieldPrivate;
 /// \brief A class to manage a wave field.
 class Wavefield
 {
- public:
+public:
   /// \brief Destructor.
   virtual ~Wavefield();
 
   /// \brief Constructor.
-  explicit Wavefield(const std::string& world_name);
+  explicit Wavefield(const std::string & world_name);
 
   /// \brief Compute the height at a point (vertical distance to surface).
-  bool Height(const Eigen::Vector3d& point, double& height) const;
+  bool Height(const Eigen::Vector3d & point, double & height) const;
 
   /// \brief Get the wave parameters.
   std::shared_ptr<const WaveParameters> GetParameters() const;
@@ -57,7 +57,7 @@ class Wavefield
   /// \param[in] time    The time parameter for the wave evolution.
   void Update(double time);
 
- private:
+private:
   /// \internal Private implementation.
   std::shared_ptr<WavefieldPrivate> impl_;
 };

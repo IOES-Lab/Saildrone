@@ -41,18 +41,19 @@
 #include <gz/common/Console.hh>
 #include <gz/common/SystemPaths.hh>
 #include <gz/plugin/Loader.hh>
-#include <gz/rendering/config.hh>
 #include <gz/rendering/InstallationDirectories.hh>
+#include <gz/rendering/config.hh>
 
-#include "RenderEngineExtensionManager.hh"
 #include "RenderEngineExtension.hh"
+#include "RenderEngineExtensionManager.hh"
 #include "RenderEngineExtensionPlugin.hh"
 
 namespace gz
 {
 namespace rendering
 {
-inline namespace GZ_RENDERING_VERSION_NAMESPACE {
+inline namespace GZ_RENDERING_VERSION_NAMESPACE
+{
 
 /// \brief Holds information about an extension
 struct ExtensionInfo
@@ -62,7 +63,7 @@ struct ExtensionInfo
   std::string name;
 
   /// \brief The pointer to the render extension.
-  RenderEngineExtension *extension;
+  RenderEngineExtension * extension;
 };
 
 /// \brief Private implementation of the RenderEngineExtensionManager class.
@@ -78,18 +79,21 @@ class RenderEngineExtensionManagerPrivate
   /// iterator.
   /// \param[in] _iter ExtensionMap iterator
   /// \param[in] _path Another search path for rendering extension plugin.
-  public: RenderEngineExtension *Extension(ExtensionInfo _info,
-      const std::map<std::string, std::string> &_params,
-      const std::string &_path);
+public:
+  RenderEngineExtension * Extension(
+    ExtensionInfo _info, const std::map<std::string, std::string> & _params,
+    const std::string & _path);
 
   /// \brief Unload the given render extension from an ExtensionMap iterator.
   /// The extension will remain registered and can be loaded again later.
   /// \param[in] _iter ExtensionMap iterator
   /// \return True if the extension is unloaded
-  public: bool UnloadExtension(ExtensionIter _iter);
+public:
+  bool UnloadExtension(ExtensionIter _iter);
 
   /// \brief Register default extensions supplied by ign-rendering
-  public: void RegisterDefaultExtensions();
+public:
+  void RegisterDefaultExtensions();
 
   /// \brief Unregister an extension using an ExtensionMap iterator.
   /// Once an extension is unregistered, it can no longer be loaded. Use
@@ -97,46 +101,55 @@ class RenderEngineExtensionManagerPrivate
   /// extension without unregistering it if you wish to load the
   /// extension again
   /// \param[in] _iter ExtensionMap iterator
-  public: void UnregisterExtension(ExtensionIter _iter);
+public:
+  void UnregisterExtension(ExtensionIter _iter);
 
   /// \brief Load a render extension plugin.
   /// \param[in] _filename Filename of plugin shared library
   /// \param[in] _path Another search path for rendering extension plugin.
   /// \return True if the plugin is loaded successfully
-  public: bool LoadExtensionPlugin(const std::string &_filename,
-              const std::string &_path);
+public:
+  bool LoadExtensionPlugin(const std::string & _filename, const std::string & _path);
 
   /// \brief Unload a render extension plugin.
   /// \param[in] _extensionName Name of extension associated with this plugin
   /// \return True if the plugin is unloaded successfully
-  public: bool UnloadExtensionPlugin(const std::string &_extensionName);
+public:
+  bool UnloadExtensionPlugin(const std::string & _extensionName);
 
   /// \brief Extensions that have been registered
-  public: ExtensionMap extensions;
+public:
+  ExtensionMap extensions;
 
   /// \brief A map of default extension library names to their plugin names.
-  public: std::map<std::string, std::string> defaultExtensions;
+public:
+  std::map<std::string, std::string> defaultExtensions;
 
   /// \brief A map of loaded extension plugins to its plugin name.
-  public: std::map<std::string, std::string> extensionPlugins;
+public:
+  std::map<std::string, std::string> extensionPlugins;
 
   /// \brief Plugin loader for managing render extension plugin libraries.
-  public: gz::plugin::Loader pluginLoader;
+public:
+  gz::plugin::Loader pluginLoader;
 
   /// \brief Environment variable which holds paths to look for plugins
-  public: std::string pluginPathEnv = "GZ_RENDERING_PLUGIN_PATH";
+public:
+  std::string pluginPathEnv = "GZ_RENDERING_PLUGIN_PATH";
 
   /// \brief List which holds paths to look for extension plugins.
-  public: std::list<std::string> pluginPaths;
+public:
+  std::list<std::string> pluginPaths;
 
   /// \brief Mutex to protect the extensions map.
-  public: std::recursive_mutex extensionsMutex;
+public:
+  std::recursive_mutex extensionsMutex;
 };
 
 //////////////////////////////////////////////////
 //////////////////////////////////////////////////
-RenderEngineExtensionManager::RenderEngineExtensionManager() :
-  dataPtr(new RenderEngineExtensionManagerPrivate)
+RenderEngineExtensionManager::RenderEngineExtensionManager()
+: dataPtr(new RenderEngineExtensionManagerPrivate)
 {
   this->dataPtr->RegisterDefaultExtensions();
 }
@@ -152,7 +165,7 @@ unsigned int RenderEngineExtensionManager::ExtensionCount() const
 }
 
 //////////////////////////////////////////////////
-bool RenderEngineExtensionManager::HasExtension(const std::string &_name) const
+bool RenderEngineExtensionManager::HasExtension(const std::string & _name) const
 {
   std::lock_guard<std::recursive_mutex> lock(this->dataPtr->extensionsMutex);
   auto iter = this->dataPtr->extensions.find(_name);
@@ -163,15 +176,16 @@ bool RenderEngineExtensionManager::HasExtension(const std::string &_name) const
     // translate the name to the shared library name
     auto defaultIt = this->dataPtr->defaultExtensions.find(_name);
     if (defaultIt != this->dataPtr->defaultExtensions.end())
+    {
       iter = this->dataPtr->extensions.find(defaultIt->second);
+    }
   }
 
   return iter != this->dataPtr->extensions.end();
 }
 
 //////////////////////////////////////////////////
-bool RenderEngineExtensionManager::IsExtensionLoaded(
-    const std::string &_name) const
+bool RenderEngineExtensionManager::IsExtensionLoaded(const std::string & _name) const
 {
   std::lock_guard<std::recursive_mutex> lock(this->dataPtr->extensionsMutex);
   auto iter = this->dataPtr->extensions.find(_name);
@@ -185,10 +199,14 @@ bool RenderEngineExtensionManager::IsExtensionLoaded(
     {
       iter = this->dataPtr->extensions.find(defaultIt->second);
       if (iter == this->dataPtr->extensions.end())
+      {
         return false;
+      }
     }
     else
+    {
       return false;
+    }
   }
 
   return nullptr != iter->second;
@@ -200,7 +218,7 @@ std::vector<std::string> RenderEngineExtensionManager::LoadedExtensions() const
   std::lock_guard<std::recursive_mutex> lock(this->dataPtr->extensionsMutex);
   std::vector<std::string> extensions;
   for (auto [name, extension] :  // NOLINT(whitespace/braces)
-      this->dataPtr->extensions)
+       this->dataPtr->extensions)
   {
     std::string n = name;
     if (nullptr != extension)
@@ -208,7 +226,7 @@ std::vector<std::string> RenderEngineExtensionManager::LoadedExtensions() const
       // gz-rendering3 changed loaded extension names to the actual lib name.
       // For backward compatibility, return extension name if it is one of the
       // default extensions
-      for (const auto &it : this->dataPtr->defaultExtensions)
+      for (const auto & it : this->dataPtr->defaultExtensions)
       {
         if (it.second == name)
         {
@@ -223,10 +241,9 @@ std::vector<std::string> RenderEngineExtensionManager::LoadedExtensions() const
 }
 
 //////////////////////////////////////////////////
-RenderEngineExtension *RenderEngineExtensionManager::Extension(
-    const std::string &_name,
-    const std::map<std::string, std::string> &_params,
-    const std::string &_path)
+RenderEngineExtension * RenderEngineExtensionManager::Extension(
+  const std::string & _name, const std::map<std::string, std::string> & _params,
+  const std::string & _path)
 {
   ExtensionInfo info{_name, nullptr};
   std::lock_guard<std::recursive_mutex> lock(this->dataPtr->extensionsMutex);
@@ -242,10 +259,9 @@ RenderEngineExtension *RenderEngineExtensionManager::Extension(
 }
 
 //////////////////////////////////////////////////
-RenderEngineExtension *RenderEngineExtensionManager::ExtensionAt(
-    unsigned int _index,
-    const std::map<std::string, std::string> &_params,
-    const std::string &_path)
+RenderEngineExtension * RenderEngineExtensionManager::ExtensionAt(
+  unsigned int _index, const std::map<std::string, std::string> & _params,
+  const std::string & _path)
 {
   if (_index >= this->ExtensionCount())
   {
@@ -260,7 +276,7 @@ RenderEngineExtension *RenderEngineExtensionManager::ExtensionAt(
 }
 
 //////////////////////////////////////////////////
-bool RenderEngineExtensionManager::UnloadExtension(const std::string &_name)
+bool RenderEngineExtensionManager::UnloadExtension(const std::string & _name)
 {
   std::lock_guard<std::recursive_mutex> lock(this->dataPtr->extensionsMutex);
   // check in the list of available extensions
@@ -272,12 +288,13 @@ bool RenderEngineExtensionManager::UnloadExtension(const std::string &_name)
     // translate the name to the shared library name
     auto defaultIt = this->dataPtr->defaultExtensions.find(_name);
     if (defaultIt != this->dataPtr->defaultExtensions.end())
+    {
       iter = this->dataPtr->extensions.find(defaultIt->second);
+    }
 
     if (iter == this->dataPtr->extensions.end())
     {
-      gzerr << "No render-extension registered with name: "
-          << _name << std::endl;
+      gzerr << "No render-extension registered with name: " << _name << std::endl;
       return false;
     }
   }
@@ -301,8 +318,8 @@ bool RenderEngineExtensionManager::UnloadExtensionAt(unsigned int _index)
 }
 
 //////////////////////////////////////////////////
-void RenderEngineExtensionManager::RegisterExtension(const std::string &_name,
-    RenderEngineExtension *_extension)
+void RenderEngineExtensionManager::RegisterExtension(
+  const std::string & _name, RenderEngineExtension * _extension)
 {
   if (!_extension)
   {
@@ -312,8 +329,7 @@ void RenderEngineExtensionManager::RegisterExtension(const std::string &_name,
 
   if (this->HasExtension(_name))
   {
-    gzerr << "Render-extension already registered with name: "
-          << _name << std::endl;
+    gzerr << "Render-extension already registered with name: " << _name << std::endl;
 
     return;
   }
@@ -323,7 +339,7 @@ void RenderEngineExtensionManager::RegisterExtension(const std::string &_name,
 }
 
 //////////////////////////////////////////////////
-void RenderEngineExtensionManager::UnregisterExtension(const std::string &_name)
+void RenderEngineExtensionManager::UnregisterExtension(const std::string & _name)
 {
   std::lock_guard<std::recursive_mutex> lock(this->dataPtr->extensionsMutex);
   auto iter = this->dataPtr->extensions.find(_name);
@@ -335,11 +351,12 @@ void RenderEngineExtensionManager::UnregisterExtension(const std::string &_name)
 }
 
 //////////////////////////////////////////////////
-void RenderEngineExtensionManager::UnregisterExtension(
-    RenderEngineExtension *_extension)
+void RenderEngineExtensionManager::UnregisterExtension(RenderEngineExtension * _extension)
 {
   if (!_extension)
+  {
     return;
+  }
 
   std::lock_guard<std::recursive_mutex> lock(this->dataPtr->extensionsMutex);
   auto begin = this->dataPtr->extensions.begin();
@@ -371,8 +388,7 @@ void RenderEngineExtensionManager::UnregisterExtensionAt(unsigned int _index)
 }
 
 //////////////////////////////////////////////////
-void RenderEngineExtensionManager::SetPluginPaths(
-    const std::list<std::string> &_paths)
+void RenderEngineExtensionManager::SetPluginPaths(const std::list<std::string> & _paths)
 {
   this->dataPtr->pluginPaths = _paths;
 }
@@ -380,12 +396,11 @@ void RenderEngineExtensionManager::SetPluginPaths(
 //////////////////////////////////////////////////
 // RenderEngineExtensionManagerPrivate
 //////////////////////////////////////////////////
-RenderEngineExtension *RenderEngineExtensionManagerPrivate::Extension(
-    ExtensionInfo _info,
-    const std::map<std::string, std::string> &_params,
-    const std::string &_path)
+RenderEngineExtension * RenderEngineExtensionManagerPrivate::Extension(
+  ExtensionInfo _info, const std::map<std::string, std::string> & _params,
+  const std::string & _path)
 {
-  RenderEngineExtension *extension = _info.extension;
+  RenderEngineExtension * extension = _info.extension;
 
   if (!extension)
   {
@@ -395,7 +410,9 @@ RenderEngineExtension *RenderEngineExtensionManagerPrivate::Extension(
     // translate the name to the shared library name
     auto defaultIt = this->defaultExtensions.find(_info.name);
     if (defaultIt != this->defaultExtensions.end())
+    {
       libName = defaultIt->second;
+    }
 
     // Load the extension plugin
     if (this->LoadExtensionPlugin(libName, _path))
@@ -403,12 +420,16 @@ RenderEngineExtension *RenderEngineExtensionManagerPrivate::Extension(
       std::lock_guard<std::recursive_mutex> lock(this->extensionsMutex);
       auto extensionIt = this->extensions.find(libName);
       if (extensionIt != this->extensions.end())
+      {
         extension = extensionIt->second;
+      }
     }
   }
 
   if (!extension)
+  {
     return nullptr;
+  }
 
   if (!extension->IsInitialized())
   {
@@ -422,10 +443,12 @@ RenderEngineExtension *RenderEngineExtensionManagerPrivate::Extension(
 //////////////////////////////////////////////////
 bool RenderEngineExtensionManagerPrivate::UnloadExtension(ExtensionIter _iter)
 {
-  RenderEngineExtension *extension = _iter->second;
+  RenderEngineExtension * extension = _iter->second;
 
   if (!extension)
+  {
     return false;
+  }
 
   extension->Destroy();
 
@@ -445,17 +468,19 @@ void RenderEngineExtensionManagerPrivate::RegisterDefaultExtensions()
   std::string extensionName;
 
   std::lock_guard<std::recursive_mutex> lock(this->extensionsMutex);
-// #if HAVE_OGRE2
+  // #if HAVE_OGRE2
   extensionName = "ogre2";
   this->defaultExtensions[extensionName] = libName + extensionName;
   if (this->extensions.find(libName + extensionName) == this->extensions.end())
+  {
     this->extensions[libName + extensionName] = nullptr;
-// #endif
+  }
+  // #endif
 }
 
 //////////////////////////////////////////////////
 bool RenderEngineExtensionManagerPrivate::LoadExtensionPlugin(
-    const std::string &_filename, const std::string &_path)
+  const std::string & _filename, const std::string & _path)
 {
   gzmsg << "Loading plugin [" << _filename << "]" << std::endl;
 
@@ -467,8 +492,10 @@ bool RenderEngineExtensionManagerPrivate::LoadExtensionPlugin(
   systemPaths.AddPluginPaths(gz::rendering::getEngineInstallDir());
 
   // Add any preset plugin paths.
-  for (const auto &path : this->pluginPaths)
+  for (const auto & path : this->pluginPaths)
+  {
     systemPaths.AddPluginPaths(path);
+  }
 
   // Add extra search path.
   systemPaths.AddPluginPaths(_path);
@@ -479,21 +506,19 @@ bool RenderEngineExtensionManagerPrivate::LoadExtensionPlugin(
   auto pluginNames = this->pluginLoader.LoadLib(pathToLib);
   if (pluginNames.empty())
   {
-    gzerr << "Failed to load plugin [" << _filename <<
-              "] : couldn't load library on path [" << pathToLib <<
-              "]." << std::endl;
+    gzerr << "Failed to load plugin [" << _filename << "] : couldn't load library on path ["
+          << pathToLib << "]." << std::endl;
     return false;
   }
 
-  auto extensionNames = pluginLoader.PluginsImplementing<
-      gz::rendering::RenderEngineExtensionPlugin>();
+  auto extensionNames =
+    pluginLoader.PluginsImplementing<gz::rendering::RenderEngineExtensionPlugin>();
 
   if (extensionNames.empty())
   {
     std::stringstream error;
-    error << "Found no render extension plugins in ["
-          << _filename << "], available interfaces are:"
-          << std::endl;
+    error << "Found no render extension plugins in [" << _filename
+          << "], available interfaces are:" << std::endl;
     for (auto pluginName : pluginNames)
     {
       error << "- " << pluginName << std::endl;
@@ -506,9 +531,7 @@ bool RenderEngineExtensionManagerPrivate::LoadExtensionPlugin(
   if (extensionNames.size() > 1)
   {
     std::stringstream warn;
-    warn << "Found multiple render extension plugins in ["
-          << _filename << "]:"
-          << std::endl;
+    warn << "Found multiple render extension plugins in [" << _filename << "]:" << std::endl;
     for (auto pluginName : extensionNames)
     {
       warn << "- " << pluginName << std::endl;
@@ -520,18 +543,15 @@ bool RenderEngineExtensionManagerPrivate::LoadExtensionPlugin(
   auto plugin = pluginLoader.Instantiate(extensionName);
   if (!plugin)
   {
-    gzerr << "Failed to instantiate plugin [" << extensionName << "]"
-           << std::endl;
+    gzerr << "Failed to instantiate plugin [" << extensionName << "]" << std::endl;
     return false;
   }
 
-  auto renderPlugin =
-      plugin->QueryInterface<gz::rendering::RenderEngineExtensionPlugin>();
+  auto renderPlugin = plugin->QueryInterface<gz::rendering::RenderEngineExtensionPlugin>();
 
   if (!renderPlugin)
   {
-    gzerr << "Failed to query interface from [" << extensionName << "]"
-           << std::endl;
+    gzerr << "Failed to query interface from [" << extensionName << "]" << std::endl;
     return false;
   }
 
@@ -548,14 +568,13 @@ bool RenderEngineExtensionManagerPrivate::LoadExtensionPlugin(
 }
 
 //////////////////////////////////////////////////
-bool RenderEngineExtensionManagerPrivate::UnloadExtensionPlugin(
-    const std::string &_extensionName)
+bool RenderEngineExtensionManagerPrivate::UnloadExtensionPlugin(const std::string & _extensionName)
 {
   auto it = this->extensionPlugins.find(_extensionName);
   if (it == this->extensionPlugins.end())
   {
     gzmsg << "Skip unloading extension plugin. [" << _extensionName << "] "
-           << "not loaded from plugin." << std::endl;
+          << "not loaded from plugin." << std::endl;
     return false;
   }
 
@@ -574,7 +593,9 @@ bool RenderEngineExtensionManagerPrivate::UnloadExtensionPlugin(
   std::lock_guard<std::recursive_mutex> lock(this->extensionsMutex);
   auto extensionIt = this->extensions.find(_extensionName);
   if (extensionIt == this->extensions.end())
+  {
     return false;
+  }
 
   // set to null - this means extension is still registered but not loaded
   this->extensions[_extensionName] = nullptr;
@@ -583,8 +604,7 @@ bool RenderEngineExtensionManagerPrivate::UnloadExtensionPlugin(
 }
 
 //////////////////////////////////////////////////
-void RenderEngineExtensionManagerPrivate::UnregisterExtension(
-    ExtensionIter _iter)
+void RenderEngineExtensionManagerPrivate::UnregisterExtension(ExtensionIter _iter)
 {
   _iter->second->Destroy();
 
@@ -592,6 +612,6 @@ void RenderEngineExtensionManagerPrivate::UnregisterExtension(
   this->extensions.erase(_iter);
 }
 
-}
+}  // namespace GZ_RENDERING_VERSION_NAMESPACE
 }  // namespace rendering
 }  // namespace gz

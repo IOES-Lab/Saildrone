@@ -24,27 +24,21 @@ namespace waves
 {
 
 //////////////////////////////////////////////////
-DirectionalSpreadingFunction::~DirectionalSpreadingFunction()
-{
-}
+DirectionalSpreadingFunction::~DirectionalSpreadingFunction() {}
 
 //////////////////////////////////////////////////
 //////////////////////////////////////////////////
-Cos2sSpreadingFunction::~Cos2sSpreadingFunction()
-{
-}
+Cos2sSpreadingFunction::~Cos2sSpreadingFunction() {}
 
 //////////////////////////////////////////////////
-Cos2sSpreadingFunction::Cos2sSpreadingFunction(double spread) :
-    DirectionalSpreadingFunction(),
-    spread_(spread)
+Cos2sSpreadingFunction::Cos2sSpreadingFunction(double spread)
+: DirectionalSpreadingFunction(), spread_(spread)
 {
   RecalcCoeffs();
 }
 
 //////////////////////////////////////////////////
-double Cos2sSpreadingFunction::Evaluate(
-    double theta, double theta_mean, double /*k*/) const
+double Cos2sSpreadingFunction::Evaluate(double theta, double theta_mean, double /*k*/) const
 {
   double phi = theta - theta_mean;
   double cp = std::cos(phi / 2.0);
@@ -55,33 +49,23 @@ double Cos2sSpreadingFunction::Evaluate(
 
 //////////////////////////////////////////////////
 void Cos2sSpreadingFunction::Evaluate(
-    Eigen::Ref<Eigen::ArrayXXd> phi,
-    const Eigen::Ref<const Eigen::ArrayXXd>& theta,
-    double theta_mean,
-    const Eigen::Ref<const Eigen::ArrayXXd>& /*k*/) const
+  Eigen::Ref<Eigen::ArrayXXd> phi, const Eigen::Ref<const Eigen::ArrayXXd> & theta,
+  double theta_mean, const Eigen::Ref<const Eigen::ArrayXXd> & /*k*/) const
 {
   auto theta_view = theta.reshaped();
   std::transform(
-    theta_view.cbegin(),
-    theta_view.cend(),
-    phi.reshaped().begin(),
-    [&, this] (double theta_i) -> double
-    {
-      return this->Evaluate(theta_i, theta_mean);
-    });
+    theta_view.cbegin(), theta_view.cend(), phi.reshaped().begin(),
+    [&, this](double theta_i) -> double { return this->Evaluate(theta_i, theta_mean); });
 }
 
 //////////////////////////////////////////////////
-double Cos2sSpreadingFunction::Spread() const
-{
-  return spread_;
-}
+double Cos2sSpreadingFunction::Spread() const { return spread_; }
 
 //////////////////////////////////////////////////
 void Cos2sSpreadingFunction::SetSpread(double value)
 {
-    spread_ = value;
-    RecalcCoeffs();
+  spread_ = value;
+  RecalcCoeffs();
 }
 
 //////////////////////////////////////////////////
@@ -94,25 +78,16 @@ void Cos2sSpreadingFunction::RecalcCoeffs()
 
 //////////////////////////////////////////////////
 //////////////////////////////////////////////////
-ECKVSpreadingFunction::~ECKVSpreadingFunction()
+ECKVSpreadingFunction::~ECKVSpreadingFunction() {}
+
+//////////////////////////////////////////////////
+ECKVSpreadingFunction::ECKVSpreadingFunction(double u10, double cap_omega_c, double gravity)
+: DirectionalSpreadingFunction(), gravity_(gravity), u10_(u10), cap_omega_c_(cap_omega_c)
 {
 }
 
 //////////////////////////////////////////////////
-ECKVSpreadingFunction::ECKVSpreadingFunction(
-    double u10,
-    double cap_omega_c,
-    double gravity) :
-  DirectionalSpreadingFunction(),
-  gravity_(gravity),
-  u10_(u10),
-  cap_omega_c_(cap_omega_c)
-{
-}
-
-//////////////////////////////////////////////////
-double ECKVSpreadingFunction::Evaluate(
-    double theta, double theta_mean, double k) const
+double ECKVSpreadingFunction::Evaluate(double theta, double theta_mean, double k) const
 {
   double angle = theta - theta_mean;
 
@@ -137,58 +112,33 @@ double ECKVSpreadingFunction::Evaluate(
 
 //////////////////////////////////////////////////
 void ECKVSpreadingFunction::Evaluate(
-    Eigen::Ref<Eigen::ArrayXXd> phi,
-    const Eigen::Ref<const Eigen::ArrayXXd>& theta,
-    double theta_mean,
-    const Eigen::Ref<const Eigen::ArrayXXd>& k) const
+  Eigen::Ref<Eigen::ArrayXXd> phi, const Eigen::Ref<const Eigen::ArrayXXd> & theta,
+  double theta_mean, const Eigen::Ref<const Eigen::ArrayXXd> & k) const
 {
   auto theta_view = theta.reshaped();
   std::transform(
-    theta_view.cbegin(),
-    theta_view.cend(),
-    k.reshaped().cbegin(),
-    phi.reshaped().begin(),
-    [&, this] (double theta_i, double k_i) -> double
-    {
-      return this->Evaluate(theta_i, theta_mean, k_i);
-    });
+    theta_view.cbegin(), theta_view.cend(), k.reshaped().cbegin(), phi.reshaped().begin(),
+    [&, this](double theta_i, double k_i) -> double
+    { return this->Evaluate(theta_i, theta_mean, k_i); });
 }
 
 //////////////////////////////////////////////////
-double ECKVSpreadingFunction::Gravity() const
-{
-  return gravity_;
-}
+double ECKVSpreadingFunction::Gravity() const { return gravity_; }
 
 //////////////////////////////////////////////////
-void ECKVSpreadingFunction::SetGravity(double value)
-{
-  gravity_ = value;
-}
+void ECKVSpreadingFunction::SetGravity(double value) { gravity_ = value; }
 
 //////////////////////////////////////////////////
-double ECKVSpreadingFunction::U10() const
-{
-  return u10_;
-}
+double ECKVSpreadingFunction::U10() const { return u10_; }
 
 //////////////////////////////////////////////////
-void ECKVSpreadingFunction::SetU10(double value)
-{
-  u10_ = value;
-}
+void ECKVSpreadingFunction::SetU10(double value) { u10_ = value; }
 
 //////////////////////////////////////////////////
-double ECKVSpreadingFunction::CapOmegaC() const
-{
-  return cap_omega_c_;
-}
+double ECKVSpreadingFunction::CapOmegaC() const { return cap_omega_c_; }
 
 //////////////////////////////////////////////////
-void ECKVSpreadingFunction::SetCapOmegaC(double value)
-{
-  cap_omega_c_ = value;
-}
+void ECKVSpreadingFunction::SetCapOmegaC(double value) { cap_omega_c_ = value; }
 
 }  // namespace waves
 }  // namespace gz

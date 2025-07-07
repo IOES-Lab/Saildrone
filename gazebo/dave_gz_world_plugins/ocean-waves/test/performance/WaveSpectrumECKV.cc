@@ -26,25 +26,20 @@
 
 namespace Eigen
 {
-  typedef Eigen::Array<
-    double,
-    Eigen::Dynamic,
-    Eigen::Dynamic,
-    Eigen::RowMajor
-  > ArrayXXdRowMajor;
+typedef Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> ArrayXXdRowMajor;
 }
 
-using std::chrono::steady_clock;
-using std::chrono::milliseconds;
 using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+using std::chrono::steady_clock;
 
 using gz::waves::ECKVWaveSpectrum;
 
 //////////////////////////////////////////////////
 // Define fixture
-class WaveSpectrumECKVTest: public ::testing::Test
+class WaveSpectrumECKVTest : public ::testing::Test
 {
- public:
+public:
   WaveSpectrumECKVTest()
   {
     double kx_nyquist = M_PI * nx_ / lx_;
@@ -53,11 +48,11 @@ class WaveSpectrumECKVTest: public ::testing::Test
     Eigen::ArrayXd kx_v(nx_);
     Eigen::ArrayXd ky_v(ny_);
 
-    for (int i=0; i < nx_; ++i)
+    for (int i = 0; i < nx_; ++i)
     {
       kx_v(i) = (i * 2.0 / nx_ - 1.0) * kx_nyquist;
     }
-    for (int i=0; i < ny_; ++i)
+    for (int i = 0; i < ny_; ++i)
     {
       ky_v(i) = (i * 2.0 / ny_ - 1.0) * ky_nyquist;
     }
@@ -77,10 +72,7 @@ class WaveSpectrumECKVTest: public ::testing::Test
     spectrum_ = ECKVWaveSpectrum(u19_);
   }
 
-  void SetUp() override
-  {
-    cap_s_ = Eigen::ArrayXXd::Zero(nx_, ny_);
-  }
+  void SetUp() override { cap_s_ = Eigen::ArrayXXd::Zero(nx_, ny_); }
 
   // number of evaluations
   int num_runs_ = 10000;
@@ -88,8 +80,8 @@ class WaveSpectrumECKVTest: public ::testing::Test
   // wave number grid (nx_, ny_)
   double lx_{200.0};
   double ly_{100.0};
-  int    nx_{256};
-  int    ny_{128};
+  int nx_{256};
+  int ny_{128};
   Eigen::ArrayXXd k_;
 
   // spectrum
@@ -156,11 +148,8 @@ TEST_F(WaveSpectrumECKVTest, ArrayXXdReshapedIterator)
   {
     Eigen::ArrayXd k_view = k_.reshaped();
     Eigen::ArrayXd cap_s_view = cap_s_.reshaped();
-    for (
-      auto it1 = cap_s_view.begin(), it2 = k_view.begin();
-      it1 != cap_s_view.end() && it2 != k_view.end();
-      ++it1, ++it2
-    )
+    for (auto it1 = cap_s_view.begin(), it2 = k_view.begin();
+         it1 != cap_s_view.end() && it2 != k_view.end(); ++it1, ++it2)
     {
       *it1 = spectrum_.Evaluate(*it2);
     }

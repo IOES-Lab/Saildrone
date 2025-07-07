@@ -25,7 +25,8 @@
 class gz::sim::CollisionPrivate
 {
   /// \brief Id of link entity.
-  public: Entity id{kNullEntity};
+public:
+  Entity id{kNullEntity};
 };
 
 namespace gz
@@ -37,59 +38,54 @@ namespace sim
 Collision::~Collision() = default;
 
 //////////////////////////////////////////////////
-Collision::Collision(sim::Entity _entity)
-  : dataPtr(std::make_unique<CollisionPrivate>())
+Collision::Collision(sim::Entity _entity) : dataPtr(std::make_unique<CollisionPrivate>())
 {
   this->dataPtr->id = _entity;
 }
 
 //////////////////////////////////////////////////
-Collision::Collision(const Collision &_collision)
-  : dataPtr(std::make_unique<CollisionPrivate>(*_collision.dataPtr))
+Collision::Collision(const Collision & _collision)
+: dataPtr(std::make_unique<CollisionPrivate>(*_collision.dataPtr))
 {
 }
 
 //////////////////////////////////////////////////
-Collision::Collision(Collision &&_collision) noexcept = default;
+Collision::Collision(Collision && _collision) noexcept = default;
 
 //////////////////////////////////////////////////
-Collision &Collision::operator=(Collision &&_collision) noexcept = default;
+Collision & Collision::operator=(Collision && _collision) noexcept = default;
 
 //////////////////////////////////////////////////
-Collision &Collision::operator=(const Collision &_collision)
+Collision & Collision::operator=(const Collision & _collision)
 {
   *this->dataPtr = (*_collision.dataPtr);
   return *this;
 }
 
 //////////////////////////////////////////////////
-sim::Entity Collision::Entity() const
+sim::Entity Collision::Entity() const { return this->dataPtr->id; }
+
+//////////////////////////////////////////////////
+bool Collision::Valid(const EntityComponentManager & _ecm) const
 {
-  return this->dataPtr->id;
+  return nullptr != _ecm.Component<components::Collision>(this->dataPtr->id);
 }
 
 //////////////////////////////////////////////////
-bool Collision::Valid(const EntityComponentManager &_ecm) const
-{
-  return nullptr != _ecm.Component<components::Collision>(
-      this->dataPtr->id);
-}
-
-//////////////////////////////////////////////////
-std::optional<std::string> Collision::Name(
-    const EntityComponentManager &_ecm) const
+std::optional<std::string> Collision::Name(const EntityComponentManager & _ecm) const
 {
   return _ecm.ComponentData<components::Name>(this->dataPtr->id);
 }
 
 //////////////////////////////////////////////////
-std::optional<Model> Collision::ParentLink(
-    const EntityComponentManager &_ecm) const
+std::optional<Model> Collision::ParentLink(const EntityComponentManager & _ecm) const
 {
   auto parent = _ecm.Component<components::ParentEntity>(this->dataPtr->id);
 
   if (!parent)
+  {
     return std::nullopt;
+  }
 
   return std::optional<Model>(parent->Data());
 }

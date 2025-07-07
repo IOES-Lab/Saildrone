@@ -26,21 +26,21 @@
 #include <gz/waves/WaveSimulation.hh>
 #include <gz/waves/WaveSpectrum.hh>
 
-using gz::waves::Index;
 using gz::waves::ECKVWaveSpectrum;
+using gz::waves::Index;
 using gz::waves::PiersonMoskowitzWaveSpectrum;
 
 // https://stackoverflow.com/questions/16605967/set-precision-of-stdto-string-when-converting-floating-point-values
 template <typename T>
 std::string to_string_with_precision(const T a_value, const int n = 6)
 {
-    std::ostringstream out;
-    out.precision(n);
-    out << std::fixed << a_value;
-    return out.str();
+  std::ostringstream out;
+  out.precision(n);
+  out << std::fixed << a_value;
+  return out.str();
 }
 
-int main(int /*argc*/, const char **/*argv*/)
+int main(int /*argc*/, const char ** /*argv*/)
 {
   try
   {
@@ -55,8 +55,7 @@ int main(int /*argc*/, const char **/*argv*/)
       ECKVWaveSpectrum spectrum;
 
       Index nk = 200;
-      Eigen::ArrayXd k =
-          Eigen::pow(10.0, Eigen::ArrayXd::LinSpaced(nk, -3.0, 4.0));
+      Eigen::ArrayXd k = Eigen::pow(10.0, Eigen::ArrayXd::LinSpaced(nk, -3.0, 4.0));
 
       Index nu = 5;
       Eigen::ArrayXd u10 = Eigen::ArrayXd::LinSpaced(nu, 0.0, 20.0);
@@ -76,14 +75,14 @@ int main(int /*argc*/, const char **/*argv*/)
         }
       }
 
-
       // assume we always have at least one plot
       std::string plot_str("plot '-' w l title 'u10 = ");
       plot_str.append(to_string_with_precision(u10(0), 1)).append("'");
       for (Index iu = 1; iu < nu; ++iu)
       {
         plot_str.append(",'-' w l title 'u10 = ")
-          .append(to_string_with_precision(u10(iu), 1)).append("'");
+          .append(to_string_with_precision(u10(iu), 1))
+          .append("'");
       }
       plot_str.append("\n");
 
@@ -107,8 +106,7 @@ int main(int /*argc*/, const char **/*argv*/)
       PiersonMoskowitzWaveSpectrum spectrum;
 
       Index nk = 200;
-      Eigen::ArrayXd k =
-          Eigen::pow(10.0, Eigen::ArrayXd::LinSpaced(nk, -3.0, 4.0));
+      Eigen::ArrayXd k = Eigen::pow(10.0, Eigen::ArrayXd::LinSpaced(nk, -3.0, 4.0));
 
       Index nu = 5;
       Eigen::ArrayXd u19 = Eigen::ArrayXd::LinSpaced(nu, 0.0, 20.0);
@@ -134,7 +132,8 @@ int main(int /*argc*/, const char **/*argv*/)
       for (Index iu = 1; iu < nu; ++iu)
       {
         plot_str.append(",'-' w l title 'u19 = ")
-          .append(to_string_with_precision(u19(iu), 1)).append("'");
+          .append(to_string_with_precision(u19(iu), 1))
+          .append("'");
       }
       plot_str.append("\n");
 
@@ -154,11 +153,10 @@ int main(int /*argc*/, const char **/*argv*/)
       }
     }
   }
-  catch(...)
+  catch (...)
   {
     std::cerr << "Unknown exception\n";
     return -1;
   }
   return 0;
 }
-

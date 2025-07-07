@@ -51,7 +51,7 @@ namespace waves
 
 //////////////////////////////////////////////////
 // Utilities
-void DebugPrint(const cgal::Triangle& triangle)
+void DebugPrint(const cgal::Triangle & triangle)
 {
   gzmsg << "Vertex[0]:   " << triangle[0] << "\n";
   gzmsg << "Vertex[1]:   " << triangle[1] << "\n";
@@ -63,10 +63,7 @@ void DebugPrint(const cgal::Triangle& triangle)
 // Physics
 
 cgal::Point3 Physics::CenterOfForce(
-  double _fA, double _fB,
-  const cgal::Point3& _A,
-  const cgal::Point3& _B
-)
+  double _fA, double _fB, const cgal::Point3 & _A, const cgal::Point3 & _B)
 {
   /// \todo provide robust floating point checks
   double div = _fA + _fB;
@@ -75,7 +72,9 @@ cgal::Point3 Physics::CenterOfForce(
   {
     double t = _fA / div;
     return _B + (_A - _B) * t;
-  } else {
+  }
+  else
+  {
     return _B;
   }
 }
@@ -102,22 +101,18 @@ double Physics::ViscousDragCoefficient(double Rn)
   // corresponds to a velocity ~ 1.0E-5
   double r = std::max(1.0E3, Rn);
   double d = std::log10(r) - 2.0;
-  double d2 = d*d;
+  double d2 = d * d;
   double CF = 0.075 / d2;
   return CF;
 }
 
 //////////////////////////////////////////////////
 cgal::Point3 Physics::CenterOfPressureApexUp(
-  double _z0,
-  const cgal::Point3& _H,
-  const cgal::Point3& _M,
-  const cgal::Point3& _B
-)
+  double _z0, const cgal::Point3 & _H, const cgal::Point3 & _M, const cgal::Point3 & _B)
 {
   cgal::Vector3 alt = _B - _H;
   double h = _H.z() - _M.z();
-  double tc = 2.0/3.0;
+  double tc = 2.0 / 3.0;
   double div = 6.0 * _z0 + 4.0 * h;
   constexpr double tol = 1.0E-16;
   if (std::fabs(div) > tol)
@@ -129,15 +124,11 @@ cgal::Point3 Physics::CenterOfPressureApexUp(
 
 //////////////////////////////////////////////////
 cgal::Point3 Physics::CenterOfPressureApexDn(
-  double _z0,
-  const cgal::Point3& _L,
-  const cgal::Point3& _M,
-  const cgal::Point3& _B
-)
+  double _z0, const cgal::Point3 & _L, const cgal::Point3 & _M, const cgal::Point3 & _B)
 {
   cgal::Vector3 alt = _L - _B;
   double h = _M.z() - _L.z();
-  double tc = 1.0/3.0;
+  double tc = 1.0 / 3.0;
   double div = 6.0 * _z0 + 2.0 * h;
   constexpr double tol = 1.0E-16;
   if (std::fabs(div) > tol)
@@ -149,15 +140,9 @@ cgal::Point3 Physics::CenterOfPressureApexDn(
 
 //////////////////////////////////////////////////
 void Physics::BuoyancyForceAtCenterOfPressure(
-  double _depthC,
-  const cgal::Point3& _C,
-  const cgal::Point3& _H,
-  const cgal::Point3& _M,
-  const cgal::Point3& _L,
-  const cgal::Vector3& _normal,
-  cgal::Point3& _center,
-  cgal::Vector3& _force
-)
+  double _depthC, const cgal::Point3 & _C, const cgal::Point3 & _H, const cgal::Point3 & _M,
+  const cgal::Point3 & _L, const cgal::Vector3 & _normal, cgal::Point3 & _center,
+  cgal::Vector3 & _force)
 {
   double fluidDensity = PhysicalConstants::WaterDensity();  // kg m^-3
   double gravity = PhysicalConstants::Gravity();            // m s^-1
@@ -250,15 +235,12 @@ void Physics::BuoyancyForceAtCenterOfPressure(
 
 //////////////////////////////////////////////////
 void Physics::BuoyancyForceAtCentroid(
-  const WavefieldSampler& _wavefieldSampler,
-  const cgal::Triangle& _triangle,
-  cgal::Point3& _center,
-  cgal::Vector3& _force
-)
+  const WavefieldSampler & _wavefieldSampler, const cgal::Triangle & _triangle,
+  cgal::Point3 & _center, cgal::Vector3 & _force)
 {
   // Physical constants
-  double density = PhysicalConstants::WaterDensity();   // kg m^-3
-  double gravity = PhysicalConstants::Gravity();        // m s^-1
+  double density = PhysicalConstants::WaterDensity();  // kg m^-3
+  double gravity = PhysicalConstants::Gravity();       // m s^-1
 
   // Calculate the triangles centroid
   _center = Geometry::TriangleCentroid(_triangle);
@@ -274,19 +256,12 @@ void Physics::BuoyancyForceAtCentroid(
 
 //////////////////////////////////////////////////
 void Physics::BuoyancyForceAtCenterOfPressure(
-  const WavefieldSampler& _wavefieldSampler,
-  const cgal::Triangle& _triangle,
-  cgal::Point3& _center,
-  cgal::Vector3& _force
-)
+  const WavefieldSampler & _wavefieldSampler, const cgal::Triangle & _triangle,
+  cgal::Point3 & _center, cgal::Vector3 & _force)
 {
   // Sort triangle vertices by height.
-  std::array<cgal::Point3, 3> v {
-    _triangle[0],
-    _triangle[1],
-    _triangle[2]
-  };
-  std::array<double, 3> vz { v[0].z(), v[1].z(), v[2].z() };
+  std::array<cgal::Point3, 3> v{_triangle[0], _triangle[1], _triangle[2]};
+  std::array<double, 3> vz{v[0].z(), v[1].z(), v[2].z()};
   auto index = algorithm::sort_indexes(vz);
 
   cgal::Point3 H = v[index[0]];
@@ -317,16 +292,14 @@ void Physics::BuoyancyForceAtCenterOfPressure(
 
 //////////////////////////////////////////////////
 std::array<double, 3> Physics::ComputeHeightMap(
-  const WavefieldSampler& _wavefieldSampler,
-  const cgal::Triangle& _triangle
-)
+  const WavefieldSampler & _wavefieldSampler, const cgal::Triangle & _triangle)
 {
   // Heightmap for the triangle vertices
   cgal::Direction3 direction(0, 0, -1);
   std::array<double, 3> heightMap;
 
   // Calculate the height above the surface (-depth)
-  for (Index i=0; i < 3; ++i)
+  for (Index i = 0; i < 3; ++i)
   {
     cgal::Point3 vertex = _triangle[i];
     heightMap[i] = -_wavefieldSampler.ComputeDepth(vertex);
@@ -338,9 +311,9 @@ std::array<double, 3> Physics::ComputeHeightMap(
 //////////////////////////////////////////////////
 class HydrodynamicsParametersPrivate
 {
- public:
-  HydrodynamicsParametersPrivate() :
-    dampingOn(true),
+public:
+  HydrodynamicsParametersPrivate()
+  : dampingOn(true),
     cDampL1(1.0E-6),
     cDampL2(1.0E-6),
     cDampR1(1.0E-6),
@@ -354,7 +327,8 @@ class HydrodynamicsParametersPrivate
     cSDrag2(1.0E+2),
     fSDrag(0.4),
     vRDrag(1.0)
-  {}
+  {
+  }
 
   // Linear and rotational damping
   bool dampingOn;
@@ -387,166 +361,95 @@ class HydrodynamicsParametersPrivate
 };
 
 //////////////////////////////////////////////////
-HydrodynamicsParameters::~HydrodynamicsParameters()
+HydrodynamicsParameters::~HydrodynamicsParameters() {}
+
+//////////////////////////////////////////////////
+HydrodynamicsParameters::HydrodynamicsParameters() : data(new HydrodynamicsParametersPrivate()) {}
+
+//////////////////////////////////////////////////
+bool HydrodynamicsParameters::DampingOn() const { return this->data->dampingOn; }
+
+//////////////////////////////////////////////////
+bool HydrodynamicsParameters::ViscousDragOn() const { return this->data->viscousDragOn; }
+
+//////////////////////////////////////////////////
+bool HydrodynamicsParameters::PressureDragOn() const { return this->data->pressureDragOn; }
+
+//////////////////////////////////////////////////
+double HydrodynamicsParameters::CDampL1() const { return this->data->cDampL1; }
+
+//////////////////////////////////////////////////
+double HydrodynamicsParameters::CDampL2() const { return this->data->cDampL2; }
+
+//////////////////////////////////////////////////
+double HydrodynamicsParameters::CDampR1() const { return this->data->cDampR1; }
+
+//////////////////////////////////////////////////
+double HydrodynamicsParameters::CDampR2() const { return this->data->cDampR2; }
+
+//////////////////////////////////////////////////
+double HydrodynamicsParameters::CPDrag1() const { return this->data->cPDrag1; }
+
+//////////////////////////////////////////////////
+double HydrodynamicsParameters::CPDrag2() const { return this->data->cPDrag2; }
+
+//////////////////////////////////////////////////
+double HydrodynamicsParameters::FPDrag() const { return this->data->fPDrag; }
+
+//////////////////////////////////////////////////
+double HydrodynamicsParameters::CSDrag1() const { return this->data->cSDrag1; }
+
+//////////////////////////////////////////////////
+double HydrodynamicsParameters::CSDrag2() const { return this->data->cSDrag2; }
+
+//////////////////////////////////////////////////
+double HydrodynamicsParameters::FSDrag() const { return this->data->fSDrag; }
+
+//////////////////////////////////////////////////
+double HydrodynamicsParameters::VRDrag() const { return this->data->vRDrag; }
+
+//////////////////////////////////////////////////
+void HydrodynamicsParameters::SetFromMsg(const gz::msgs::Param_V & _msg)
 {
+  this->data->dampingOn = Utilities::MsgParamBool(_msg, "damping_on", this->data->dampingOn);
+  this->data->viscousDragOn =
+    Utilities::MsgParamBool(_msg, "viscous_drag_on", this->data->viscousDragOn);
+  this->data->pressureDragOn =
+    Utilities::MsgParamBool(_msg, "pressure_drag_on", this->data->pressureDragOn);
+
+  this->data->cDampL1 = Utilities::MsgParamDouble(_msg, "cDampL1", this->data->cDampL1);
+  this->data->cDampL2 = Utilities::MsgParamDouble(_msg, "cDampL2", this->data->cDampL2);
+  this->data->cDampR1 = Utilities::MsgParamDouble(_msg, "cDampR1", this->data->cDampR1);
+  this->data->cDampR2 = Utilities::MsgParamDouble(_msg, "cDampR2", this->data->cDampR2);
+  this->data->cPDrag1 = Utilities::MsgParamDouble(_msg, "cPDrag1", this->data->cPDrag1);
+  this->data->cPDrag2 = Utilities::MsgParamDouble(_msg, "cPDrag2", this->data->cPDrag2);
+  this->data->fPDrag = Utilities::MsgParamDouble(_msg, "fPDrag", this->data->fPDrag);
+  this->data->cSDrag1 = Utilities::MsgParamDouble(_msg, "cSDrag1", this->data->cSDrag1);
+  this->data->cSDrag2 = Utilities::MsgParamDouble(_msg, "cSDrag2", this->data->cSDrag2);
+  this->data->fSDrag = Utilities::MsgParamDouble(_msg, "fSDrag", this->data->fSDrag);
+  this->data->vRDrag = Utilities::MsgParamDouble(_msg, "vRDrag", this->data->vRDrag);
 }
 
 //////////////////////////////////////////////////
-HydrodynamicsParameters::HydrodynamicsParameters() :
-  data(new HydrodynamicsParametersPrivate())
+void HydrodynamicsParameters::SetFromSDF(sdf::Element & _sdf)
 {
-}
+  this->data->dampingOn = Utilities::SdfParamBool(_sdf, "damping_on", this->data->dampingOn);
+  this->data->viscousDragOn =
+    Utilities::SdfParamBool(_sdf, "viscous_drag_on", this->data->viscousDragOn);
+  this->data->pressureDragOn =
+    Utilities::SdfParamBool(_sdf, "pressure_drag_on", this->data->pressureDragOn);
 
-//////////////////////////////////////////////////
-bool HydrodynamicsParameters::DampingOn() const
-{
-  return this->data->dampingOn;
-}
-
-//////////////////////////////////////////////////
-bool HydrodynamicsParameters::ViscousDragOn() const
-{
-  return this->data->viscousDragOn;
-}
-
-//////////////////////////////////////////////////
-bool HydrodynamicsParameters::PressureDragOn() const
-{
-  return this->data->pressureDragOn;
-}
-
-//////////////////////////////////////////////////
-double HydrodynamicsParameters::CDampL1() const
-{
-  return this->data->cDampL1;
-}
-
-//////////////////////////////////////////////////
-double HydrodynamicsParameters::CDampL2() const
-{
-  return this->data->cDampL2;
-}
-
-//////////////////////////////////////////////////
-double HydrodynamicsParameters::CDampR1() const
-{
-  return this->data->cDampR1;
-}
-
-//////////////////////////////////////////////////
-double HydrodynamicsParameters::CDampR2() const
-{
-  return this->data->cDampR2;
-}
-
-//////////////////////////////////////////////////
-double HydrodynamicsParameters::CPDrag1() const
-{
-  return this->data->cPDrag1;
-}
-
-//////////////////////////////////////////////////
-double HydrodynamicsParameters::CPDrag2() const
-{
-  return this->data->cPDrag2;
-}
-
-//////////////////////////////////////////////////
-double HydrodynamicsParameters::FPDrag() const
-{
-  return this->data->fPDrag;
-}
-
-//////////////////////////////////////////////////
-double HydrodynamicsParameters::CSDrag1() const
-{
-  return this->data->cSDrag1;
-}
-
-//////////////////////////////////////////////////
-double HydrodynamicsParameters::CSDrag2() const
-{
-  return this->data->cSDrag2;
-}
-
-//////////////////////////////////////////////////
-double HydrodynamicsParameters::FSDrag() const
-{
-  return this->data->fSDrag;
-}
-
-//////////////////////////////////////////////////
-double HydrodynamicsParameters::VRDrag() const
-{
-  return this->data->vRDrag;
-}
-
-//////////////////////////////////////////////////
-void HydrodynamicsParameters::SetFromMsg(const gz::msgs::Param_V& _msg)
-{
-  this->data->dampingOn      = Utilities::MsgParamBool(
-      _msg,  "damping_on",       this->data->dampingOn);
-  this->data->viscousDragOn  = Utilities::MsgParamBool(
-      _msg,  "viscous_drag_on",  this->data->viscousDragOn);
-  this->data->pressureDragOn = Utilities::MsgParamBool(
-      _msg,  "pressure_drag_on", this->data->pressureDragOn);
-
-  this->data->cDampL1 = Utilities::MsgParamDouble(
-      _msg, "cDampL1",  this->data->cDampL1);
-  this->data->cDampL2 = Utilities::MsgParamDouble(
-      _msg, "cDampL2",  this->data->cDampL2);
-  this->data->cDampR1 = Utilities::MsgParamDouble(
-      _msg, "cDampR1",  this->data->cDampR1);
-  this->data->cDampR2 = Utilities::MsgParamDouble(
-      _msg, "cDampR2",  this->data->cDampR2);
-  this->data->cPDrag1 = Utilities::MsgParamDouble(
-      _msg, "cPDrag1",  this->data->cPDrag1);
-  this->data->cPDrag2 = Utilities::MsgParamDouble(
-      _msg, "cPDrag2",  this->data->cPDrag2);
-  this->data->fPDrag  = Utilities::MsgParamDouble(
-      _msg, "fPDrag",   this->data->fPDrag);
-  this->data->cSDrag1 = Utilities::MsgParamDouble(
-      _msg, "cSDrag1",  this->data->cSDrag1);
-  this->data->cSDrag2 = Utilities::MsgParamDouble(
-      _msg, "cSDrag2",  this->data->cSDrag2);
-  this->data->fSDrag  = Utilities::MsgParamDouble(
-      _msg, "fSDrag",   this->data->fSDrag);
-  this->data->vRDrag  = Utilities::MsgParamDouble(
-      _msg, "vRDrag",   this->data->vRDrag);
-}
-
-//////////////////////////////////////////////////
-void HydrodynamicsParameters::SetFromSDF(sdf::Element& _sdf)
-{
-  this->data->dampingOn      = Utilities::SdfParamBool(
-      _sdf,  "damping_on",       this->data->dampingOn);
-  this->data->viscousDragOn  = Utilities::SdfParamBool(
-      _sdf,  "viscous_drag_on",  this->data->viscousDragOn);
-  this->data->pressureDragOn = Utilities::SdfParamBool(
-      _sdf,  "pressure_drag_on", this->data->pressureDragOn);
-
-  this->data->cDampL1 = Utilities::SdfParamDouble(
-      _sdf, "cDampL1",  this->data->cDampL1);
-  this->data->cDampL2 = Utilities::SdfParamDouble(
-      _sdf, "cDampL2",  this->data->cDampL2);
-  this->data->cDampR1 = Utilities::SdfParamDouble(
-      _sdf, "cDampR1",  this->data->cDampR1);
-  this->data->cDampR2 = Utilities::SdfParamDouble(
-      _sdf, "cDampR2",  this->data->cDampR2);
-  this->data->cPDrag1 = Utilities::SdfParamDouble(
-      _sdf, "cPDrag1",  this->data->cPDrag1);
-  this->data->cPDrag2 = Utilities::SdfParamDouble(
-      _sdf, "cPDrag2",  this->data->cPDrag2);
-  this->data->fPDrag  = Utilities::SdfParamDouble(
-      _sdf, "fPDrag",   this->data->fPDrag);
-  this->data->cSDrag1 = Utilities::SdfParamDouble(
-      _sdf, "cSDrag1",  this->data->cSDrag1);
-  this->data->cSDrag2 = Utilities::SdfParamDouble(
-      _sdf, "cSDrag2",  this->data->cSDrag2);
-  this->data->fSDrag  = Utilities::SdfParamDouble(
-      _sdf, "fSDrag",   this->data->fSDrag);
-  this->data->vRDrag  = Utilities::SdfParamDouble(
-      _sdf, "vRDrag",   this->data->vRDrag);
+  this->data->cDampL1 = Utilities::SdfParamDouble(_sdf, "cDampL1", this->data->cDampL1);
+  this->data->cDampL2 = Utilities::SdfParamDouble(_sdf, "cDampL2", this->data->cDampL2);
+  this->data->cDampR1 = Utilities::SdfParamDouble(_sdf, "cDampR1", this->data->cDampR1);
+  this->data->cDampR2 = Utilities::SdfParamDouble(_sdf, "cDampR2", this->data->cDampR2);
+  this->data->cPDrag1 = Utilities::SdfParamDouble(_sdf, "cPDrag1", this->data->cPDrag1);
+  this->data->cPDrag2 = Utilities::SdfParamDouble(_sdf, "cPDrag2", this->data->cPDrag2);
+  this->data->fPDrag = Utilities::SdfParamDouble(_sdf, "fPDrag", this->data->fPDrag);
+  this->data->cSDrag1 = Utilities::SdfParamDouble(_sdf, "cSDrag1", this->data->cSDrag1);
+  this->data->cSDrag2 = Utilities::SdfParamDouble(_sdf, "cSDrag2", this->data->cSDrag2);
+  this->data->fSDrag = Utilities::SdfParamDouble(_sdf, "fSDrag", this->data->fSDrag);
+  this->data->vRDrag = Utilities::SdfParamDouble(_sdf, "vRDrag", this->data->vRDrag);
 }
 
 //////////////////////////////////////////////////
@@ -572,9 +475,9 @@ void HydrodynamicsParameters::DebugPrint() const
 
 class TriangleProperties
 {
- public:
-  TriangleProperties() :
-    index(0),
+public:
+  TriangleProperties()
+  : index(0),
     normal(CGAL::NULL_VECTOR),
     area(std::numeric_limits<double>::signaling_NaN()),
     subArea(std::numeric_limits<double>::signaling_NaN()),
@@ -587,21 +490,21 @@ class TriangleProperties
   {
   }
 
-  Index index;                        // index to the original triangle
-  cgal::Vector3 normal;               // triangle normal
-  double area;                        // area
-  double subArea;                     // submerged area
-  std::array<double, 3> heightMap;    // heightmap[3] - unsorted
-  cgal::Point3 vh;                    // high vertex
-  cgal::Point3 vm;                    // mid vertex
-  cgal::Point3 vl;                    // low vertex
-  double hh;                          // high vertex height
-  double hm;                          // mid vertex height
-  double hl;                          // low vertex height
+  Index index;                      // index to the original triangle
+  cgal::Vector3 normal;             // triangle normal
+  double area;                      // area
+  double subArea;                   // submerged area
+  std::array<double, 3> heightMap;  // heightmap[3] - unsorted
+  cgal::Point3 vh;                  // high vertex
+  cgal::Point3 vm;                  // mid vertex
+  cgal::Point3 vl;                  // low vertex
+  double hh;                        // high vertex height
+  double hm;                        // mid vertex height
+  double hl;                        // low vertex height
 };
 
 //////////////////////////////////////////////////
-void DebugPrint(const TriangleProperties& props)
+void DebugPrint(const TriangleProperties & props)
 {
   gzmsg << "index:        " << props.index << "\n";
   gzmsg << "normal:       " << props.normal << "\n";
@@ -618,9 +521,9 @@ void DebugPrint(const TriangleProperties& props)
 //////////////////////////////////////////////////
 class SubmergedTriangleProperties
 {
- public:
-  SubmergedTriangleProperties() :
-    index(0),
+public:
+  SubmergedTriangleProperties()
+  : index(0),
     normal(CGAL::NULL_VECTOR),
     centroid(CGAL::ORIGIN),
     xr(CGAL::NULL_VECTOR),
@@ -642,21 +545,21 @@ class SubmergedTriangleProperties
   cgal::Vector3 xr;       // xr = centroid - CoM = (r - x)
   double area;            // area
   cgal::Vector3 vp;       // point velocity vp = v + omega x r,
-                                  // where r = centroid - CoM
+                          // where r = centroid - CoM
   cgal::Vector3 up;       // normalized point velocity.
   double cosTheta;        // cos[theta] = up . normal
   cgal::Vector3 vn;       // point velocity normal to surface
-                                  // vn = (vp . normal) normal
+                          // vn = (vp . normal) normal
   cgal::Vector3 vt;       // point velocity tangential to surface
-                                  // vt = vp - vn
+                          // vt = vp - vn
   cgal::Vector3 ut;       // normalized tangential point velocity.
   cgal::Vector3 uf;       // direction of tangential flow.
-                                  // uf = - vt / ||vt|| = - ut
+                          // uf = - vt / ||vt|| = - ut
   cgal::Vector3 vf;       // tangential flow vf = ||vp|| uf
 };
 
 //////////////////////////////////////////////////
-void DebugPrint(const SubmergedTriangleProperties& props)
+void DebugPrint(const SubmergedTriangleProperties & props)
 {
   gzmsg << "index:        " << props.index << "\n";
   gzmsg << "normal:       " << props.normal << "\n";
@@ -677,7 +580,7 @@ void DebugPrint(const SubmergedTriangleProperties& props)
 
 class HydrodynamicsPrivate
 {
- public:
+public:
   /// \brief The hydrodynamics parameters.
   std::shared_ptr<const HydrodynamicsParameters> params;
 
@@ -685,7 +588,7 @@ class HydrodynamicsPrivate
   std::shared_ptr<const cgal::Mesh> linkMesh;
 
   /// \brief The wavefield sampler for this rigid body (linkMesh).
-  std::shared_ptr<const WavefieldSampler>  wavefieldSampler;
+  std::shared_ptr<const WavefieldSampler> wavefieldSampler;
 
   /// \brief Pose of the centre of mass.
   gz::math::Pose3d pose;
@@ -715,7 +618,7 @@ class HydrodynamicsPrivate
 
   // Keep buoyance force and center of pressure for debugging...
   std::vector<cgal::Vector3> fBuoyancy;
-  std::vector<cgal::Point3>  cBuoyancy;
+  std::vector<cgal::Point3> cBuoyancy;
 
   /// \brief The computed force
   cgal::Vector3 force;
@@ -729,8 +632,8 @@ class HydrodynamicsPrivate
 Hydrodynamics::Hydrodynamics(
   std::shared_ptr<const HydrodynamicsParameters> _params,
   std::shared_ptr<const cgal::Mesh> _linkMesh,
-  std::shared_ptr<const WavefieldSampler> _wavefieldSampler
-) : data(new HydrodynamicsPrivate())
+  std::shared_ptr<const WavefieldSampler> _wavefieldSampler)
+: data(new HydrodynamicsPrivate())
 {
   this->data->params = _params;
   this->data->linkMesh = _linkMesh;
@@ -743,11 +646,8 @@ Hydrodynamics::Hydrodynamics(
 
 //////////////////////////////////////////////////
 void Hydrodynamics::Update(
-  std::shared_ptr<const WavefieldSampler> _wavefieldSampler,
-  const gz::math::Pose3d& _pose,
-  const cgal::Vector3& _linVelocity,
-  const cgal::Vector3& _angVelocity
-)
+  std::shared_ptr<const WavefieldSampler> _wavefieldSampler, const gz::math::Pose3d & _pose,
+  const cgal::Vector3 & _linVelocity, const cgal::Vector3 & _angVelocity)
 {
   // Set rigid body props.
   this->data->wavefieldSampler = _wavefieldSampler;
@@ -768,35 +668,35 @@ void Hydrodynamics::Update(
   this->ComputeBuoyancyForce();
 
   if (this->data->params->ViscousDragOn())
+  {
     this->ComputeViscousDragForce();
+  }
 
   if (this->data->params->PressureDragOn())
+  {
     this->ComputePressureDragForce();
+  }
 
   if (this->data->params->DampingOn())
+  {
     this->ComputeDampingForce();
+  }
 }
 
 //////////////////////////////////////////////////
-const cgal::Vector3& Hydrodynamics::Force() const
-{
-  return this->data->force;
-}
+const cgal::Vector3 & Hydrodynamics::Force() const { return this->data->force; }
 
 //////////////////////////////////////////////////
-const cgal::Vector3& Hydrodynamics::Torque() const
-{
-  return this->data->torque;
-}
+const cgal::Vector3 & Hydrodynamics::Torque() const { return this->data->torque; }
 
 //////////////////////////////////////////////////
-const std::vector<cgal::Line>& Hydrodynamics::GetWaterline() const
+const std::vector<cgal::Line> & Hydrodynamics::GetWaterline() const
 {
   return this->data->waterline;
 }
 
 //////////////////////////////////////////////////
-const std::vector<cgal::Triangle>& Hydrodynamics::GetSubmergedTriangles() const
+const std::vector<cgal::Triangle> & Hydrodynamics::GetSubmergedTriangles() const
 {
   return this->data->submergedTriangles;
 }
@@ -809,22 +709,21 @@ void Hydrodynamics::UpdateSubmergedTriangles()
   this->data->submergedTriangleProperties.clear();
   this->data->waterline.clear();
 
-  auto& linkMesh = *this->data->linkMesh;
-  auto& wavefieldSampler = *this->data->wavefieldSampler;
+  auto & linkMesh = *this->data->linkMesh;
+  auto & wavefieldSampler = *this->data->wavefieldSampler;
 
   // @TODO_FRAGILE - prefer not to const_cast... assign prop map at creation.
   // Compute depths
-  auto& ncLinkMesh = const_cast<cgal::Mesh&>(*this->data->linkMesh);
-  auto pair = ncLinkMesh.add_property_map<
-      cgal::Mesh::Vertex_index, double>("v:depth", 0);
+  auto & ncLinkMesh = const_cast<cgal::Mesh &>(*this->data->linkMesh);
+  auto pair = ncLinkMesh.add_property_map<cgal::Mesh::Vertex_index, double>("v:depth", 0);
   this->data->depths = pair.first;
-  for (auto&& v : linkMesh.vertices())
+  for (auto && v : linkMesh.vertices())
   {
     this->data->depths[v] = wavefieldSampler.ComputeDepth(linkMesh.point(v));
   }
 
   // Get a list of the meshes exterior triangles
-  for (auto&& face : linkMesh.faces())
+  for (auto && face : linkMesh.faces())
   {
     cgal::Triangle triangle = Geometry::MakeTriangle(linkMesh, face);
 
@@ -839,12 +738,9 @@ void Hydrodynamics::UpdateSubmergedTriangles()
     //      Physics::ComputeHeightMap(wavefieldSampler, triangle);
 
     // Note sign change for height.
-    const auto& rng = CGAL::vertices_around_face(
-        linkMesh.halfedge(face), linkMesh);
-    for (
-      auto&& it = std::make_pair(std::begin(rng), 0);
-      it.first != std::end(rng);
-      ++it.first, ++it.second)
+    const auto & rng = CGAL::vertices_around_face(linkMesh.halfedge(face), linkMesh);
+    for (auto && it = std::make_pair(std::begin(rng), 0); it.first != std::end(rng);
+         ++it.first, ++it.second)
     {
       triProps.heightMap[it.second] = -this->data->depths[*it.first];
     }
@@ -874,8 +770,7 @@ void Hydrodynamics::UpdateSubmergedTriangles()
 
 //////////////////////////////////////////////////
 void Hydrodynamics::PopulateSubmergedTriangle(
-  const cgal::Triangle& _triangle,
-  TriangleProperties& _triProps)
+  const cgal::Triangle & _triangle, TriangleProperties & _triProps)
 {
   // Calculations
   const Index H = 0, M = 1, L = 2;
@@ -896,31 +791,36 @@ void Hydrodynamics::PopulateSubmergedTriangle(
       if (_triProps.hl > 0)
       {
         // no-op
-      } else {
+      }
+      else
+      {
         this->SplitPartiallySubmergedTriangle1(_triProps);
       }
-    } else {
+    }
+    else
+    {
       this->SplitPartiallySubmergedTriangle2(_triProps);
     }
-  } else {
+  }
+  else
+  {
     this->AddFullySubmergedTriangle(_triProps);
   }
 }
 
 //////////////////////////////////////////////////
-void Hydrodynamics::SplitPartiallySubmergedTriangle1(
-    TriangleProperties& _triProps)
+void Hydrodynamics::SplitPartiallySubmergedTriangle1(TriangleProperties & _triProps)
 {
-  cgal::Vector3& n = _triProps.normal;
-  cgal::Point3& vh = _triProps.vh;
-  cgal::Point3& vm = _triProps.vm;
-  cgal::Point3& vl = _triProps.vl;
+  cgal::Vector3 & n = _triProps.normal;
+  cgal::Point3 & vh = _triProps.vh;
+  cgal::Point3 & vm = _triProps.vm;
+  cgal::Point3 & vl = _triProps.vl;
   double hh = _triProps.hh;
   double hm = _triProps.hm;
   double hl = _triProps.hl;
 
-  double tm = -hl/(hm - hl);
-  double th = -hl/(hh - hl);
+  double tm = -hl / (hm - hl);
+  double th = -hl / (hh - hl);
 
   cgal::Point3 vmi = vl + (vm - vl) * tm;
   cgal::Point3 vhi = vl + (vh - vl) * th;
@@ -956,22 +856,21 @@ void Hydrodynamics::SplitPartiallySubmergedTriangle1(
 }
 
 //////////////////////////////////////////////////
-void Hydrodynamics::SplitPartiallySubmergedTriangle2(
-    TriangleProperties& _triProps)
+void Hydrodynamics::SplitPartiallySubmergedTriangle2(TriangleProperties & _triProps)
 {
-  cgal::Vector3& n = _triProps.normal;
-  cgal::Point3& vh = _triProps.vh;
-  cgal::Point3& vm = _triProps.vm;
-  cgal::Point3& vl = _triProps.vl;
+  cgal::Vector3 & n = _triProps.normal;
+  cgal::Point3 & vh = _triProps.vh;
+  cgal::Point3 & vm = _triProps.vm;
+  cgal::Point3 & vl = _triProps.vl;
   double hh = _triProps.hh;
   double hm = _triProps.hm;
   double hl = _triProps.hl;
 
-  double tm = -hm/(hh - hm);
-  double tl = -hl/(hh - hl);
+  double tm = -hm / (hh - hm);
+  double tl = -hl / (hh - hl);
 
-  cgal::Point3 vmi =  vm + (vh - vm) * tm;
-  cgal::Point3 vli =  vl + (vh - vl) * tl;
+  cgal::Point3 vmi = vm + (vh - vm) * tm;
+  cgal::Point3 vli = vl + (vh - vl) * tl;
 
   // Create the new submerged triangles
   cgal::Triangle tri0(vm, vmi, vl);
@@ -1014,14 +913,13 @@ void Hydrodynamics::SplitPartiallySubmergedTriangle2(
 }
 
 //////////////////////////////////////////////////
-void Hydrodynamics::AddFullySubmergedTriangle(
-    TriangleProperties& _triProps)
+void Hydrodynamics::AddFullySubmergedTriangle(TriangleProperties & _triProps)
 {
   // Add the full triangle
-  cgal::Vector3& n = _triProps.normal;
-  cgal::Point3& vh = _triProps.vh;
-  cgal::Point3& vm = _triProps.vm;
-  cgal::Point3& vl = _triProps.vl;
+  cgal::Vector3 & n = _triProps.normal;
+  cgal::Point3 & vh = _triProps.vh;
+  cgal::Point3 & vm = _triProps.vm;
+  cgal::Point3 & vl = _triProps.vl;
 
   // Create the new submerged triangle
   cgal::Triangle tri(vh, vm, vl);
@@ -1047,14 +945,14 @@ void Hydrodynamics::AddFullySubmergedTriangle(
 void Hydrodynamics::ComputeAreas()
 {
   double area = 0.0;
-  for (auto&& props : this->data->triangleProperties)
+  for (auto && props : this->data->triangleProperties)
   {
     area += props.area;
   }
   this->data->area = area;
 
   double subArea = 0.0;
-  for (auto&& props : this->data->submergedTriangleProperties)
+  for (auto && props : this->data->submergedTriangleProperties)
   {
     subArea += props.area;
   }
@@ -1065,12 +963,11 @@ void Hydrodynamics::ComputeAreas()
 void Hydrodynamics::ComputeWaterlineLength()
 {
   // Calculate the direction of the x-axis
-  cgal::Vector3 xaxis = ToVector3(this->data->pose.Rot().RotateVector(
-    gz::math::Vector3d(1, 0, 0)));
+  cgal::Vector3 xaxis = ToVector3(this->data->pose.Rot().RotateVector(gz::math::Vector3d(1, 0, 0)));
 
   // Project the waterline onto the x-axis
   double length = 0.0;
-  for (auto&& line : this->data->waterline)
+  for (auto && line : this->data->waterline)
   {
     length += std::abs(CGAL::scalar_product(line.to_vector(), xaxis));
   }
@@ -1084,11 +981,11 @@ void Hydrodynamics::ComputeWaterlineLength()
 // Compute the point velocity at a triangles centroid
 void Hydrodynamics::ComputePointVelocities()
 {
-  auto& position = this->data->position;
-  auto& v = this->data->linVelocity;
-  auto& omega = this->data->angVelocity;
+  auto & position = this->data->position;
+  auto & v = this->data->linVelocity;
+  auto & omega = this->data->angVelocity;
 
-  for (auto&& subTriProps : this->data->submergedTriangleProperties)
+  for (auto && subTriProps : this->data->submergedTriangleProperties)
   {
     // relative position of the centroid wrt CoM
     subTriProps.xr = subTriProps.centroid - position;
@@ -1100,8 +997,7 @@ void Hydrodynamics::ComputePointVelocities()
     subTriProps.up = Geometry::Normalize(subTriProps.vp);
 
     // cos(theta) = up . n
-    subTriProps.cosTheta = CGAL::scalar_product(
-        subTriProps.up, subTriProps.normal);
+    subTriProps.cosTheta = CGAL::scalar_product(subTriProps.up, subTriProps.normal);
 
     // vn = (up . n) n
     subTriProps.vn = subTriProps.normal * subTriProps.cosTheta;
@@ -1116,11 +1012,10 @@ void Hydrodynamics::ComputePointVelocities()
     subTriProps.ut = Geometry::Normalize(subTriProps.vt);
 
     // uf = - vt / ||vt|| = - ut
-    subTriProps.uf = - subTriProps.ut;
+    subTriProps.uf = -subTriProps.ut;
 
     // vf = ||vp|| uf
-    subTriProps.vf =
-        subTriProps.uf * std::sqrt(subTriProps.vp.squared_length());
+    subTriProps.vf = subTriProps.uf * std::sqrt(subTriProps.vp.squared_length());
   }
 }
 
@@ -1129,7 +1024,7 @@ void Hydrodynamics::ComputePointVelocities()
 double Hydrodynamics::ComputeReynoldsNumber() const
 {
   // fluid speed
-  auto& v = this->data->linVelocity;
+  auto & v = this->data->linVelocity;
   double u = std::sqrt(v.squared_length());
 
   // characteristic length
@@ -1145,22 +1040,21 @@ double Hydrodynamics::ComputeReynoldsNumber() const
 //////////////////////////////////////////////////
 void Hydrodynamics::ComputeBuoyancyForce()
 {
-  cgal::Vector3 sumForce  = CGAL::NULL_VECTOR;
+  cgal::Vector3 sumForce = CGAL::NULL_VECTOR;
   cgal::Vector3 sumTorque = CGAL::NULL_VECTOR;
 
   this->data->fBuoyancy.clear();
   this->data->cBuoyancy.clear();
 
   // Calculate the buoyancy force for the submerged triangles
-  auto& position  =  this->data->position;
-  auto& wavefieldSampler = *this->data->wavefieldSampler;
-  for (auto&& subTri : this->data->submergedTriangles)
+  auto & position = this->data->position;
+  auto & wavefieldSampler = *this->data->wavefieldSampler;
+  for (auto && subTri : this->data->submergedTriangles)
   {
     // Force and center of pressure.
     cgal::Point3 center = CGAL::ORIGIN;
     cgal::Vector3 force = CGAL::NULL_VECTOR;
-    Physics::BuoyancyForceAtCenterOfPressure(
-      wavefieldSampler, subTri, center, force);
+    Physics::BuoyancyForceAtCenterOfPressure(wavefieldSampler, subTri, center, force);
     this->data->fBuoyancy.push_back(force);
     this->data->cBuoyancy.push_back(center);
 
@@ -1171,16 +1065,16 @@ void Hydrodynamics::ComputeBuoyancyForce()
     sumTorque += torque;
   }
 
-  this->data->force  += sumForce;
+  this->data->force += sumForce;
   this->data->torque += sumTorque;
 }
 
 //////////////////////////////////////////////////
 void Hydrodynamics::ComputeDampingForce()
 {
-  auto& params = *this->data->params;
+  auto & params = *this->data->params;
 
-    // Linear drag coefficients
+  // Linear drag coefficients
   double cDampL1 = params.CDampL1();
   double cDampR1 = params.CDampR1();
 
@@ -1193,17 +1087,17 @@ void Hydrodynamics::ComputeDampingForce()
   double rs = subArea / area;
 
   // Force
-  auto& v = this->data->linVelocity;
+  auto & v = this->data->linVelocity;
   double linSpeed = std::sqrt(v.squared_length());
-  double cL = - rs * (cDampL1 + cDampL2 * linSpeed);
+  double cL = -rs * (cDampL1 + cDampL2 * linSpeed);
   cgal::Vector3 force = v * cL;
 
-  auto& omega = this->data->angVelocity;
+  auto & omega = this->data->angVelocity;
   double angSpeed = std::sqrt(omega.squared_length());
-  double cR = - rs * (cDampR1 + cDampR2 * angSpeed);
+  double cR = -rs * (cDampR1 + cDampR2 * angSpeed);
   cgal::Vector3 torque = omega * cR;
 
-  this->data->force  += force;
+  this->data->force += force;
   this->data->torque += torque;
 
   // @DEBUG_INF0
@@ -1227,13 +1121,12 @@ void Hydrodynamics::ComputeViscousDragForce()
   double Rn = this->ComputeReynoldsNumber();
   double cF = Physics::ViscousDragCoefficient(Rn);
 
-  cgal::Vector3 sumForce  = CGAL::NULL_VECTOR;
+  cgal::Vector3 sumForce = CGAL::NULL_VECTOR;
   cgal::Vector3 sumTorque = CGAL::NULL_VECTOR;
-  for (auto&& subTriProps : this->data->submergedTriangleProperties)
+  for (auto && subTriProps : this->data->submergedTriangleProperties)
   {
     // Force
-    double fDrag = 0.5 * rho * cF * subTriProps.area
-      * std::sqrt(subTriProps.vf.squared_length());
+    double fDrag = 0.5 * rho * cF * subTriProps.area * std::sqrt(subTriProps.vf.squared_length());
     cgal::Vector3 force = subTriProps.vf * fDrag;
     sumForce += force;
 
@@ -1242,7 +1135,7 @@ void Hydrodynamics::ComputeViscousDragForce()
     sumTorque += torque;
   }
 
-  this->data->force  += sumForce;
+  this->data->force += sumForce;
   this->data->torque += sumTorque;
 }
 
@@ -1250,36 +1143,38 @@ void Hydrodynamics::ComputeViscousDragForce()
 // Pressure drag force - applied at triangle centroid.
 void Hydrodynamics::ComputePressureDragForce()
 {
-  auto& params = *this->data->params;
+  auto & params = *this->data->params;
 
   // Positive pressure
   double cPDrag1 = params.CPDrag1();
   double cPDrag2 = params.CPDrag2();
-  double fPDrag  = params.FPDrag();
+  double fPDrag = params.FPDrag();
   // Negative pressure (suction)
   double cSDrag1 = params.CSDrag1();
   double cSDrag2 = params.CSDrag2();
-  double fSDrag  = params.FSDrag();
+  double fSDrag = params.FSDrag();
 
   // Reference speed
-  double vRDrag  = params.VRDrag();
+  double vRDrag = params.VRDrag();
 
-  cgal::Vector3 sumForce  = CGAL::NULL_VECTOR;
+  cgal::Vector3 sumForce = CGAL::NULL_VECTOR;
   cgal::Vector3 sumTorque = CGAL::NULL_VECTOR;
-  for (auto&& subTriProps : this->data->submergedTriangleProperties)
+  for (auto && subTriProps : this->data->submergedTriangleProperties)
   {
     // General
-    double S    = subTriProps.area;
-    double vp   = std::sqrt(subTriProps.vp.squared_length());
+    double S = subTriProps.area;
+    double vp = std::sqrt(subTriProps.vp.squared_length());
     double cosTheta = subTriProps.cosTheta;
 
-    double v    = vp / vRDrag;
+    double v = vp / vRDrag;
     double drag = 0.0;
     if (cosTheta >= 0.0)
     {
       drag = -(cPDrag1 * v + cPDrag2 * v * v) * S * std::pow(cosTheta, fPDrag);
-    } else {
-      drag =  (cSDrag1 * v + cSDrag2 * v * v) * S * std::pow(-cosTheta, fSDrag);
+    }
+    else
+    {
+      drag = (cSDrag1 * v + cSDrag2 * v * v) * S * std::pow(-cosTheta, fSDrag);
     }
     cgal::Vector3 force = subTriProps.normal * drag;
     sumForce += force;
@@ -1289,7 +1184,7 @@ void Hydrodynamics::ComputePressureDragForce()
     sumTorque += torque;
   }
 
-  this->data->force  += sumForce;
+  this->data->force += sumForce;
   this->data->torque += sumTorque;
 
   // @DEBUG_INFO

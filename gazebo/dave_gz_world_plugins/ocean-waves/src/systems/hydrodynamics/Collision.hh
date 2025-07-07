@@ -20,78 +20,88 @@
 #include <optional>
 #include <string>
 
-#include <gz/sim/config.hh>
 #include <gz/sim/EntityComponentManager.hh>
 #include <gz/sim/Export.hh>
 #include <gz/sim/Model.hh>
 #include <gz/sim/System.hh>
 #include <gz/sim/Types.hh>
+#include <gz/sim/config.hh>
 
 namespace gz
 {
 namespace sim
 {
 // Inline bracket to help doxygen filtering.
-inline namespace GZ_SIM_VERSION_NAMESPACE {
+inline namespace GZ_SIM_VERSION_NAMESPACE
+{
 
-  // Forward declaration
-  class GZ_SIM_HIDDEN CollisionPrivate;
+// Forward declaration
+class GZ_SIM_HIDDEN CollisionPrivate;
 
-  class GZ_SIM_VISIBLE Collision
-  {
-    /// \brief Destructor
-    public: ~Collision();
+class GZ_SIM_VISIBLE Collision
+{
+  /// \brief Destructor
+public:
+  ~Collision();
 
-    /// \brief Constructor
-    /// \param[in] _entity Collision entity
-    public: explicit Collision(sim::Entity _entity = kNullEntity);
+  /// \brief Constructor
+  /// \param[in] _entity Collision entity
+public:
+  explicit Collision(sim::Entity _entity = kNullEntity);
 
-    /// \brief Copy constructor
-    /// \param[in] _collision Collision to copy.
-    public: Collision(const Collision &_collision);
+  /// \brief Copy constructor
+  /// \param[in] _collision Collision to copy.
+public:
+  Collision(const Collision & _collision);
 
-    /// \brief Move constructor
-    /// \param[in] _collision Collision to move.
-    public: Collision(Collision &&_collision) noexcept;
+  /// \brief Move constructor
+  /// \param[in] _collision Collision to move.
+public:
+  Collision(Collision && _collision) noexcept;
 
-    /// \brief Move assignment operator.
-    /// \param[in] _collision Collision component to move.
-    /// \return Reference to this.
-    public: Collision &operator=(Collision &&_collision) noexcept;
+  /// \brief Move assignment operator.
+  /// \param[in] _collision Collision component to move.
+  /// \return Reference to this.
+public:
+  Collision & operator=(Collision && _collision) noexcept;
 
-    /// \brief Copy assignment operator.
-    /// \param[in] _collision Collision to copy.
-    /// \return Reference to this.
-    public: Collision &operator=(const Collision &_collision);
+  /// \brief Copy assignment operator.
+  /// \param[in] _collision Collision to copy.
+  /// \return Reference to this.
+public:
+  Collision & operator=(const Collision & _collision);
 
-    /// \brief Get the entity which this Collision is related to.
-    /// \return Collision entity.
-    public: sim::Entity Entity() const;
+  /// \brief Get the entity which this Collision is related to.
+  /// \return Collision entity.
+public:
+  sim::Entity Entity() const;
 
-    /// \brief Check whether this link correctly refers to an entity that
-    /// has a components::Collision.
-    /// \param[in] _ecm Entity-component manager.
-    /// \return True if it's a valid link in the manager.
-    public: bool Valid(const EntityComponentManager &_ecm) const;
+  /// \brief Check whether this link correctly refers to an entity that
+  /// has a components::Collision.
+  /// \param[in] _ecm Entity-component manager.
+  /// \return True if it's a valid link in the manager.
+public:
+  bool Valid(const EntityComponentManager & _ecm) const;
 
-    /// \brief Get the link's unscoped name.
-    /// \param[in] _ecm Entity-component manager.
-    /// \return Collision's name or nullopt if the entity does not have a
-    /// components::Name component
-    public: std::optional<std::string> Name(
-        const EntityComponentManager &_ecm) const;
+  /// \brief Get the link's unscoped name.
+  /// \param[in] _ecm Entity-component manager.
+  /// \return Collision's name or nullopt if the entity does not have a
+  /// components::Name component
+public:
+  std::optional<std::string> Name(const EntityComponentManager & _ecm) const;
 
-    /// \brief Get the parent link
-    /// \param[in] _ecm Entity-component manager.
-    /// \return Parent Model or nullopt if the entity does not have a
-    /// components::ParentEntity component.
-    public: std::optional<Model> ParentLink(
-        const EntityComponentManager &_ecm) const;
+  /// \brief Get the parent link
+  /// \param[in] _ecm Entity-component manager.
+  /// \return Parent Model or nullopt if the entity does not have a
+  /// components::ParentEntity component.
+public:
+  std::optional<Model> ParentLink(const EntityComponentManager & _ecm) const;
 
-    /// \brief Pointer to private data.
-    private: std::unique_ptr<CollisionPrivate> dataPtr;
-  };
-}
+  /// \brief Pointer to private data.
+private:
+  std::unique_ptr<CollisionPrivate> dataPtr;
+};
+}  // namespace GZ_SIM_VERSION_NAMESPACE
 }  // namespace sim
 }  // namespace gz
 

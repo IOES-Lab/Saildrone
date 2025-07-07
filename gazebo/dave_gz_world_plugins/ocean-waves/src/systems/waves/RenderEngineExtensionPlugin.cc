@@ -38,7 +38,8 @@ namespace gz
 {
 namespace rendering
 {
-inline namespace GZ_RENDERING_VERSION_NAMESPACE {
+inline namespace GZ_RENDERING_VERSION_NAMESPACE
+{
 
 //////////////////////////////////////////////////
 class RenderEngineExtensionPluginPrivate
@@ -47,13 +48,13 @@ class RenderEngineExtensionPluginPrivate
 
 //////////////////////////////////////////////////
 RenderEngineExtensionPlugin::RenderEngineExtensionPlugin()
-    : dataPtr(new RenderEngineExtensionPluginPrivate)
+: dataPtr(new RenderEngineExtensionPluginPrivate)
 {
 }
 
 //////////////////////////////////////////////////
 RenderEngineExtensionPlugin::~RenderEngineExtensionPlugin() = default;
 
-}
+}  // namespace GZ_RENDERING_VERSION_NAMESPACE
 }  // namespace rendering
 }  // namespace gz

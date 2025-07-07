@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.6">
-  <model name="shipping_container">        
+  <model name="shipping_container">
     <plugin
         filename="wave-hydrodynamics-system"
         name="gz::sim::systems::Hydrodynamics">

@@ -28,7 +28,7 @@ namespace waves
 /// \brief A collection of static methods to retrieve physical constants.
 class PhysicalConstants
 {
- public:
+public:
   /// \brief Uniform acceleration due to gravity at earth's surface
   ///        (orientation is z-up).
   ///

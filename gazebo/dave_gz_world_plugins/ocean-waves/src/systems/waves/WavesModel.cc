@@ -19,28 +19,29 @@
 #include <list>
 #include <memory>
 #include <mutex>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include <gz/common/Profiler.hh>
 #include <gz/plugin/Register.hh>
-#include <gz/sim/components/Name.hh>
-#include <gz/sim/components/World.hh>
 #include <gz/sim/Model.hh>
 #include <gz/sim/Util.hh>
+#include <gz/sim/components/Name.hh>
+#include <gz/sim/components/World.hh>
 
 #include <sdf/Element.hh>
 
 #include "gz/waves/Utilities.hh"
-#include "gz/waves/Wavefield.hh"
 #include "gz/waves/WaveParameters.hh"
+#include "gz/waves/Wavefield.hh"
 #include "gz/waves/components/Wavefield.hh"
 
 namespace gz
 {
 namespace sim
 {
-inline namespace GZ_SIM_VERSION_NAMESPACE {
+inline namespace GZ_SIM_VERSION_NAMESPACE
+{
 namespace systems
 {
 
@@ -49,68 +50,74 @@ namespace systems
 class WavesModelPrivate
 {
   /// \brief Destructor
-  public: ~WavesModelPrivate();
+public:
+  ~WavesModelPrivate();
 
   /// \brief Initialize the system.
   /// \param[in] _ecm Mutable reference to the EntityComponentManager.
   /// \param[in] _sdf Pointer to sdf::Element that contains configuration
   /// parameters for the system.
-  public: void Load(EntityComponentManager &_ecm);
+public:
+  void Load(EntityComponentManager & _ecm);
 
   /// \brief Calculate and update the waves component.
   /// \param[in] _info Simulation update info.
   /// \param[in] _ecm Mutable reference to the EntityComponentManager.
-  public: void UpdateWaves(const UpdateInfo &_info,
-                    EntityComponentManager &_ecm);
+public:
+  void UpdateWaves(const UpdateInfo & _info, EntityComponentManager & _ecm);
 
   /// \brief Model interface
-  public: Model model{kNullEntity};
+public:
+  Model model{kNullEntity};
 
   /// \brief Copy of the sdf configuration used for this plugin
-  public: sdf::ElementPtr sdf;
+public:
+  sdf::ElementPtr sdf;
 
   /// \brief Initialization flag
-  public: bool initialized{false};
+public:
+  bool initialized{false};
 
   /// \brief Set during Load to true if the configuration for the system is
   /// valid and the post-update can run
-  public: bool validConfig{false};
+public:
+  bool validConfig{false};
 
   /// \brief The wavefield entity for this system
-  public: Entity wavefieldEntity{kNullEntity};
+public:
+  Entity wavefieldEntity{kNullEntity};
 
   /// \brief Set the wavefield to be static [false].
-  public: bool isStatic{false};
+public:
+  bool isStatic{false};
 
   /// \brief Update rate [Hz].
-  public: double updateRate{30.0};
+public:
+  double updateRate{30.0};
 
   /// \brief The wave parameters.
-  public: waves::WaveParametersPtr waveParams;
+public:
+  waves::WaveParametersPtr waveParams;
 
   /// \brief The wavefield.
-  public: waves::WavefieldPtr wavefield;
+public:
+  waves::WavefieldPtr wavefield;
 
   /// \brief Previous update time.
-  public: double lastUpdateTime{0};
+public:
+  double lastUpdateTime{0};
 };
 
 /////////////////////////////////////////////////
-WavesModel::WavesModel() : System(),
-    dataPtr(std::make_unique<WavesModelPrivate>())
-{
-}
+WavesModel::WavesModel() : System(), dataPtr(std::make_unique<WavesModelPrivate>()) {}
 
 /////////////////////////////////////////////////
-WavesModel::~WavesModel()
-{
-}
+WavesModel::~WavesModel() {}
 
 /////////////////////////////////////////////////
-void WavesModel::Configure(const Entity &_entity,
-    const std::shared_ptr<const sdf::Element> &_sdf,
-    EntityComponentManager &_ecm,
-    EventManager &/*_eventMgr*/)
+void WavesModel::Configure(
+  const Entity & _entity, const std::shared_ptr<const sdf::Element> & _sdf,
+  EntityComponentManager & _ecm, EventManager & /*_eventMgr*/)
 {
   GZ_PROFILE("WavesModel::Configure");
 
@@ -120,16 +127,14 @@ void WavesModel::Configure(const Entity &_entity,
   if (!this->dataPtr->model.Valid(_ecm))
   {
     gzerr << "The WavesModel system should be attached to a model entity. "
-           << "Failed to initialize." << std::endl;
+          << "Failed to initialize." << std::endl;
     return;
   }
   this->dataPtr->sdf = _sdf->Clone();
 }
 
 //////////////////////////////////////////////////
-void WavesModel::PreUpdate(
-  const UpdateInfo &_info,
-  EntityComponentManager &_ecm)
+void WavesModel::PreUpdate(const UpdateInfo & _info, EntityComponentManager & _ecm)
 {
   GZ_PROFILE("WavesModel::PreUpdate");
 
@@ -140,8 +145,8 @@ void WavesModel::PreUpdate(
   if (_info.dt < std::chrono::steady_clock::duration::zero())
   {
     gzwarn << "Detected jump back in time ["
-        << std::chrono::duration_cast<std::chrono::seconds>(_info.dt).count()
-        << "s]. System may not work properly." << std::endl;
+           << std::chrono::duration_cast<std::chrono::seconds>(_info.dt).count()
+           << "s]. System may not work properly." << std::endl;
   }
 
   if (!this->dataPtr->initialized)
@@ -153,7 +158,9 @@ void WavesModel::PreUpdate(
   }
 
   if (_info.paused)
+  {
     return;
+  }
 
   if (this->dataPtr->initialized && this->dataPtr->validConfig)
   {
@@ -163,19 +170,15 @@ void WavesModel::PreUpdate(
 
 //////////////////////////////////////////////////
 //////////////////////////////////////////////////
-WavesModelPrivate::~WavesModelPrivate()
-{
-};
+WavesModelPrivate::~WavesModelPrivate() {};
 
 /////////////////////////////////////////////////
-void WavesModelPrivate::Load(EntityComponentManager &_ecm)
+void WavesModelPrivate::Load(EntityComponentManager & _ecm)
 {
   // World name
   std::string worldName;
   _ecm.Each<components::World, components::Name>(
-    [&](const Entity &,
-        const components::World *,
-        const components::Name *_name) -> bool
+    [&](const Entity &, const components::World *, const components::Name * _name) -> bool
     {
       // Assume there's only one world
       worldName = _name->Data();
@@ -183,11 +186,9 @@ void WavesModelPrivate::Load(EntityComponentManager &_ecm)
     });
 
   // Update parameters
-  this->isStatic = waves::Utilities::SdfParamBool(
-      *this->sdf,  "static", this->isStatic);
+  this->isStatic = waves::Utilities::SdfParamBool(*this->sdf, "static", this->isStatic);
 
-  this->updateRate = waves::Utilities::SdfParamDouble(
-      *this->sdf,  "update_rate", this->updateRate);
+  this->updateRate = waves::Utilities::SdfParamDouble(*this->sdf, "update_rate", this->updateRate);
 
   // Wave parameters
   this->waveParams.reset(new waves::WaveParameters());
@@ -206,27 +207,22 @@ void WavesModelPrivate::Load(EntityComponentManager &_ecm)
   // Create a new entity and register a wavefield component with it.
   this->wavefieldEntity = _ecm.CreateEntity();
 
-  _ecm.CreateComponent(this->wavefieldEntity,
-      components::Name(entityName));
+  _ecm.CreateComponent(this->wavefieldEntity, components::Name(entityName));
 
-  auto comp = _ecm.CreateComponent(this->wavefieldEntity,
-      waves::components::Wavefield());
+  auto comp = _ecm.CreateComponent(this->wavefieldEntity, waves::components::Wavefield());
   comp->Data() = this->wavefield;
 
-  gzmsg << "WavesModel: created wavefield in entity ["
-      << this->wavefieldEntity << "]\n";
+  gzmsg << "WavesModel: created wavefield in entity [" << this->wavefieldEntity << "]\n";
 
   // fetch the wavefield back to check...
-  auto wfComp = _ecm.Component<waves::components::Wavefield>(
-      this->wavefieldEntity);
+  auto wfComp = _ecm.Component<waves::components::Wavefield>(this->wavefieldEntity);
   if (!wfComp)
   {
-    gzwarn << "WavesModel: could not find wavefield in entity ["
-        << this->wavefieldEntity << "]\n";
+    gzwarn << "WavesModel: could not find wavefield in entity [" << this->wavefieldEntity << "]\n";
   }
   else
   {
-    gzmsg << "WavesModel: found wavefield with params" <<  std::endl;
+    gzmsg << "WavesModel: found wavefield with params" << std::endl;
     this->waveParams->DebugPrint();
   }
 
@@ -234,13 +230,12 @@ void WavesModelPrivate::Load(EntityComponentManager &_ecm)
 }
 
 /////////////////////////////////////////////////
-void WavesModelPrivate::UpdateWaves(const UpdateInfo &_info,
-    EntityComponentManager &/*_ecm*/)
+void WavesModelPrivate::UpdateWaves(const UpdateInfo & _info, EntityComponentManager & /*_ecm*/)
 {
   if (!this->isStatic)
   {
     // Throttle update [30 FPS by default]
-    auto updatePeriod = 1.0/this->updateRate;
+    auto updatePeriod = 1.0 / this->updateRate;
     double simTime = std::chrono::duration<double>(_info.simTime).count();
     if ((simTime - this->lastUpdateTime) > updatePeriod)
     {
@@ -251,15 +246,13 @@ void WavesModelPrivate::UpdateWaves(const UpdateInfo &_info,
 }
 
 }  // namespace systems
-}
+}  // namespace GZ_SIM_VERSION_NAMESPACE
 }  // namespace sim
 }  // namespace gz
 
 //////////////////////////////////////////////////
-GZ_ADD_PLUGIN(gz::sim::systems::WavesModel,
-              gz::sim::System,
-              gz::sim::systems::WavesModel::ISystemConfigure,
-              gz::sim::systems::WavesModel::ISystemPreUpdate)
+GZ_ADD_PLUGIN(
+  gz::sim::systems::WavesModel, gz::sim::System, gz::sim::systems::WavesModel::ISystemConfigure,
+  gz::sim::systems::WavesModel::ISystemPreUpdate)
 
-GZ_ADD_PLUGIN_ALIAS(gz::sim::systems::WavesModel,
-                   "gz::sim::systems::WavesModel")
+GZ_ADD_PLUGIN_ALIAS(gz::sim::systems::WavesModel, "gz::sim::systems::WavesModel")

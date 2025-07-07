@@ -23,9 +23,9 @@
 #include <string>
 #include <vector>
 
-#include "gz/waves/LinearRandomFFTWaveSimulation.hh"
 #include "LinearRandomFFTWaveSimulationImpl.hh"
 #include "LinearRandomFFTWaveSimulationRefImpl.hh"
+#include "gz/waves/LinearRandomFFTWaveSimulation.hh"
 
 using gz::waves::Index;
 using gz::waves::LinearRandomFFTWaveSimulation;
@@ -35,17 +35,17 @@ using gz::waves::LinearRandomFFTWaveSimulationRef;
 
 //////////////////////////////////////////////////
 // Define fixture
-class LinearRandomFFTWaveSimFixture: public ::testing::Test
+class LinearRandomFFTWaveSimFixture : public ::testing::Test
 {
- public:
+public:
   virtual ~LinearRandomFFTWaveSimFixture() = default;
   LinearRandomFFTWaveSimFixture() = default;
 
   // put in any custom data members that you need
   double lx_ = 200.0;
   double ly_ = 100.0;
-  Index  nx_ = 16;
-  Index  ny_ = 8;
+  Index nx_ = 16;
+  Index ny_ = 8;
 };
 
 //////////////////////////////////////////////////
@@ -58,21 +58,17 @@ TEST_F(LinearRandomFFTWaveSimFixture, AngularSpatialWavenumber)
   EXPECT_EQ(model.kx_fft_.size(), nx_);
   EXPECT_EQ(model.ky_fft_.size(), ny_);
 
-  std::vector<double> ikx_fft = {
-     0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,
-    -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0
-  };
-  std::vector<double> iky_fft = {
-    0.0,  1.0,  2.0,  3.0, -4.0, -3.0, -2.0, -1.0
-  };
+  std::vector<double> ikx_fft = {0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,
+                                 -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0};
+  std::vector<double> iky_fft = {0.0, 1.0, 2.0, 3.0, -4.0, -3.0, -2.0, -1.0};
 
   // check kx fft-ordering
-  for (Index i=0; i < nx_; ++i)
+  for (Index i = 0; i < nx_; ++i)
   {
     EXPECT_DOUBLE_EQ(model.kx_fft_[i] / model.kx_f_, ikx_fft[i]);
   }
   // check ky fft-ordering
-  for (Index i=0; i < ny_; ++i)
+  for (Index i = 0; i < ny_; ++i)
   {
     EXPECT_DOUBLE_EQ(model.ky_fft_[i] / model.ky_f_, iky_fft[i]);
   }
@@ -86,21 +82,25 @@ TEST_F(LinearRandomFFTWaveSimFixture, HermitianHTimeZeroReference)
   model.ComputeBaseAmplitudes();
   model.ComputeCurrentAmplitudes(0.0);
 
-  for (Index ikx=0; ikx < nx_; ++ikx)
+  for (Index ikx = 0; ikx < nx_; ++ikx)
   {
-    for (Index iky=0; iky < ny_; ++iky)
+    for (Index iky = 0; iky < ny_; ++iky)
     {
       // index for conjugate
       Index ckx = 0;
       if (ikx != 0)
+      {
         ckx = nx_ - ikx;
+      }
 
       Index cky = 0;
       if (iky != 0)
+      {
         cky = ny_ - iky;
+      }
 
       // look up amplitude and conjugate
-      std::complex h  = model.fft_h_(ikx, iky);
+      std::complex h = model.fft_h_(ikx, iky);
       std::complex hc = model.fft_h_(ckx, cky);
 
       // real part symmetric
@@ -119,21 +119,25 @@ TEST_F(LinearRandomFFTWaveSimFixture, HermitianDhDxTimeZeroReference)
   model.ComputeBaseAmplitudes();
   model.ComputeCurrentAmplitudes(0.0);
 
-  for (Index ikx=0; ikx < nx_; ++ikx)
+  for (Index ikx = 0; ikx < nx_; ++ikx)
   {
-    for (Index iky=0; iky < ny_; ++iky)
+    for (Index iky = 0; iky < ny_; ++iky)
     {
       // index for conjugate
       Index ckx = 0;
       if (ikx != 0)
+      {
         ckx = nx_ - ikx;
+      }
 
       Index cky = 0;
       if (iky != 0)
+      {
         cky = ny_ - iky;
+      }
 
       // look up amplitude and conjugate
-      std::complex h  = model.fft_h_ikx_(ikx, iky);
+      std::complex h = model.fft_h_ikx_(ikx, iky);
       std::complex hc = model.fft_h_ikx_(ckx, cky);
 
       // real part symmetric
@@ -152,21 +156,25 @@ TEST_F(LinearRandomFFTWaveSimFixture, HermitianDhDyTimeZeroReference)
   model.ComputeBaseAmplitudes();
   model.ComputeCurrentAmplitudes(0.0);
 
-  for (Index ikx=0; ikx < nx_; ++ikx)
+  for (Index ikx = 0; ikx < nx_; ++ikx)
   {
-    for (Index iky=0; iky < ny_; ++iky)
+    for (Index iky = 0; iky < ny_; ++iky)
     {
       // index for conjugate
       Index ckx = 0;
       if (ikx != 0)
+      {
         ckx = nx_ - ikx;
+      }
 
       Index cky = 0;
       if (iky != 0)
+      {
         cky = ny_ - iky;
+      }
 
       // look up amplitude and conjugate
-      std::complex h  = model.fft_h_iky_(ikx, iky);
+      std::complex h = model.fft_h_iky_(ikx, iky);
       std::complex hc = model.fft_h_iky_(ckx, cky);
 
       // real part symmetric
@@ -185,21 +193,25 @@ TEST_F(LinearRandomFFTWaveSimFixture, HermitianSxTimeZeroReference)
   model.ComputeBaseAmplitudes();
   model.ComputeCurrentAmplitudes(0.0);
 
-  for (Index ikx=0; ikx < nx_; ++ikx)
+  for (Index ikx = 0; ikx < nx_; ++ikx)
   {
-    for (Index iky=0; iky < ny_; ++iky)
+    for (Index iky = 0; iky < ny_; ++iky)
     {
       // index for conjugate
       Index ckx = 0;
       if (ikx != 0)
+      {
         ckx = nx_ - ikx;
+      }
 
       Index cky = 0;
       if (iky != 0)
+      {
         cky = ny_ - iky;
+      }
 
       // look up amplitude and conjugate
-      std::complex h  = model.fft_sx_(ikx, iky);
+      std::complex h = model.fft_sx_(ikx, iky);
       std::complex hc = model.fft_sx_(ckx, cky);
 
       // real part symmetric
@@ -218,21 +230,25 @@ TEST_F(LinearRandomFFTWaveSimFixture, HermitianSyTimeZeroReference)
   model.ComputeBaseAmplitudes();
   model.ComputeCurrentAmplitudes(0.0);
 
-  for (Index ikx=0; ikx < nx_; ++ikx)
+  for (Index ikx = 0; ikx < nx_; ++ikx)
   {
-    for (Index iky=0; iky < ny_; ++iky)
+    for (Index iky = 0; iky < ny_; ++iky)
     {
       // index for conjugate
       Index ckx = 0;
       if (ikx != 0)
+      {
         ckx = nx_ - ikx;
+      }
 
       Index cky = 0;
       if (iky != 0)
+      {
         cky = ny_ - iky;
+      }
 
       // look up amplitude and conjugate
-      std::complex h  = model.fft_sy_(ikx, iky);
+      std::complex h = model.fft_sy_(ikx, iky);
       std::complex hc = model.fft_sy_(ckx, cky);
 
       // real part symmetric
@@ -251,21 +267,25 @@ TEST_F(LinearRandomFFTWaveSimFixture, HermitianDsxDxTimeZeroReference)
   model.ComputeBaseAmplitudes();
   model.ComputeCurrentAmplitudes(0.0);
 
-  for (Index ikx=0; ikx < nx_; ++ikx)
+  for (Index ikx = 0; ikx < nx_; ++ikx)
   {
-    for (Index iky=0; iky < ny_; ++iky)
+    for (Index iky = 0; iky < ny_; ++iky)
     {
       // index for conjugate
       Index ckx = 0;
       if (ikx != 0)
+      {
         ckx = nx_ - ikx;
+      }
 
       Index cky = 0;
       if (iky != 0)
+      {
         cky = ny_ - iky;
+      }
 
       // look up amplitude and conjugate
-      std::complex h  = model.fft_h_kxkx_(ikx, iky);
+      std::complex h = model.fft_h_kxkx_(ikx, iky);
       std::complex hc = model.fft_h_kxkx_(ckx, cky);
 
       // real part symmetric
@@ -284,21 +304,25 @@ TEST_F(LinearRandomFFTWaveSimFixture, HermitianDsyDyTimeZeroReference)
   model.ComputeBaseAmplitudes();
   model.ComputeCurrentAmplitudes(0.0);
 
-  for (Index ikx=0; ikx < nx_; ++ikx)
+  for (Index ikx = 0; ikx < nx_; ++ikx)
   {
-    for (Index iky=0; iky < ny_; ++iky)
+    for (Index iky = 0; iky < ny_; ++iky)
     {
       // index for conjugate
       Index ckx = 0;
       if (ikx != 0)
+      {
         ckx = nx_ - ikx;
+      }
 
       Index cky = 0;
       if (iky != 0)
+      {
         cky = ny_ - iky;
+      }
 
       // look up amplitude and conjugate
-      std::complex h  = model.fft_h_kyky_(ikx, iky);
+      std::complex h = model.fft_h_kyky_(ikx, iky);
       std::complex hc = model.fft_h_kyky_(ckx, cky);
 
       // real part symmetric
@@ -317,21 +341,25 @@ TEST_F(LinearRandomFFTWaveSimFixture, HermitianDsxDyTimeZeroReference)
   model.ComputeBaseAmplitudes();
   model.ComputeCurrentAmplitudes(0.0);
 
-  for (Index ikx=0; ikx < nx_; ++ikx)
+  for (Index ikx = 0; ikx < nx_; ++ikx)
   {
-    for (Index iky=0; iky < ny_; ++iky)
+    for (Index iky = 0; iky < ny_; ++iky)
     {
       // index for conjugate
       Index ckx = 0;
       if (ikx != 0)
+      {
         ckx = nx_ - ikx;
+      }
 
       Index cky = 0;
       if (iky != 0)
+      {
         cky = ny_ - iky;
+      }
 
       // look up amplitude and conjugate
-      std::complex h  = model.fft_h_kxky_(ikx, iky);
+      std::complex h = model.fft_h_kxky_(ikx, iky);
       std::complex hc = model.fft_h_kxky_(ckx, cky);
 
       // real part symmetric
@@ -350,9 +378,9 @@ TEST_F(LinearRandomFFTWaveSimFixture, HermitianTimeNonZeroReference)
   model.ComputeBaseAmplitudes();
   model.ComputeCurrentAmplitudes(11.2);
 
-  for (Index ikx=0, idx=0; ikx < nx_; ++ikx)
+  for (Index ikx = 0, idx = 0; ikx < nx_; ++ikx)
   {
-    for (Index iky=0; iky < ny_; ++iky, ++idx)
+    for (Index iky = 0; iky < ny_; ++iky, ++idx)
     {
       // index for conjugate
       // Index cdx = 0;
@@ -370,7 +398,7 @@ TEST_F(LinearRandomFFTWaveSimFixture, HermitianTimeNonZeroReference)
       }
 
       // look up amplitude and conjugate
-      std::complex h  = model.fft_h_(ikx, iky);
+      std::complex h = model.fft_h_(ikx, iky);
       std::complex hc = model.fft_h_(ckx, cky);
 
       // real part symmetric
@@ -398,9 +426,9 @@ TEST_F(LinearRandomFFTWaveSimFixture, ParsevalsIdentityTimeZeroReference)
 
   double sum_z2 = 0.0;
   double sum_h2 = 0.0;
-  for (Index ikx=0, idx=0; ikx < nx_; ++ikx)
+  for (Index ikx = 0, idx = 0; ikx < nx_; ++ikx)
   {
-    for (Index iky=0; iky < ny_; ++iky, ++idx)
+    for (Index iky = 0; iky < ny_; ++iky, ++idx)
     {
       sum_z2 += z(idx, 0) * z(idx, 0);
       sum_h2 += norm(model.fft_h_(ikx, iky));
@@ -425,9 +453,9 @@ TEST_F(LinearRandomFFTWaveSimFixture, ParsevalsIdentityTimeNonZeroReference)
 
   double sum_z2 = 0.0;
   double sum_h2 = 0.0;
-  for (Index ikx=0, idx=0; ikx < nx_; ++ikx)
+  for (Index ikx = 0, idx = 0; ikx < nx_; ++ikx)
   {
-    for (Index iky=0; iky < ny_; ++iky, ++idx)
+    for (Index iky = 0; iky < ny_; ++iky, ++idx)
     {
       sum_z2 += z(idx, 0) * z(idx, 0);
       sum_h2 += norm(model.fft_h_(ikx, iky));
@@ -438,8 +466,7 @@ TEST_F(LinearRandomFFTWaveSimFixture, ParsevalsIdentityTimeNonZeroReference)
 }
 
 //////////////////////////////////////////////////
-TEST_F(LinearRandomFFTWaveSimFixture,
-    HorizontalDisplacementsLambdaZeroReference)
+TEST_F(LinearRandomFFTWaveSimFixture, HorizontalDisplacementsLambdaZeroReference)
 {
   Index n2 = nx_ * ny_;
 
@@ -457,7 +484,7 @@ TEST_F(LinearRandomFFTWaveSimFixture,
   EXPECT_EQ(sx.size(), n2);
   EXPECT_EQ(sy.size(), n2);
 
-  for (Index i=0; i < n2; ++i)
+  for (Index i = 0; i < n2; ++i)
   {
     EXPECT_DOUBLE_EQ(sx(i, 0), 0.0);
     EXPECT_DOUBLE_EQ(sy(i, 0), 0.0);
@@ -474,9 +501,9 @@ TEST_F(LinearRandomFFTWaveSimFixture, HermitianTimeZero)
   model.ComputeBaseAmplitudes();
   model.ComputeCurrentAmplitudes(0.0);
 
-  for (Index ikx=0; ikx < nx_; ++ikx)
+  for (Index ikx = 0; ikx < nx_; ++ikx)
   {
-    for (Index iky=0; iky < ny_; ++iky)
+    for (Index iky = 0; iky < ny_; ++iky)
     {
       // index for conjugate
       Index ckx = 0;
@@ -491,7 +518,7 @@ TEST_F(LinearRandomFFTWaveSimFixture, HermitianTimeZero)
       }
 
       // look up amplitude and conjugate
-      std::complex h  = model.fft_h_(ikx, iky);
+      std::complex h = model.fft_h_(ikx, iky);
       std::complex hc = model.fft_h_(ckx, cky);
 
       // real part symmetric
@@ -513,9 +540,9 @@ TEST_F(LinearRandomFFTWaveSimFixture, HermitianTimeNonZero)
   model.ComputeBaseAmplitudes();
   model.ComputeCurrentAmplitudes(11.2);
 
-  for (Index ikx=0, idx=0; ikx < nx_; ++ikx)
+  for (Index ikx = 0, idx = 0; ikx < nx_; ++ikx)
   {
-    for (Index iky=0; iky < ny_; ++iky, ++idx)
+    for (Index iky = 0; iky < ny_; ++iky, ++idx)
     {
       // index for conjugate
       Index cdx = 0;
@@ -533,7 +560,7 @@ TEST_F(LinearRandomFFTWaveSimFixture, HermitianTimeNonZero)
       }
 
       // look up amplitude and conjugate
-      std::complex h  = model.fft_h_(ikx, iky);
+      std::complex h = model.fft_h_(ikx, iky);
       std::complex hc = model.fft_h_(ckx, cky);
 
       // real part symmetric
@@ -625,7 +652,7 @@ TEST_F(LinearRandomFFTWaveSimFixture, HorizontalDisplacementsLambdaZero)
   EXPECT_EQ(sx.size(), n2);
   EXPECT_EQ(sy.size(), n2);
 
-  for (Index i=0; i < n2; ++i)
+  for (Index i = 0; i < n2; ++i)
   {
     EXPECT_DOUBLE_EQ(sx(i, 0), 0.0);
     EXPECT_DOUBLE_EQ(sy(i, 0), 0.0);
@@ -655,7 +682,7 @@ TEST_F(LinearRandomFFTWaveSimFixture, ElevationTimeZero)
   EXPECT_EQ(ref_z.size(), n2);
   EXPECT_EQ(z.size(), n2);
 
-  for (Index i=0; i < n2; ++i)
+  for (Index i = 0; i < n2; ++i)
   {
     EXPECT_NEAR(z(i, 0), ref_z(i, 0), 1.0E-15);
   }
@@ -683,7 +710,7 @@ TEST_F(LinearRandomFFTWaveSimFixture, ElevationTimeNonZero)
   EXPECT_EQ(ref_z.size(), n2);
   EXPECT_EQ(z.size(), n2);
 
-  for (Index i=0; i < n2; ++i)
+  for (Index i = 0; i < n2; ++i)
   {
     EXPECT_NEAR(z(i, 0), ref_z(i, 0), 1.0E-15);
   }
@@ -715,7 +742,7 @@ TEST_F(LinearRandomFFTWaveSimFixture, Displacement)
   EXPECT_EQ(sx.size(), n2);
   EXPECT_EQ(sy.size(), n2);
 
-  for (Index i=0; i < n2; ++i)
+  for (Index i = 0; i < n2; ++i)
   {
     EXPECT_NEAR(sx(i, 0), ref_sx(i, 0), 1.0E-15);
     EXPECT_NEAR(sy(i, 0), ref_sy(i, 0), 1.0E-15);
@@ -748,7 +775,7 @@ TEST_F(LinearRandomFFTWaveSimFixture, ElevationDerivatives)
   EXPECT_EQ(dhdx.size(), n2);
   EXPECT_EQ(dhdy.size(), n2);
 
-  for (Index i=0; i < n2; ++i)
+  for (Index i = 0; i < n2; ++i)
   {
     EXPECT_DOUBLE_EQ(dhdx(i, 0), ref_dhdx(i, 0));
     EXPECT_DOUBLE_EQ(dhdy(i, 0), ref_dhdy(i, 0));
@@ -785,7 +812,7 @@ TEST_F(LinearRandomFFTWaveSimFixture, DisplacementDerivatives)
   EXPECT_EQ(dsydy.size(), n2);
   EXPECT_EQ(dsxdy.size(), n2);
 
-  for (Index i=0; i < n2; ++i)
+  for (Index i = 0; i < n2; ++i)
   {
     EXPECT_DOUBLE_EQ(dsxdx(i, 0), ref_dsxdx(i, 0));
     EXPECT_DOUBLE_EQ(dsydy(i, 0), ref_dsydy(i, 0));
@@ -818,15 +845,9 @@ TEST_F(LinearRandomFFTWaveSimFixture, Indexing)
   //      2   6  10
   //      3   7  11
   //
-  std::vector<std::vector<double>> a2 = {
-    { 0, 1, 2, 3},
-    { 4, 5, 6, 7},
-    { 8, 9, 10, 11}
-  };
+  std::vector<std::vector<double>> a2 = {{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}};
 
-  std::vector<double> a3 = {
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
-  };
+  std::vector<double> a3 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
 
   EXPECT_EQ(a1.size(), nyy);
   EXPECT_EQ(a1[0].size(), nxx);
@@ -856,13 +877,13 @@ TEST_F(LinearRandomFFTWaveSimFixture, DisplacementDerivativesWindDirection)
   double da = 18.0;
 
   // test over a range of times, windspeeds and  directions
-  for (int it=0; it < 10; ++it)
+  for (int it = 0; it < 10; ++it)
   {
     double time = it * dt;
-    for (int iu=0; iu < 10; ++iu)
+    for (int iu = 0; iu < 10; ++iu)
     {
       double u = iu * du;
-      for (int ia=0; ia < 20; ++ia)
+      for (int ia = 0; ia < 20; ++ia)
       {
         double angle_deg = ia * da;
         double angle_rad = angle_deg * M_PI / 180.0;
@@ -903,7 +924,7 @@ TEST_F(LinearRandomFFTWaveSimFixture, DisplacementDerivativesWindDirection)
         EXPECT_EQ(ref_h.size(), n2);
         EXPECT_EQ(h.size(), n2);
 
-        for (int i=0; i < n2; ++i)
+        for (int i = 0; i < n2; ++i)
         {
           EXPECT_NEAR(h(i, 0), ref_h(i, 0), 1.0E-14);
           EXPECT_NEAR(sx(i, 0), ref_sx(i, 0), 1.0E-14);
@@ -919,9 +940,8 @@ TEST_F(LinearRandomFFTWaveSimFixture, DisplacementDerivativesWindDirection)
 //////////////////////////////////////////////////
 // Run tests
 
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
-

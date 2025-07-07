@@ -29,71 +29,83 @@ namespace gz
 {
 namespace rendering
 {
-inline namespace GZ_RENDERING_VERSION_NAMESPACE {
+inline namespace GZ_RENDERING_VERSION_NAMESPACE
+{
 
 // Forward declaration
 class Ogre2OceanVisualPrivate;
 
 /// \brief Ogre2.x implementation of an ocean visual class
-class GZ_RENDERING_OGRE2_VISIBLE Ogre2OceanVisual :
-  public BaseOceanVisual<Ogre2Visual>
+class GZ_RENDERING_OGRE2_VISIBLE Ogre2OceanVisual : public BaseOceanVisual<Ogre2Visual>
 {
   /// \brief Constructor
-  public: Ogre2OceanVisual();
+public:
+  Ogre2OceanVisual();
 
   /// \brief Destructor
-  public: virtual ~Ogre2OceanVisual();
+public:
+  virtual ~Ogre2OceanVisual();
 
   // Documentation inherited.
-  public: virtual void Init() override;
+public:
+  virtual void Init() override;
 
   // Documentation inherited.
-  public: virtual void PreRender() override;
+public:
+  virtual void PreRender() override;
 
   // Documentation inherited.
-  protected: virtual void Destroy() override;
+protected:
+  virtual void Destroy() override;
 
   // Documentation inherited.
-  public: virtual MaterialPtr Material() const override;
+public:
+  virtual MaterialPtr Material() const override;
 
   // Documentation inherited.
-  public: virtual void SetMaterial(
-    MaterialPtr _material, bool _unique) override;
+public:
+  virtual void SetMaterial(MaterialPtr _material, bool _unique) override;
 
   /// \brief Load a dynamic cube (example)
-  public: virtual void LoadCube() override;
+public:
+  virtual void LoadCube() override;
 
   /// \brief Load from an ocean tile
-  public: virtual void LoadOceanTile(
-      waves::visual::OceanTilePtr _oceanTile) override;
+public:
+  virtual void LoadOceanTile(waves::visual::OceanTilePtr _oceanTile) override;
 
   /// \brief Update from an ocean tile
-  public: virtual void UpdateOceanTile(
-      waves::visual::OceanTilePtr _oceanTile) override;
+public:
+  virtual void UpdateOceanTile(waves::visual::OceanTilePtr _oceanTile) override;
 
   /// \brief Load from a mesh
-  public: virtual void LoadMesh(gz::common::MeshPtr _mesh) override;
+public:
+  virtual void LoadMesh(gz::common::MeshPtr _mesh) override;
 
   /// \brief Update from a mesh
-  public: virtual void UpdateMesh(gz::common::MeshPtr _mesh) override;
+public:
+  virtual void UpdateMesh(gz::common::MeshPtr _mesh) override;
 
   /// \brief Set material to geometry.
   /// \param[in] _material Ogre material.
-  protected: virtual void SetMaterialImpl(Ogre2MaterialPtr _material);
+protected:
+  virtual void SetMaterialImpl(Ogre2MaterialPtr _material);
 
   /// \brief Work-around the protected accessors and protected methods in Scene
-  public: virtual void InitObject(ScenePtr _scene,
-      unsigned int _id, const std::string &_name) override;
+public:
+  virtual void InitObject(ScenePtr _scene, unsigned int _id, const std::string & _name) override;
 
-  private: friend class Ogre2Scene;
+private:
+  friend class Ogre2Scene;
 
   /// \brief Private data class
-  private: std::unique_ptr<Ogre2OceanVisualPrivate> dataPtr;
+private:
+  std::unique_ptr<Ogre2OceanVisualPrivate> dataPtr;
 };
 
 typedef std::shared_ptr<Ogre2OceanVisual> Ogre2OceanVisualPtr;
 
-}
+}  // namespace GZ_RENDERING_VERSION_NAMESPACE
 }  // namespace rendering
 }  // namespace gz
 

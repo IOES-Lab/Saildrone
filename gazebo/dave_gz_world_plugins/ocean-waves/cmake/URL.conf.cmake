@@ -1,5 +1,5 @@
 
-# Declare the PATH, TAG and PATCH used by FetchContent 
+# Declare the PATH, TAG and PATCH used by FetchContent
 
 # gnuplot-iostream: master HEAD
 set(gnuplot-iostream_URL https://github.com/dstahlke/gnuplot-iostream.git)

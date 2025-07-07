@@ -30,7 +30,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
-*/
+ */
 
 #include "Ogre2DynamicMesh.hh"
 
@@ -53,7 +53,7 @@
 #include <gz/rendering/ogre2/Ogre2Scene.hh>
 
 #ifdef _MSC_VER
-  #pragma warning(push, 0)
+#pragma warning(push, 0)
 #endif
 #include <OgreItem.h>
 #include <OgreMesh2.h>
@@ -62,56 +62,69 @@
 #include <OgreSubMesh2.h>
 #include <Vao/OgreVaoManager.h>
 #ifdef _MSC_VER
-  #pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 namespace gz
 {
 namespace rendering
 {
-inline namespace GZ_RENDERING_VERSION_NAMESPACE {
+inline namespace GZ_RENDERING_VERSION_NAMESPACE
+{
 
 /// \brief Private implementation
 class Ogre2DynamicMeshPrivate
 {
   /// \brief list of colors at each point
-  public: std::vector<gz::math::Color> colors;
+public:
+  std::vector<gz::math::Color> colors;
 
   /// \brief List of vertices for the mesh
-  public: std::vector<gz::math::Vector3d> vertices;
+public:
+  std::vector<gz::math::Vector3d> vertices;
 
   /// \brief List of normals for the mesh
-  public: std::vector<gz::math::Vector3d> normals;
+public:
+  std::vector<gz::math::Vector3d> normals;
 
   /// \brief List of tangents for the mesh
-  public: std::vector<gz::math::Vector3d> tangents;
+public:
+  std::vector<gz::math::Vector3d> tangents;
 
   /// \brief List of binormals for the mesh
   // public: std::vector<gz::math::Vector3d> binormals;
 
   /// \brief List of uv0 coordinates for the mesh
-  public: std::vector<gz::math::Vector2d> uv0s;
+public:
+  std::vector<gz::math::Vector2d> uv0s;
 
   /// \brief Used to indicate if the lines require an update
-  public: bool dirty {false};
+public:
+  bool dirty{false};
 
   /// \brief Render operation type
-  public: Ogre::OperationType operationType;
+public:
+  Ogre::OperationType operationType;
 
   /// \brief Ogre mesh
-  public: Ogre::MeshPtr mesh;
+public:
+  Ogre::MeshPtr mesh;
 
   /// \brief Ogre submesh
-  public: Ogre::SubMesh *subMesh {nullptr};
+public:
+  Ogre::SubMesh * subMesh{nullptr};
 
   /// \brief Ogre vertex buffer data structure
-  public: Ogre::VertexBufferPacked *vertexBuffer {nullptr};
+public:
+  Ogre::VertexBufferPacked * vertexBuffer{nullptr};
 
   /// \brief Ogre vertex array object which binds the index and vertex buffers
-  public: Ogre::VertexArrayObject *vao {nullptr};
+public:
+  Ogre::VertexArrayObject * vao{nullptr};
 
   /// \brief Ogre item created from the dynamic geometry
-  public: Ogre::Item *ogreItem {nullptr};
+public:
+  Ogre::Item * ogreItem{nullptr};
 
   /// \todo if we use binormals then update teh stride and ensure
   ///       they are set elsewhere
@@ -125,32 +138,38 @@ class Ogre2DynamicMeshPrivate
   ///             vertex.xyz
   ///             + normal.xyz + tangent.xyz
   ///             + uv0.xy
-  public: unsigned int stride {3 + 3 + 3 + 2};
+public:
+  unsigned int stride{3 + 3 + 3 + 2};
 
   /// \brief raw vertex buffer
-  public: float *vbuffer {nullptr};
+public:
+  float * vbuffer{nullptr};
 
   /// \brief Maximum capacity of the currently allocated vertex buffer.
-  public: size_t vertexBufferCapacity {0};
+public:
+  size_t vertexBufferCapacity{0};
 
   /// \brief Pointer to the dynamic mesh's material
-  public: Ogre2MaterialPtr material;
+public:
+  Ogre2MaterialPtr material;
 
   /// \brief Flag to indicate whether or not this mesh should be
   /// responsible for destroying the material
-  public: bool ownsMaterial {false};
+public:
+  bool ownsMaterial{false};
 
   /// \brief Pointer to scene
-  public: ScenePtr scene;
+public:
+  ScenePtr scene;
 
   /// \brief Pointer to the ogre scene manager
-  public: Ogre::SceneManager *sceneManager = nullptr;
+public:
+  Ogre::SceneManager * sceneManager = nullptr;
 };
 
 //////////////////////////////////////////////////
 Ogre2DynamicMesh::Ogre2DynamicMesh(ScenePtr _scene)
-    : Ogre2Geometry(),
-    dataPtr(new Ogre2DynamicMeshPrivate)
+: Ogre2Geometry(), dataPtr(new Ogre2DynamicMeshPrivate)
 {
   this->dataPtr->scene = _scene;
 
@@ -162,19 +181,20 @@ Ogre2DynamicMesh::Ogre2DynamicMesh(ScenePtr _scene)
 }
 
 //////////////////////////////////////////////////
-Ogre2DynamicMesh::~Ogre2DynamicMesh()
-{
-  this->Destroy();
-}
+Ogre2DynamicMesh::~Ogre2DynamicMesh() { this->Destroy(); }
 
 //////////////////////////////////////////////////
 void Ogre2DynamicMesh::Destroy()
 {
   if (!this->dataPtr->scene->IsInitialized())
+  {
     return;
+  }
 
   if (!this->dataPtr->ogreItem)
+  {
     return;
+  }
 
   this->DestroyBuffer();
 
@@ -183,12 +203,11 @@ void Ogre2DynamicMesh::Destroy()
   this->dataPtr->ogreItem = nullptr;
 
   // remove mesh from mesh manager
-  if (this->dataPtr->subMesh &&
-      Ogre::MeshManager::getSingleton().resourceExists(
-      this->dataPtr->subMesh->mParent->getName()))
+  if (
+    this->dataPtr->subMesh &&
+    Ogre::MeshManager::getSingleton().resourceExists(this->dataPtr->subMesh->mParent->getName()))
   {
-    Ogre::MeshManager::getSingleton().remove(
-        this->dataPtr->subMesh->mParent->getName());
+    Ogre::MeshManager::getSingleton().remove(this->dataPtr->subMesh->mParent->getName());
     this->dataPtr->subMesh = nullptr;
   }
 
@@ -200,42 +219,36 @@ void Ogre2DynamicMesh::Destroy()
 }
 
 //////////////////////////////////////////////////
-Ogre::MovableObject *Ogre2DynamicMesh::OgreObject() const
-{
-  return this->dataPtr->ogreItem;
-}
+Ogre::MovableObject * Ogre2DynamicMesh::OgreObject() const { return this->dataPtr->ogreItem; }
 
 //////////////////////////////////////////////////
-MaterialPtr Ogre2DynamicMesh::Material() const
-{
-  return this->dataPtr->material;
-}
+MaterialPtr Ogre2DynamicMesh::Material() const { return this->dataPtr->material; }
 
 //////////////////////////////////////////////////
 void Ogre2DynamicMesh::SetMaterial(MaterialPtr _material, bool _unique)
 {
   _material = (_unique) ? _material->Clone() : _material;
 
-  Ogre2MaterialPtr derived =
-      std::dynamic_pointer_cast<Ogre2Material>(_material);
+  Ogre2MaterialPtr derived = std::dynamic_pointer_cast<Ogre2Material>(_material);
 
   if (!derived)
   {
-    gzerr << "Cannot assign material created by another render-engine"
-        << std::endl;
+    gzerr << "Cannot assign material created by another render-engine" << std::endl;
 
     return;
   }
 
   if (this->dataPtr->material && this->dataPtr->ownsMaterial)
+  {
     this->dataPtr->scene->DestroyMaterial(this->dataPtr->material);
+  }
 
   this->dataPtr->ownsMaterial = _unique;
 
   this->dataPtr->material = derived;
 
   this->dataPtr->ogreItem->getSubItem(0)->setDatablock(
-      static_cast<Ogre::HlmsPbsDatablock *>(derived->Datablock()));
+    static_cast<Ogre::HlmsPbsDatablock *>(derived->Datablock()));
 
   // set cast shadows
   this->dataPtr->ogreItem->setCastShadows(_material->CastShadows());
@@ -245,24 +258,28 @@ void Ogre2DynamicMesh::SetMaterial(MaterialPtr _material, bool _unique)
 void Ogre2DynamicMesh::DestroyBuffer()
 {
   if (this->dataPtr->vbuffer)
-    delete [] this->dataPtr->vbuffer;
+  {
+    delete[] this->dataPtr->vbuffer;
+  }
 
-  Ogre::RenderSystem *renderSystem =
-      this->dataPtr->sceneManager->getDestinationRenderSystem();
-  Ogre::VaoManager *vaoManager = renderSystem->getVaoManager();
+  Ogre::RenderSystem * renderSystem = this->dataPtr->sceneManager->getDestinationRenderSystem();
+  Ogre::VaoManager * vaoManager = renderSystem->getVaoManager();
 
   if (!vaoManager)
+  {
     return;
+  }
 
   if (this->dataPtr->subMesh)
   {
     if (!this->dataPtr->subMesh->mVao[Ogre::VpNormal].empty())
     {
-      this->dataPtr->subMesh->destroyVaos(
-          this->dataPtr->subMesh->mVao[Ogre::VpNormal], vaoManager);
+      this->dataPtr->subMesh->destroyVaos(this->dataPtr->subMesh->mVao[Ogre::VpNormal], vaoManager);
     }
     if (!this->dataPtr->subMesh->mVao[Ogre::VpShadow].empty())
+    {
       this->dataPtr->subMesh->mVao[Ogre::VpShadow].clear();
+    }
   }
 
   this->dataPtr->vertexBuffer = nullptr;
@@ -271,68 +288,72 @@ void Ogre2DynamicMesh::DestroyBuffer()
 }
 
 //////////////////////////////////////////////////
-void Ogre2DynamicMesh::Update()
-{
-  this->UpdateBuffer();
-}
+void Ogre2DynamicMesh::Update() { this->UpdateBuffer(); }
 
 //////////////////////////////////////////////////
 void Ogre2DynamicMesh::CreateDynamicMesh()
 {
   if (this->dataPtr->ogreItem)
+  {
     return;
+  }
 
   static int dynamicMeshId = 0;
   Ogre::MeshPtr mesh = Ogre::MeshManager::getSingleton().createManual(
-              "dynamic_mesh_" + std::to_string(dynamicMeshId++),
-              Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
+    "dynamic_mesh_" + std::to_string(dynamicMeshId++),
+    Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
   this->dataPtr->subMesh = mesh->createSubMesh();
   this->dataPtr->dirty = true;
 
   // this creates the ogre2 dynamic geometry buffer
   this->UpdateBuffer();
 
-  this->dataPtr->ogreItem =
-      this->dataPtr->sceneManager->createItem(mesh, Ogre::SCENE_DYNAMIC);
+  this->dataPtr->ogreItem = this->dataPtr->sceneManager->createItem(mesh, Ogre::SCENE_DYNAMIC);
 }
 
 //////////////////////////////////////////////////
 void Ogre2DynamicMesh::UpdateBuffer()
 {
   if (!this->dataPtr->dirty)
+  {
     return;
+  }
 
   unsigned int stride = this->dataPtr->stride;
 
-  Ogre::RenderSystem *renderSystem =
-      this->dataPtr->sceneManager->getDestinationRenderSystem();
+  Ogre::RenderSystem * renderSystem = this->dataPtr->sceneManager->getDestinationRenderSystem();
 
-  Ogre::VaoManager *vaoManager = renderSystem->getVaoManager();
+  Ogre::VaoManager * vaoManager = renderSystem->getVaoManager();
   if (!vaoManager)
+  {
     return;
+  }
 
   // Prepare vertex buffer
   unsigned int newVertCapacity = this->dataPtr->vertexBufferCapacity;
 
   unsigned int vertexCount = this->dataPtr->vertices.size();
-  if ((vertexCount > this->dataPtr->vertexBufferCapacity) ||
-      (!this->dataPtr->vertexBufferCapacity))
+  if ((vertexCount > this->dataPtr->vertexBufferCapacity) || (!this->dataPtr->vertexBufferCapacity))
   {
     // vertexCount exceeds current capacity!
     // It is necessary to reallocate the buffer.
 
     // Check if this is the first call
     if (!newVertCapacity)
+    {
       newVertCapacity = 1;
+    }
 
     // Make capacity the next power of two
     while (newVertCapacity < vertexCount)
+    {
       newVertCapacity <<= 1;
+    }
   }
-  else if (vertexCount < this->dataPtr->vertexBufferCapacity>>1)
+  else if (vertexCount < this->dataPtr->vertexBufferCapacity >> 1)
   {
     // Make capacity the previous power of two
-    unsigned int newCapacity = newVertCapacity >>1;
+    unsigned int newCapacity = newVertCapacity >> 1;
     while (vertexCount < newCapacity)
     {
       newVertCapacity = newCapacity;
@@ -356,30 +377,26 @@ void Ogre2DynamicMesh::UpdateBuffer()
 
     // recreate the vao data structures
     Ogre::VertexElement2Vec vertexElements;
-    vertexElements.push_back(
-        Ogre::VertexElement2(Ogre::VET_FLOAT3, Ogre::VES_POSITION));
-    vertexElements.push_back(
-        Ogre::VertexElement2(Ogre::VET_FLOAT3, Ogre::VES_NORMAL));
-    vertexElements.push_back(
-        Ogre::VertexElement2(Ogre::VET_FLOAT3, Ogre::VES_TANGENT));
+    vertexElements.push_back(Ogre::VertexElement2(Ogre::VET_FLOAT3, Ogre::VES_POSITION));
+    vertexElements.push_back(Ogre::VertexElement2(Ogre::VET_FLOAT3, Ogre::VES_NORMAL));
+    vertexElements.push_back(Ogre::VertexElement2(Ogre::VET_FLOAT3, Ogre::VES_TANGENT));
     // vertexElements.push_back(
     //     Ogre::VertexElement2(Ogre::VET_FLOAT3, Ogre::VES_BINORMAL));
-    vertexElements.push_back(
-        Ogre::VertexElement2(Ogre::VET_FLOAT2, Ogre::VES_TEXTURE_COORDINATES));
+    vertexElements.push_back(Ogre::VertexElement2(Ogre::VET_FLOAT2, Ogre::VES_TEXTURE_COORDINATES));
 
     // create vertex buffer
     this->dataPtr->vertexBuffer = vaoManager->createVertexBuffer(
-        vertexElements, this->dataPtr->vertexBufferCapacity,
-        Ogre::BT_DYNAMIC_PERSISTENT, this->dataPtr->vbuffer, false);
+      vertexElements, this->dataPtr->vertexBufferCapacity, Ogre::BT_DYNAMIC_PERSISTENT,
+      this->dataPtr->vbuffer, false);
 
     Ogre::VertexBufferPackedVec vertexBuffers;
     vertexBuffers.push_back(this->dataPtr->vertexBuffer);
 
     // it is ok to use null index buffer
-    Ogre::IndexBufferPacked *indexBuffer = nullptr;
+    Ogre::IndexBufferPacked * indexBuffer = nullptr;
 
-    this->dataPtr->vao = vaoManager->createVertexArrayObject(vertexBuffers,
-        indexBuffer, this->dataPtr->operationType);
+    this->dataPtr->vao =
+      vaoManager->createVertexArrayObject(vertexBuffers, indexBuffer, this->dataPtr->operationType);
 
     this->dataPtr->subMesh->mVao[Ogre::VpNormal].push_back(this->dataPtr->vao);
     // Use the same geometry for shadow casting.
@@ -389,13 +406,12 @@ void Ogre2DynamicMesh::UpdateBuffer()
   // map buffer and update the geometry
   Ogre::Aabb bbox;
   float * RESTRICT_ALIAS vertices = reinterpret_cast<float * RESTRICT_ALIAS>(
-      this->dataPtr->vertexBuffer->map(
-      0, this->dataPtr->vertexBuffer->getNumElements()));
+    this->dataPtr->vertexBuffer->map(0, this->dataPtr->vertexBuffer->getNumElements()));
 
   // fill positions, normals and texture coords
   for (unsigned int i = 0; i < vertexCount; ++i)
   {
-    unsigned int idx = i*stride;
+    unsigned int idx = i * stride;
 
     // position
     Ogre::Vector3 v = Ogre2Conversions::Convert(this->dataPtr->vertices[i]);
@@ -433,13 +449,12 @@ void Ogre2DynamicMesh::UpdateBuffer()
   // the geometry connecting back to 0, 0, 0
   if (vertexCount > 0 && vertexCount < this->dataPtr->vertexBufferCapacity)
   {
-    math::Vector3d lastVertex = this->dataPtr->vertices[vertexCount-1];
-    math::Vector3d lastNormal = this->dataPtr->normals[vertexCount-1];
-    math::Vector3d lastTangent = this->dataPtr->tangents[vertexCount-1];
+    math::Vector3d lastVertex = this->dataPtr->vertices[vertexCount - 1];
+    math::Vector3d lastNormal = this->dataPtr->normals[vertexCount - 1];
+    math::Vector3d lastTangent = this->dataPtr->tangents[vertexCount - 1];
     // math::Vector3d lastBinormal = this->dataPtr->binormals[vertexCount-1];
-    math::Vector2d lastUv0 = this->dataPtr->uv0s[vertexCount-1];
-    for (unsigned int i = vertexCount; i < this->dataPtr->vertexBufferCapacity;
-        ++i)
+    math::Vector2d lastUv0 = this->dataPtr->uv0s[vertexCount - 1];
+    for (unsigned int i = vertexCount; i < this->dataPtr->vertexBufferCapacity; ++i)
     {
       unsigned int idx = i * stride;
       // vertex
@@ -483,7 +498,7 @@ void Ogre2DynamicMesh::UpdateBuffer()
   this->dataPtr->vertexBuffer->unmap(Ogre::UO_KEEP_PERSISTENT);
 
   // Set the bounds to get frustum culling and LOD to work correctly.
-  Ogre::Mesh *mesh = this->dataPtr->subMesh->mParent;
+  Ogre::Mesh * mesh = this->dataPtr->subMesh->mParent;
   mesh->_setBounds(bbox, true);
 
   // update item aabb
@@ -501,10 +516,8 @@ void Ogre2DynamicMesh::UpdateBuffer()
     if (this->dataPtr->material)
     {
       this->dataPtr->ogreItem->getSubItem(0)->setDatablock(
-          static_cast<Ogre::HlmsPbsDatablock *>(
-          this->dataPtr->material->Datablock()));
-      this->dataPtr->ogreItem->setCastShadows(
-          this->dataPtr->material->CastShadows());
+        static_cast<Ogre::HlmsPbsDatablock *>(this->dataPtr->material->Datablock()));
+      this->dataPtr->ogreItem->setCastShadows(this->dataPtr->material->CastShadows());
     }
     if (lowLevelMat)
     {
@@ -589,8 +602,7 @@ MarkerType Ogre2DynamicMesh::OperationType() const
 }
 
 /////////////////////////////////////////////////
-void Ogre2DynamicMesh::AddPoint(const math::Vector3d &_pt,
-    const math::Color &_color)
+void Ogre2DynamicMesh::AddPoint(const math::Vector3d & _pt, const math::Color & _color)
 {
   this->dataPtr->vertices.push_back(_pt);
 
@@ -609,20 +621,18 @@ void Ogre2DynamicMesh::AddPoint(const math::Vector3d &_pt,
 }
 
 /////////////////////////////////////////////////
-void Ogre2DynamicMesh::AddPoint(double _x, double _y, double _z,
-    const math::Color &_color)
+void Ogre2DynamicMesh::AddPoint(double _x, double _y, double _z, const math::Color & _color)
 {
   this->AddPoint(math::Vector3d(_x, _y, _z), _color);
 }
 
 /////////////////////////////////////////////////
-void Ogre2DynamicMesh::SetPoint(unsigned int _index,
-    const math::Vector3d &_value)
+void Ogre2DynamicMesh::SetPoint(unsigned int _index, const math::Vector3d & _value)
 {
   if (_index >= this->dataPtr->vertices.size())
   {
     gzerr << "Point index[" << _index << "] is out of bounds[0-"
-           << this->dataPtr->vertices.size()-1 << "]\n";
+          << this->dataPtr->vertices.size() - 1 << "]\n";
     return;
   }
 
@@ -632,16 +642,14 @@ void Ogre2DynamicMesh::SetPoint(unsigned int _index,
 }
 
 /////////////////////////////////////////////////
-void Ogre2DynamicMesh::SetColor(unsigned int _index,
-    const math::Color &_color)
+void Ogre2DynamicMesh::SetColor(unsigned int _index, const math::Color & _color)
 {
   if (_index >= this->dataPtr->colors.size())
   {
     gzerr << "Point color index[" << _index << "] is out of bounds[0-"
-           << this->dataPtr->colors.size()-1 << "]\n";
+          << this->dataPtr->colors.size() - 1 << "]\n";
     return;
   }
-
 
   // todo(anyone)
   // vertex coloring only works for points.
@@ -653,13 +661,12 @@ void Ogre2DynamicMesh::SetColor(unsigned int _index,
 }
 
 /////////////////////////////////////////////////
-void Ogre2DynamicMesh::SetNormal(unsigned int _index,
-                              const math::Vector3d &_normal)
+void Ogre2DynamicMesh::SetNormal(unsigned int _index, const math::Vector3d & _normal)
 {
   if (_index >= this->dataPtr->normals.size())
   {
     gzerr << "Point normal index[" << _index << "] is out of bounds[0-"
-           << this->dataPtr->normals.size()-1 << "]\n";
+          << this->dataPtr->normals.size() - 1 << "]\n";
     return;
   }
 
@@ -669,13 +676,12 @@ void Ogre2DynamicMesh::SetNormal(unsigned int _index,
 }
 
 /////////////////////////////////////////////////
-void Ogre2DynamicMesh::SetTangent(unsigned int _index,
-                              const math::Vector3d &_tangent)
+void Ogre2DynamicMesh::SetTangent(unsigned int _index, const math::Vector3d & _tangent)
 {
   if (_index >= this->dataPtr->tangents.size())
   {
     gzerr << "Point tangent index[" << _index << "] is out of bounds[0-"
-           << this->dataPtr->tangents.size()-1 << "]\n";
+          << this->dataPtr->tangents.size() - 1 << "]\n";
     return;
   }
 
@@ -685,13 +691,12 @@ void Ogre2DynamicMesh::SetTangent(unsigned int _index,
 }
 
 /////////////////////////////////////////////////
-void Ogre2DynamicMesh::SetUV0(unsigned int _index,
-                              const math::Vector2d &_uv0)
+void Ogre2DynamicMesh::SetUV0(unsigned int _index, const math::Vector2d & _uv0)
 {
   if (_index >= this->dataPtr->uv0s.size())
   {
     gzerr << "Point uv0 index[" << _index << "] is out of bounds[0-"
-           << this->dataPtr->uv0s.size()-1 << "]\n";
+          << this->dataPtr->uv0s.size() - 1 << "]\n";
     return;
   }
 
@@ -701,33 +706,29 @@ void Ogre2DynamicMesh::SetUV0(unsigned int _index,
 }
 
 /////////////////////////////////////////////////
-math::Vector3d Ogre2DynamicMesh::Point(
-    const unsigned int _index) const
+math::Vector3d Ogre2DynamicMesh::Point(const unsigned int _index) const
 {
   if (_index >= this->dataPtr->vertices.size())
   {
     gzerr << "Point index[" << _index << "] is out of bounds[0-"
-           << this->dataPtr->vertices.size()-1 << "]\n";
+          << this->dataPtr->vertices.size() - 1 << "]\n";
 
-    return math::Vector3d(math::INF_D,
-                          math::INF_D,
-                          math::INF_D);
+    return math::Vector3d(math::INF_D, math::INF_D, math::INF_D);
   }
 
   return this->dataPtr->vertices[_index];
 }
 
 /////////////////////////////////////////////////
-unsigned int Ogre2DynamicMesh::PointCount() const
-{
-  return this->dataPtr->vertices.size();
-}
+unsigned int Ogre2DynamicMesh::PointCount() const { return this->dataPtr->vertices.size(); }
 
 /////////////////////////////////////////////////
 void Ogre2DynamicMesh::Clear()
 {
   if (this->dataPtr->vertices.empty() && this->dataPtr->colors.empty())
+  {
     return;
+  }
 
   this->dataPtr->vertices.clear();
   this->dataPtr->normals.clear();
@@ -739,8 +740,8 @@ void Ogre2DynamicMesh::Clear()
 }
 
 //////////////////////////////////////////////////
-void Ogre2DynamicMesh::GenerateNormals(Ogre::OperationType _opType,
-  const std::vector<math::Vector3d> &_vertices, float *_vbuffer)
+void Ogre2DynamicMesh::GenerateNormals(
+  Ogre::OperationType _opType, const std::vector<math::Vector3d> & _vertices, float * _vbuffer)
 {
   unsigned int vertexCount = _vertices.size();
   unsigned int stride = this->dataPtr->stride;
@@ -769,7 +770,9 @@ void Ogre2DynamicMesh::GenerateNormals(Ogre::OperationType _opType,
     case Ogre::OperationType::OT_TRIANGLE_LIST:
     {
       if (vertexCount < 3)
+      {
         return;
+      }
 
       // NOTE: because each face has it's own vertices they each get
       //       the normal for the face. When using indexed vertices
@@ -777,27 +780,27 @@ void Ogre2DynamicMesh::GenerateNormals(Ogre::OperationType _opType,
       //       a vertex, which results in a smoother looking surface
       for (unsigned int i = 0; i < vertexCount / 3; ++i)
       {
-        unsigned int idx = i*3;
+        unsigned int idx = i * 3;
         unsigned int idx1 = idx * stride;
         unsigned int idx2 = idx1 + stride;
         unsigned int idx3 = idx2 + stride;
-        math::Vector3d v1 = _vertices[idx+0];
-        math::Vector3d v2 = _vertices[idx+1];
-        math::Vector3d v3 = _vertices[idx+2];
+        math::Vector3d v1 = _vertices[idx + 0];
+        math::Vector3d v2 = _vertices[idx + 1];
+        math::Vector3d v3 = _vertices[idx + 2];
         math::Vector3d n = (v1 - v2).Cross((v1 - v3));
         // math::Vector3d n = math::Vector3d::Normal(v1, v2, v3);
 
-        _vbuffer[idx1+3] = n.X();
-        _vbuffer[idx1+4] = n.Y();
-        _vbuffer[idx1+5] = n.Z();
+        _vbuffer[idx1 + 3] = n.X();
+        _vbuffer[idx1 + 4] = n.Y();
+        _vbuffer[idx1 + 5] = n.Z();
 
-        _vbuffer[idx2+3] = n.X();
-        _vbuffer[idx2+4] = n.Y();
-        _vbuffer[idx2+5] = n.Z();
+        _vbuffer[idx2 + 3] = n.X();
+        _vbuffer[idx2 + 4] = n.Y();
+        _vbuffer[idx2 + 5] = n.Z();
 
-        _vbuffer[idx3+3] = n.X();
-        _vbuffer[idx3+4] = n.Y();
-        _vbuffer[idx3+5] = n.Z();
+        _vbuffer[idx3 + 3] = n.X();
+        _vbuffer[idx3 + 4] = n.Y();
+        _vbuffer[idx3 + 5] = n.Z();
       }
 
       break;
@@ -805,57 +808,59 @@ void Ogre2DynamicMesh::GenerateNormals(Ogre::OperationType _opType,
     case Ogre::OperationType::OT_TRIANGLE_STRIP:
     {
       if (vertexCount < 3)
+      {
         return;
+      }
 
       bool even = false;
       for (unsigned int i = 0; i < vertexCount - 2; ++i)
       {
         math::Vector3d v1;
         math::Vector3d v2;
-        math::Vector3d v3 = _vertices[i+2];
+        math::Vector3d v3 = _vertices[i + 2];
 
         // For odd n, vertices n, n+1, and n+2 define triangle n.
         // For even n, vertices n+1, n, and n+2 define triangle n.
         unsigned int idx1;
         unsigned int idx2;
-        unsigned int idx3 = (i+2) * stride;
+        unsigned int idx3 = (i + 2) * stride;
         if (even)
         {
-          v1 = _vertices[i+1];
+          v1 = _vertices[i + 1];
           v2 = _vertices[i];
-          idx1 = (i+1) * stride;
-          idx2 = i*stride;
+          idx1 = (i + 1) * stride;
+          idx2 = i * stride;
         }
         else
         {
           v1 = _vertices[i];
-          v2 = _vertices[i+1];
-          idx1 = i*stride;
-          idx2 = (i+1) * stride;
+          v2 = _vertices[i + 1];
+          idx1 = i * stride;
+          idx2 = (i + 1) * stride;
         }
         even = !even;
 
         math::Vector3d n = (v1 - v2).Cross((v1 - v3));
-        math::Vector3d n1(_vbuffer[idx1+3], _vbuffer[idx1+4], _vbuffer[idx1+5]);
-        math::Vector3d n2(_vbuffer[idx2+3], _vbuffer[idx2+4], _vbuffer[idx2+5]);
-        math::Vector3d n3(_vbuffer[idx3+3], _vbuffer[idx3+4], _vbuffer[idx3+5]);
+        math::Vector3d n1(_vbuffer[idx1 + 3], _vbuffer[idx1 + 4], _vbuffer[idx1 + 5]);
+        math::Vector3d n2(_vbuffer[idx2 + 3], _vbuffer[idx2 + 4], _vbuffer[idx2 + 5]);
+        math::Vector3d n3(_vbuffer[idx3 + 3], _vbuffer[idx3 + 4], _vbuffer[idx3 + 5]);
 
-        math::Vector3d n1a = ((n1 + n)/2);
+        math::Vector3d n1a = ((n1 + n) / 2);
         n1a.Normalize();
-        math::Vector3d n2a = ((n2 + n)/2);
+        math::Vector3d n2a = ((n2 + n) / 2);
         n2a.Normalize();
-        math::Vector3d n3a = ((n3 + n)/2);
+        math::Vector3d n3a = ((n3 + n) / 2);
         n3a.Normalize();
 
-        _vbuffer[idx1+3] = n1a.X();
-        _vbuffer[idx1+4] = n1a.Y();
-        _vbuffer[idx1+5] = n1a.Z();
-        _vbuffer[idx2+3] = n2a.X();
-        _vbuffer[idx2+4] = n2a.Y();
-        _vbuffer[idx2+5] = n2a.Z();
-        _vbuffer[idx3+3] = n3a.X();
-        _vbuffer[idx3+4] = n3a.Y();
-        _vbuffer[idx3+5] = n3a.Z();
+        _vbuffer[idx1 + 3] = n1a.X();
+        _vbuffer[idx1 + 4] = n1a.Y();
+        _vbuffer[idx1 + 5] = n1a.Z();
+        _vbuffer[idx2 + 3] = n2a.X();
+        _vbuffer[idx2 + 4] = n2a.Y();
+        _vbuffer[idx2 + 5] = n2a.Z();
+        _vbuffer[idx3 + 3] = n3a.X();
+        _vbuffer[idx3 + 4] = n3a.Y();
+        _vbuffer[idx3 + 5] = n3a.Z();
       }
 
       break;
@@ -863,39 +868,41 @@ void Ogre2DynamicMesh::GenerateNormals(Ogre::OperationType _opType,
     case Ogre::OperationType::OT_TRIANGLE_FAN:
     {
       if (vertexCount < 3)
+      {
         return;
+      }
 
       unsigned int idx1 = 0;
       math::Vector3d v1 = _vertices[0];
 
       for (unsigned int i = 0; i < vertexCount - 2; ++i)
       {
-        unsigned int idx2 = (i+1) * stride;
+        unsigned int idx2 = (i + 1) * stride;
         unsigned int idx3 = idx2 + stride;
-        math::Vector3d v2 = _vertices[i+1];
-        math::Vector3d v3 = _vertices[i+2];
+        math::Vector3d v2 = _vertices[i + 1];
+        math::Vector3d v3 = _vertices[i + 2];
         math::Vector3d n = (v1 - v2).Cross((v1 - v3));
 
-        math::Vector3d n1(_vbuffer[idx1+3], _vbuffer[idx1+4], _vbuffer[idx1+5]);
-        math::Vector3d n2(_vbuffer[idx2+3], _vbuffer[idx2+4], _vbuffer[idx2+5]);
-        math::Vector3d n3(_vbuffer[idx3+3], _vbuffer[idx3+4], _vbuffer[idx3+5]);
+        math::Vector3d n1(_vbuffer[idx1 + 3], _vbuffer[idx1 + 4], _vbuffer[idx1 + 5]);
+        math::Vector3d n2(_vbuffer[idx2 + 3], _vbuffer[idx2 + 4], _vbuffer[idx2 + 5]);
+        math::Vector3d n3(_vbuffer[idx3 + 3], _vbuffer[idx3 + 4], _vbuffer[idx3 + 5]);
 
-        math::Vector3d n1a = ((n1 + n)/2);
+        math::Vector3d n1a = ((n1 + n) / 2);
         n1a.Normalize();
-        math::Vector3d n2a = ((n2 + n)/2);
+        math::Vector3d n2a = ((n2 + n) / 2);
         n2a.Normalize();
-        math::Vector3d n3a = ((n3 + n)/2);
+        math::Vector3d n3a = ((n3 + n) / 2);
         n3a.Normalize();
 
-        _vbuffer[idx1+3] = n1a.X();
-        _vbuffer[idx1+4] = n1a.Y();
-        _vbuffer[idx1+5] = n1a.Z();
-        _vbuffer[idx2+3] = n2a.X();
-        _vbuffer[idx2+4] = n2a.Y();
-        _vbuffer[idx2+5] = n2a.Z();
-        _vbuffer[idx3+3] = n3a.X();
-        _vbuffer[idx3+4] = n3a.Y();
-        _vbuffer[idx3+5] = n3a.Z();
+        _vbuffer[idx1 + 3] = n1a.X();
+        _vbuffer[idx1 + 4] = n1a.Y();
+        _vbuffer[idx1 + 5] = n1a.Z();
+        _vbuffer[idx2 + 3] = n2a.X();
+        _vbuffer[idx2 + 4] = n2a.Y();
+        _vbuffer[idx2 + 5] = n2a.Z();
+        _vbuffer[idx3 + 3] = n3a.X();
+        _vbuffer[idx3 + 4] = n3a.Y();
+        _vbuffer[idx3 + 5] = n3a.Z();
       }
 
       break;
@@ -906,12 +913,14 @@ void Ogre2DynamicMesh::GenerateNormals(Ogre::OperationType _opType,
 }
 
 //////////////////////////////////////////////////
-void Ogre2DynamicMesh::GenerateColors(Ogre::OperationType _opType,
-  const std::vector<math::Vector3d> &_vertices, float *_vbuffer)
+void Ogre2DynamicMesh::GenerateColors(
+  Ogre::OperationType _opType, const std::vector<math::Vector3d> & _vertices, float * _vbuffer)
 {
   // Skip if colors haven't been setup per-vertex correctly.
   if (_vertices.size() != this->dataPtr->colors.size())
+  {
     return;
+  }
 
   unsigned int stride = this->dataPtr->stride;
 
@@ -931,13 +940,13 @@ void Ogre2DynamicMesh::GenerateColors(Ogre::OperationType _opType,
     {
       for (unsigned int i = 0; i < this->dataPtr->vertexBufferCapacity; ++i)
       {
-        math::Color color = i < this->dataPtr->colors.size() ?
-            this->dataPtr->colors[i] : this->dataPtr->colors.back();
+        math::Color color = i < this->dataPtr->colors.size() ? this->dataPtr->colors[i]
+                                                             : this->dataPtr->colors.back();
 
         unsigned int idx = i * stride;
-        _vbuffer[idx+3] = color.R();
-        _vbuffer[idx+4] = color.G();
-        _vbuffer[idx+5] = color.B();
+        _vbuffer[idx + 3] = color.R();
+        _vbuffer[idx + 4] = color.G();
+        _vbuffer[idx + 5] = color.B();
       }
 
       break;
@@ -947,6 +956,6 @@ void Ogre2DynamicMesh::GenerateColors(Ogre::OperationType _opType,
   }
 }
 
-}
+}  // namespace GZ_RENDERING_VERSION_NAMESPACE
 }  // namespace rendering
 }  // namespace gz

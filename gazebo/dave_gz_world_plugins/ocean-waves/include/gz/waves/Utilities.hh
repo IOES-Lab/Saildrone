@@ -33,15 +33,15 @@ namespace waves
 /// \brief A collection of static methods for common tasks.
 class Utilities
 {
- public:
+public:
   /// \brief Extract a named bool parameter from an SDF element.
   ///
   /// \param[in] _sdf         A reference to the SDF Element tree.
   /// \param[in] _paramName   The parameter name as it appears in SDF.
   /// \param[in] _defaultVal  A default value for the parameter.
   /// \return                 The parameter value (or default if not found).
-  static bool SdfParamBool(const sdf::Element& _sdf,
-    const std::string& _paramName, const bool _defaultVal);
+  static bool SdfParamBool(
+    const sdf::Element & _sdf, const std::string & _paramName, const bool _defaultVal);
 
   /// \brief Extract a named size_t parameter from an SDF element.
   ///
@@ -49,8 +49,8 @@ class Utilities
   /// \param[in] _paramName   The parameter name as it appears in SDF.
   /// \param[in] _defaultVal  A default value for the parameter.
   /// \return                 The parameter value (or default if not found).
-  static size_t SdfParamSizeT(const sdf::Element& _sdf,
-    const std::string& _paramName, const size_t _defaultVal);
+  static size_t SdfParamSizeT(
+    const sdf::Element & _sdf, const std::string & _paramName, const size_t _defaultVal);
 
   /// \brief Extract a named double parameter from an SDF element.
   ///
@@ -58,8 +58,8 @@ class Utilities
   /// \param[in] _paramName   The parameter name as it appears in SDF.
   /// \param[in] _defaultVal  A default value for the parameter.
   /// \return                 The parameter value (or default if not found).
-  static double SdfParamDouble(const sdf::Element& _sdf,
-    const std::string& _paramName, const double _defaultVal);
+  static double SdfParamDouble(
+    const sdf::Element & _sdf, const std::string & _paramName, const double _defaultVal);
 
   /// \brief Extract a named string parameter from an SDF element.
   ///
@@ -67,8 +67,8 @@ class Utilities
   /// \param[in] _paramName   The parameter name as it appears in SDF.
   /// \param[in] _defaultVal  A default value for the parameter.
   /// \return                 The parameter value (or default if not found).
-  static std::string SdfParamString(const sdf::Element& _sdf,
-    const std::string& _paramName, const std::string _defaultVal);
+  static std::string SdfParamString(
+    const sdf::Element & _sdf, const std::string & _paramName, const std::string _defaultVal);
 
   /// \brief Extract a named Vector2d parameter from an SDF element.
   ///
@@ -76,8 +76,9 @@ class Utilities
   /// \param[in] _paramName   The parameter name as it appears in SDF.
   /// \param[in] _defaultVal  A default value for the parameter.
   /// \return                 The parameter value (or default if not found).
-  static gz::math::Vector2d SdfParamVector2d(const sdf::Element& _sdf,
-    const std::string& _paramName, const gz::math::Vector2d _defaultVal);
+  static gz::math::Vector2d SdfParamVector2d(
+    const sdf::Element & _sdf, const std::string & _paramName,
+    const gz::math::Vector2d _defaultVal);
 
   /// \brief Extract a named Vector2i parameter from an SDF element.
   ///
@@ -85,8 +86,9 @@ class Utilities
   /// \param[in] _paramName   The parameter name as it appears in SDF.
   /// \param[in] _defaultVal  A default value for the parameter.
   /// \return                 The parameter value (or default if not found).
-  static gz::math::Vector2i SdfParamVector2i(const sdf::Element& _sdf,
-    const std::string& _paramName, const gz::math::Vector2i _defaultVal);
+  static gz::math::Vector2i SdfParamVector2i(
+    const sdf::Element & _sdf, const std::string & _paramName,
+    const gz::math::Vector2i _defaultVal);
 
   /// \brief Extract a named Vector3d parameter from an SDF element.
   ///
@@ -94,8 +96,9 @@ class Utilities
   /// \param[in] _paramName   The parameter name as it appears in SDF.
   /// \param[in] _defaultVal  A default value for the parameter.
   /// \return                 The parameter value (or default if not found).
-  static gz::math::Vector3d SdfParamVector3d(const sdf::Element& _sdf,
-    const std::string& _paramName, const gz::math::Vector3d _defaultVal);
+  static gz::math::Vector3d SdfParamVector3d(
+    const sdf::Element & _sdf, const std::string & _paramName,
+    const gz::math::Vector3d _defaultVal);
 
   /// \brief Extract a named bool parameter from a Param_V message.
   ///
@@ -103,8 +106,8 @@ class Utilities
   /// \param[in] _paramName   The parameter name as it appears in message.
   /// \param[in] _defaultVal  A default value for the parameter.
   /// \return                 The parameter value (or default if not found).
-  static bool MsgParamBool(const msgs::Param_V& _msg,
-    const std::string& _paramName, const bool _defaultVal);
+  static bool MsgParamBool(
+    const msgs::Param_V & _msg, const std::string & _paramName, const bool _defaultVal);
 
   /// \brief Extract a named size_t parameter from a Param_V message.
   ///
@@ -112,8 +115,8 @@ class Utilities
   /// \param[in] _paramName   The parameter name as it appears in message.
   /// \param[in] _defaultVal  A default value for the parameter.
   /// \return                 The parameter value (or default if not found).
-  static size_t MsgParamSizeT(const msgs::Param_V& _msg,
-    const std::string& _paramName, const size_t _defaultVal);
+  static size_t MsgParamSizeT(
+    const msgs::Param_V & _msg, const std::string & _paramName, const size_t _defaultVal);
 
   /// \brief Extract a named double parameter from a Param_V message.
   ///
@@ -121,8 +124,8 @@ class Utilities
   /// \param[in] _paramName   The parameter name as it appears in message.
   /// \param[in] _defaultVal  A default value for the parameter.
   /// \return                 The parameter value (or default if not found).
-  static double MsgParamDouble(const msgs::Param_V& _msg,
-    const std::string& _paramName, const double _defaultVal);
+  static double MsgParamDouble(
+    const msgs::Param_V & _msg, const std::string & _paramName, const double _defaultVal);
 
   /// \brief Extract a named std::string parameter from a Param_V message.
   ///
@@ -130,8 +133,8 @@ class Utilities
   /// \param[in] _paramName   The parameter name as it appears in message.
   /// \param[in] _defaultVal  A default value for the parameter.
   /// \return                 The parameter value (or default if not found).
-  static std::string MsgParamString(const msgs::Param_V& _msg,
-    const std::string& _paramName, const std::string _defaultVal);
+  static std::string MsgParamString(
+    const msgs::Param_V & _msg, const std::string & _paramName, const std::string _defaultVal);
 
   /// \brief Extract a named Vector2i parameter from a Param_V message.
   ///
@@ -139,8 +142,9 @@ class Utilities
   /// \param[in] _paramName   The parameter name as it appears in message.
   /// \param[in] _defaultVal  A default value for the parameter.
   /// \return                 The parameter value (or default if not found).
-  static gz::math::Vector2i MsgParamVector2i(const msgs::Param_V& _msg,
-    const std::string& _paramName, const gz::math::Vector2i _defaultVal);
+  static gz::math::Vector2i MsgParamVector2i(
+    const msgs::Param_V & _msg, const std::string & _paramName,
+    const gz::math::Vector2i _defaultVal);
 
   /// \brief Extract a named Vector2d parameter from a Param_V message.
   ///
@@ -148,8 +152,9 @@ class Utilities
   /// \param[in] _paramName   The parameter name as it appears in message.
   /// \param[in] _defaultVal  A default value for the parameter.
   /// \return                 The parameter value (or default if not found).
-  static gz::math::Vector2d MsgParamVector2d(const msgs::Param_V& _msg,
-    const std::string& _paramName, const gz::math::Vector2d _defaultVal);
+  static gz::math::Vector2d MsgParamVector2d(
+    const msgs::Param_V & _msg, const std::string & _paramName,
+    const gz::math::Vector2d _defaultVal);
 
   /// \brief Extract a named Vector3d parameter from a Param_V message.
   ///
@@ -157,8 +162,9 @@ class Utilities
   /// \param[in] _paramName   The parameter name as it appears in message.
   /// \param[in] _defaultVal  A default value for the parameter.
   /// \return                 The parameter value (or default if not found).
-  static gz::math::Vector3d MsgParamVector3d(const msgs::Param_V& _msg,
-    const std::string& _paramName, const gz::math::Vector3d _defaultVal);
+  static gz::math::Vector3d MsgParamVector3d(
+    const msgs::Param_V & _msg, const std::string & _paramName,
+    const gz::math::Vector3d _defaultVal);
 };
 
 }  // namespace waves

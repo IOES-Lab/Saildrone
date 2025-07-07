@@ -38,25 +38,23 @@ class GridPrivate;
 /// \brief An accessing / partitioning scheme for a planar SurfaceMesh.
 class Grid
 {
- public:
+public:
   /// \brief Constructor. Initialise the SurfaceMesh comprising the grid.
   ///
   /// \param[in] _size        The size of the grid in the x, y directions.
   /// \param[in] _cellCount   The number of cells in each direction.
-  Grid(
-    const std::array<double, 2>& _size,
-    const std::array<Index, 2>& _cellCount);
+  Grid(const std::array<double, 2> & _size, const std::array<Index, 2> & _cellCount);
 
   /// \brief Copy constructor. Performs a deep copy.
   ///
   /// \param[in] _other   The source grid to copy.
-  Grid(const Grid& _other);
+  Grid(const Grid & _other);
 
   /// \brief Copy assignment. Performs a deep copy.
   ///
   /// \param[in] _other   The source grid to copy.
   /// \return             A reference to this, the copy.
-  Grid& operator=(const Grid& _other);
+  Grid & operator=(const Grid & _other);
 
   /// \brief Get the CGAL SurfaceMesh comprising the grid.
   ///
@@ -71,17 +69,17 @@ class Grid
   /// \brief Get the CGAL SurfaceMesh comprising the grid.
   ///
   /// \return             An immutable reference to the mesh.
-  const cgal::Mesh& GetMeshByRef() const;
+  const cgal::Mesh & GetMeshByRef() const;
 
   /// \brief Get the size of the grid in each direction.
   ///
   /// \return             An array containing the grid size.
-  const std::array<double, 2>& GetSize() const;
+  const std::array<double, 2> & GetSize() const;
 
   /// \brief Get the number of cells the partioning the grid.
   ///
   /// \return             An array containing the number of grid cells.
-  const std::array<Index, 2>& GetCellCount() const;
+  const std::array<Index, 2> & GetCellCount() const;
 
   /// \brief Get the number of vertices (and points).
   ///
@@ -96,14 +94,14 @@ class Grid
   /// \brief Get the _i-th point.
   ///
   /// \return             A point.
-  const cgal::Point3& GetPoint(Index _i) const;
+  const cgal::Point3 & GetPoint(Index _i) const;
 
   /// \brief Set the _i-th point.
   ///
   /// \param[in] _i       Index to the i-th point. Must be less than
   ///                     GetVertexCount().
   /// \param[in] _point   The point to set.
-  void SetPoint(Index _i, const cgal::Point3& _point);
+  void SetPoint(Index _i, const cgal::Point3 & _point);
 
   /// \brief Get the _k-th Triangle in cell(_ix, _iy), _k = 0, 1.
   ///
@@ -127,31 +125,31 @@ class Grid
   /// \param[in] _iy      Index to the iy-th grid cell.
   /// \param[in] _k       Index to the k-th face in cell (ix, iy).
   /// \return             The face normal vector.
-  const cgal::Vector3& GetNormal(Index _ix, Index _iy, Index _k) const;
+  const cgal::Vector3 & GetNormal(Index _ix, Index _iy, Index _k) const;
 
   /// \brief Get the Triangle normal in face _idx (face indexing).
   ///
   /// \param[in] _idx     A face index.
   /// \return             The face normal vector.
-  const cgal::Vector3& GetNormal(Index _idx) const;
+  const cgal::Vector3 & GetNormal(Index _idx) const;
 
   /// \brief Recalculate the normals.
   void RecalculateNormals();
 
   /// \brief Get the position of the grid center.
-  const cgal::Point3& GetCenter() const;
+  const cgal::Point3 & GetCenter() const;
 
   /// \brief Set the position of the grid center.
   ///
   /// \param[in] _center  Set the location of the center
   ///                     of the grid (xy-plane only).
-  void SetCenter(const cgal::Point3& _center);
+  void SetCenter(const cgal::Point3 & _center);
 
   /// \brief Output the grid properties to std::cout.
   ///
   void DebugPrint() const;
 
- private:
+private:
   /// \internal Private implementation.
   std::shared_ptr<GridPrivate> data;
 };
@@ -160,7 +158,7 @@ class Grid
 /// \brief A collection of methods for finding line intersections with a Grid.
 class GridTools
 {
- public:
+public:
   /// \brief Find the index of a grid cell and triangle that contains the
   /// coordinate (_x, _y)
   ///
@@ -170,9 +168,7 @@ class GridTools
   /// \param[out] _index        The grid cell and face index (ix, iy, k).
   /// \return                   True if an intersection is found.
   static bool FindIntersectionIndex(
-    const Grid& _grid,
-    double _x, double _y,
-    std::array<Index, 3>& _index);
+    const Grid & _grid, double _x, double _y, std::array<Index, 3> & _index);
 
   /// \brief Search one triangle for an intersection with the line
   ///        defined by origin and direction.
@@ -185,11 +181,8 @@ class GridTools
   /// \param[out] _intersection The intersection point if found.
   /// \return                   True if an intersection is found.
   static bool FindIntersectionTriangle(
-    const Grid& _grid,
-    const cgal::Point3& _origin,
-    const cgal::Direction3& _direction,
-    const std::array<Index, 3>& _index,
-    cgal::Point3& _intersection);
+    const Grid & _grid, const cgal::Point3 & _origin, const cgal::Direction3 & _direction,
+    const std::array<Index, 3> & _index, cgal::Point3 & _intersection);
 
   /// \brief Search the two triangles in a cell for an intersection with
   ///        the line defined by origin and direction.
@@ -204,11 +197,8 @@ class GridTools
   /// \param[out] _intersection The intersection point if found.
   /// \return                   True if an intersection is found.
   static bool FindIntersectionCell(
-    const Grid& _grid,
-    const cgal::Point3& _origin,
-    const cgal::Direction3& _direction,
-    std::array<Index, 3>& _index,
-    cgal::Point3& _intersection);
+    const Grid & _grid, const cgal::Point3 & _origin, const cgal::Direction3 & _direction,
+    std::array<Index, 3> & _index, cgal::Point3 & _intersection);
 
   /// Search a grid for an intersection with the line defined by origin
   /// and direction. The search starts with a initial guess cell, then
@@ -225,11 +215,8 @@ class GridTools
   /// \param[out] _intersection The intersection point if found.
   /// \return                   True if an intersection is found.
   static bool FindIntersectionGrid(
-    const Grid& _grid,
-    const cgal::Point3& _origin,
-    const cgal::Direction3& _direction,
-    std::array<Index, 3>& _index,
-    cgal::Point3& _intersection);
+    const Grid & _grid, const cgal::Point3 & _origin, const cgal::Direction3 & _direction,
+    std::array<Index, 3> & _index, cgal::Point3 & _intersection);
 };
 
 }  // namespace waves

@@ -41,11 +41,11 @@ namespace waves
 /// \internal Private implementation.
 class WavefieldPrivate
 {
- public:
+public:
   /// \brief Callback for topic "/world/<world>/waves".
   ///
   /// \param[in] msg Wave parameters message.
-  void OnWaveMsg(const gz::msgs::Param& msg);
+  void OnWaveMsg(const gz::msgs::Param & msg);
 
   /// \brief Wave parameters
   std::shared_ptr<WaveParameters> params_;
@@ -64,34 +64,30 @@ class WavefieldPrivate
 };
 
 //////////////////////////////////////////////////
-Wavefield::~Wavefield()
-{
-}
+Wavefield::~Wavefield() {}
 
 //////////////////////////////////////////////////
-Wavefield::Wavefield(const std::string& world_name) :
-  impl_(new WavefieldPrivate())
+Wavefield::Wavefield(const std::string & world_name) : impl_(new WavefieldPrivate())
 {
-  gzmsg << "Constructing Wavefield..." <<  std::endl;
+  gzmsg << "Constructing Wavefield..." << std::endl;
 
   // Subscribe to wave parameter updates
   std::string topic("/world/" + world_name + "/waves");
-  impl_->node_.Subscribe(
-      topic, &WavefieldPrivate::OnWaveMsg, impl_.get());
+  impl_->node_.Subscribe(topic, &WavefieldPrivate::OnWaveMsg, impl_.get());
 
   // Wave parameters
-  gzmsg << "Creating WaveParameters." <<  std::endl;
+  gzmsg << "Creating WaveParameters." << std::endl;
   auto params = std::make_shared<WaveParameters>();
   SetParameters(params);
 
   // Update
   Update(0.0);
 
-  gzmsg << "Done constructing Wavefield." <<  std::endl;
+  gzmsg << "Done constructing Wavefield." << std::endl;
 }
 
 //////////////////////////////////////////////////
-bool Wavefield::Height(const Eigen::Vector3d& point, double& height) const
+bool Wavefield::Height(const Eigen::Vector3d & point, double & height) const
 {
   /// \todo(srmainwaring) the calculation assumes that the tile origin
   /// is at its center.
@@ -101,18 +97,26 @@ bool Wavefield::Height(const Eigen::Vector3d& point, double& height) const
   // https://stackoverflow.com/questions/46114214/lambda-implicit-capture-fails-with-variable-declared-from-structured-binding
   auto px_mod = [lx = lx](double x)
   {
-      if (x < 0.0)
-        return std::fmod(x - lx/2.0, lx) + lx/2.0;
-      else
-        return std::fmod(x + lx/2.0, lx) - lx/2.0;
+    if (x < 0.0)
+    {
+      return std::fmod(x - lx / 2.0, lx) + lx / 2.0;
+    }
+    else
+    {
+      return std::fmod(x + lx / 2.0, lx) - lx / 2.0;
+    }
   };
 
   auto py_mod = [ly = ly](double y)
   {
-      if (y < 0.0)
-        return std::fmod(y - ly/2.0, ly) + ly/2.0;
-      else
-        return std::fmod(y + ly/2.0, ly) - ly/2.0;
+    if (y < 0.0)
+    {
+      return std::fmod(y - ly / 2.0, ly) + ly / 2.0;
+    }
+    else
+    {
+      return std::fmod(y + ly / 2.0, ly) - ly / 2.0;
+    }
   };
 
   // Obtain the point modulo the tile dimensions
@@ -122,10 +126,7 @@ bool Wavefield::Height(const Eigen::Vector3d& point, double& height) const
 }
 
 //////////////////////////////////////////////////
-std::shared_ptr<const WaveParameters> Wavefield::GetParameters() const
-{
-  return impl_->params_;
-}
+std::shared_ptr<const WaveParameters> Wavefield::GetParameters() const { return impl_->params_; }
 
 //////////////////////////////////////////////////
 void Wavefield::SetParameters(std::shared_ptr<WaveParameters> params)
@@ -140,8 +141,7 @@ void Wavefield::SetParameters(std::shared_ptr<WaveParameters> params)
 
   // OceanTile
   gzmsg << "Creating OceanTile.\n";
-  impl_->ocean_tile_.reset(new physics::OceanTile(
-      impl_->params_, false));
+  impl_->ocean_tile_.reset(new physics::OceanTile(impl_->params_, false));
   impl_->ocean_tile_->SetWindVelocity(u, v);
   impl_->ocean_tile_->Create();
 
@@ -160,13 +160,13 @@ void Wavefield::Update(double time)
   impl_->ocean_tile_->Update(time);
 
   // Update the point locator.
-  auto& vertices = impl_->ocean_tile_->Vertices();
+  auto & vertices = impl_->ocean_tile_->Vertices();
   impl_->tri_grid_->UpdatePoints(vertices);
 }
 
 //////////////////////////////////////////////////
 //////////////////////////////////////////////////
-void WavefieldPrivate::OnWaveMsg(const gz::msgs::Param& msg)
+void WavefieldPrivate::OnWaveMsg(const gz::msgs::Param & msg)
 {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
 
@@ -197,7 +197,7 @@ void WavefieldPrivate::OnWaveMsg(const gz::msgs::Param& msg)
       auto param = it->second;
       // auto type = param.type();
       auto value = param.double_value();
-      wind_angle_rad = M_PI/180.0*value;
+      wind_angle_rad = M_PI / 180.0 * value;
     }
   }
   {
@@ -216,11 +216,8 @@ void WavefieldPrivate::OnWaveMsg(const gz::msgs::Param& msg)
   params_->SetWindSpeedAndAngle(wind_speed, wind_angle_rad);
   params_->SetSteepness(steepness);
 
-  ocean_tile_->SetWindVelocity(
-      params_->WindVelocity().X(),
-      params_->WindVelocity().Y());
-  ocean_tile_->SetSteepness(
-      params_->Steepness());
+  ocean_tile_->SetWindVelocity(params_->WindVelocity().X(), params_->WindVelocity().Y());
+  ocean_tile_->SetSteepness(params_->Steepness());
 }
 
 }  // namespace waves

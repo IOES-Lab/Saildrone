@@ -147,7 +147,7 @@ find_package(CGAL REQUIRED COMPONENTS Core)
 
 if(NOT CGAL_FOUND)
   message(STATUS "This project requires the CGAL library, and will not be compiled.")
-  return()  
+  return()
 endif()
 
 # message("CGAL_VERSION_MAJOR: ${CGAL_VERSION_MAJOR}")

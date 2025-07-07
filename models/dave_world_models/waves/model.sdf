@@ -26,7 +26,7 @@
             <uri>materials/mesh_L256m_N256.dae</uri>
           </mesh>
         </geometry>
-        <!-- 
+        <!--
           Uncomment material if using DYNAMIC_GEOMETRY which uses PBS
           rather than a custom shader
         -->

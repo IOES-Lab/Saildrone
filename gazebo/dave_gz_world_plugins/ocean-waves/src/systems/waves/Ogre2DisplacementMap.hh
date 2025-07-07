@@ -20,10 +20,10 @@
 
 #include <memory>
 
-#include <gz/rendering/config.hh>
+#include <gz/rendering/Export.hh>
 #include <gz/rendering/Material.hh>
 #include <gz/rendering/Scene.hh>
-#include <gz/rendering/Export.hh>
+#include <gz/rendering/config.hh>
 
 #include <gz/rendering/ogre2.hh>
 #include <gz/rendering/ogre2/Export.hh>
@@ -34,62 +34,68 @@ namespace gz
 {
 namespace rendering
 {
-inline namespace GZ_RENDERING_VERSION_NAMESPACE {
-
-class GZ_RENDERING_OGRE2_VISIBLE Ogre2DisplacementMap :
-    public DisplacementMap
+inline namespace GZ_RENDERING_VERSION_NAMESPACE
 {
-  public: Ogre2DisplacementMap(
-    ScenePtr _scene,
-    MaterialPtr _material,
-    uint64_t _entity,
-    uint32_t _width,
-    uint32_t _height);
 
-  public: virtual ~Ogre2DisplacementMap();
+class GZ_RENDERING_OGRE2_VISIBLE Ogre2DisplacementMap : public DisplacementMap
+{
+public:
+  Ogre2DisplacementMap(
+    ScenePtr _scene, MaterialPtr _material, uint64_t _entity, uint32_t _width, uint32_t _height);
 
-  public: virtual void InitTextures() override;
+public:
+  virtual ~Ogre2DisplacementMap();
 
-  public: virtual void UpdateTextures(
-    const Eigen::Ref<const Eigen::ArrayXXd> &mHeights,
-    const Eigen::Ref<const Eigen::ArrayXXd> &mDhdx,
-    const Eigen::Ref<const Eigen::ArrayXXd> &mDhdy,
-    const Eigen::Ref<const Eigen::ArrayXXd> &mDisplacementsX,
-    const Eigen::Ref<const Eigen::ArrayXXd> &mDisplacementsY,
-    const Eigen::Ref<const Eigen::ArrayXXd> &mDxdx,
-    const Eigen::Ref<const Eigen::ArrayXXd> &mDydy,
-    const Eigen::Ref<const Eigen::ArrayXXd> &mDxdy) override;
+public:
+  virtual void InitTextures() override;
 
-  private: ScenePtr scene;
-  private: MaterialPtr material;
-  private: uint64_t entity{0};
-  private: uint32_t width{0};
-  private: uint32_t height{0};
+public:
+  virtual void UpdateTextures(
+    const Eigen::Ref<const Eigen::ArrayXXd> & mHeights,
+    const Eigen::Ref<const Eigen::ArrayXXd> & mDhdx,
+    const Eigen::Ref<const Eigen::ArrayXXd> & mDhdy,
+    const Eigen::Ref<const Eigen::ArrayXXd> & mDisplacementsX,
+    const Eigen::Ref<const Eigen::ArrayXXd> & mDisplacementsY,
+    const Eigen::Ref<const Eigen::ArrayXXd> & mDxdx,
+    const Eigen::Ref<const Eigen::ArrayXXd> & mDydy,
+    const Eigen::Ref<const Eigen::ArrayXXd> & mDxdy) override;
 
-  private:
+private:
+  ScenePtr scene;
+
+private:
+  MaterialPtr material;
+
+private:
+  uint64_t entity{0};
+
+private:
+  uint32_t width{0};
+
+private:
+  uint32_t height{0};
+
+private:
   /// \note: new code adapted from ogre ocean materials sample
   // textures for displacement, normal and tangent maps
-  Ogre::Image2       *mHeightMapImage{nullptr};
-  Ogre::Image2       *mNormalMapImage{nullptr};
-  Ogre::Image2       *mTangentMapImage{nullptr};
-  Ogre::TextureGpu   *mHeightMapTex{nullptr};
-  Ogre::TextureGpu   *mNormalMapTex{nullptr};
-  Ogre::TextureGpu   *mTangentMapTex{nullptr};
+  Ogre::Image2 * mHeightMapImage{nullptr};
+  Ogre::Image2 * mNormalMapImage{nullptr};
+  Ogre::Image2 * mTangentMapImage{nullptr};
+  Ogre::TextureGpu * mHeightMapTex{nullptr};
+  Ogre::TextureGpu * mNormalMapTex{nullptr};
+  Ogre::TextureGpu * mTangentMapTex{nullptr};
 
   /// \note Triple buffer staging textures
-  Ogre::StagingTexture* mHeightMapStagingTextures[3] =
-      {nullptr, nullptr, nullptr};
-  Ogre::StagingTexture* mNormalMapStagingTextures[3] =
-      {nullptr, nullptr, nullptr};
-  Ogre::StagingTexture* mTangentMapStagingTextures[3] =
-      {nullptr, nullptr, nullptr};
+  Ogre::StagingTexture * mHeightMapStagingTextures[3] = {nullptr, nullptr, nullptr};
+  Ogre::StagingTexture * mNormalMapStagingTextures[3] = {nullptr, nullptr, nullptr};
+  Ogre::StagingTexture * mTangentMapStagingTextures[3] = {nullptr, nullptr, nullptr};
 
   uint8_t mHeightMapFrameIdx{0};
   uint8_t mNormalMapFrameIdx{0};
   uint8_t mTangentMapFrameIdx{0};
 };
 
-}
+}  // namespace GZ_RENDERING_VERSION_NAMESPACE
 }  // namespace rendering
 }  // namespace gz
 

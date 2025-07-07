@@ -23,13 +23,13 @@
 #include <string>
 #include <vector>
 
-#include <gz/waves/WaveSimulation.hh>
 #include <gz/waves/LinearRegularWaveSimulation.hh>
+#include <gz/waves/WaveSimulation.hh>
 
 using gz::waves::Index;
 using gz::waves::LinearRegularWaveSimulation;
 
-int main(int /*argc*/, const char **/*argv*/)
+int main(int /*argc*/, const char ** /*argv*/)
 {
   try
   {
@@ -45,9 +45,9 @@ int main(int /*argc*/, const char **/*argv*/)
     Index nx = 128;
     Index ny = 128;
 
-    { // wave elevation vs time
+    {  // wave elevation vs time
       std::unique_ptr<LinearRegularWaveSimulation> wave_sim(
-          new LinearRegularWaveSimulation(lx, ly, nx, ny));
+        new LinearRegularWaveSimulation(lx, ly, nx, ny));
       wave_sim->SetDirection(1.0, 0.0);
       wave_sim->SetAmplitude(2.0);
       wave_sim->SetPeriod(12.0);
@@ -75,9 +75,9 @@ int main(int /*argc*/, const char **/*argv*/)
       gp.send1d(std::make_tuple(pts_t, pts_eta));
     }
 
-    { // wave elevation vs position
+    {  // wave elevation vs position
       std::unique_ptr<LinearRegularWaveSimulation> wave_sim(
-          new LinearRegularWaveSimulation(lx, ly, nx, ny));
+        new LinearRegularWaveSimulation(lx, ly, nx, ny));
       wave_sim->SetDirection(1.0, 0.0);
       wave_sim->SetAmplitude(2.0);
       wave_sim->SetPeriod(12.0);
@@ -114,12 +114,12 @@ int main(int /*argc*/, const char **/*argv*/)
       gp.send1d(std::make_tuple(pts_x, pts_eta2));
     }
 
-    { // wave pressure vs position
+    {  // wave pressure vs position
       Index nz = 10;
       double lz = 50.0;
 
       std::unique_ptr<LinearRegularWaveSimulation> wave_sim(
-          new LinearRegularWaveSimulation(lx, ly, lz, nx, ny, nz));
+        new LinearRegularWaveSimulation(lx, ly, lz, nx, ny, nz));
       wave_sim->SetDirection(1.0, 0.0);
       wave_sim->SetAmplitude(2.0);
       wave_sim->SetPeriod(12.0);
@@ -144,8 +144,7 @@ int main(int /*argc*/, const char **/*argv*/)
       std::string plot_str("plot '-' w l title 'p0'");
       for (Index iz = 1; iz < nz; ++iz)
       {
-        plot_str.append(",'-' w l title 'p")
-          .append(std::to_string(iz)).append("'");
+        plot_str.append(",'-' w l title 'p").append(std::to_string(iz)).append("'");
       }
       plot_str.append("\n");
 
@@ -162,11 +161,10 @@ int main(int /*argc*/, const char **/*argv*/)
       }
     }
   }
-  catch(...)
+  catch (...)
   {
     std::cerr << "Unknown exception\n";
     return -1;
   }
   return 0;
 }
-

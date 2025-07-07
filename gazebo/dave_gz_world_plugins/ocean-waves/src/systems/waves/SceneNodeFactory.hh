@@ -18,8 +18,8 @@
 
 #include <memory>
 
-#include <gz/rendering/config.hh>
 #include <gz/rendering/Scene.hh>
+#include <gz/rendering/config.hh>
 #include "gz/rendering/Export.hh"
 
 #include "DisplacementMap.hh"
@@ -30,31 +30,33 @@ namespace gz
 {
 namespace rendering
 {
-inline namespace GZ_RENDERING_VERSION_NAMESPACE {
+inline namespace GZ_RENDERING_VERSION_NAMESPACE
+{
 
 class GZ_RENDERING_VISIBLE SceneNodeFactory
 {
   /// \brief Destructor
-  public: virtual ~SceneNodeFactory();
+public:
+  virtual ~SceneNodeFactory();
 
   /// \brief Create an ocean visual
-  public: virtual OceanVisualPtr CreateOceanVisual(ScenePtr _scene) = 0;
+public:
+  virtual OceanVisualPtr CreateOceanVisual(ScenePtr _scene) = 0;
 
   /// \brief Create an ocean geometry
-  public: virtual OceanGeometryPtr CreateOceanGeometry(ScenePtr _scene) = 0;
+public:
+  virtual OceanGeometryPtr CreateOceanGeometry(ScenePtr _scene) = 0;
 
   /// \brief Create a displacement map
-  public: virtual DisplacementMapPtr CreateDisplacementMap(
-      ScenePtr _scene,
-      MaterialPtr _material,
-      uint64_t _entity,
-      uint32_t _width,
-      uint32_t _height) = 0;
+public:
+  virtual DisplacementMapPtr CreateDisplacementMap(
+    ScenePtr _scene, MaterialPtr _material, uint64_t _entity, uint32_t _width,
+    uint32_t _height) = 0;
 };
 
 typedef std::shared_ptr<SceneNodeFactory> SceneNodeFactoryPtr;
 
-}
+}  // namespace GZ_RENDERING_VERSION_NAMESPACE
 }  // namespace rendering
 }  // namespace gz
 

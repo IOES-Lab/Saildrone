@@ -46,10 +46,11 @@
 #include "gtest/gtest-message.h"
 #include "gtest/internal/gtest-port.h"
 
-GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251                                   \
-/* class A needs to have dll-interface to be used by clients of class B */)
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(
+  4251 /* class A needs to have dll-interface to be used by clients of class B */)
 
-namespace testing {
+namespace testing
+{
 
 // A class for indicating whether an assertion was successful.  When
 // the assertion wasn't successful, the AssertionResult object
@@ -130,11 +131,12 @@ namespace testing {
 //   Expected: Foo() is even
 //     Actual: it's 5
 //
-class GTEST_API_ AssertionResult {
- public:
+class GTEST_API_ AssertionResult
+{
+public:
   // Copy constructor.
   // Used in EXPECT_TRUE/FALSE(assertion_result).
-  AssertionResult(const AssertionResult& other);
+  AssertionResult(const AssertionResult & other);
 
 // C4800 is a level 3 warning in Visual Studio 2015 and earlier.
 // This warning is not emitted in Visual Studio 2017.
@@ -153,19 +155,21 @@ class GTEST_API_ AssertionResult {
   // we want AssertionResult's copy constructor to be used.
   template <typename T>
   explicit AssertionResult(
-      const T& success,
-      typename std::enable_if<
-          !std::is_convertible<T, AssertionResult>::value>::type*
-      /*enabler*/
-      = nullptr)
-      : success_(success) {}
+    const T & success,
+    typename std::enable_if<!std::is_convertible<T, AssertionResult>::value>::type *
+    /*enabler*/
+    = nullptr)
+  : success_(success)
+  {
+  }
 
 #if defined(_MSC_VER) && (_MSC_VER < 1910 || _MSC_VER >= 1920)
   GTEST_DISABLE_MSC_WARNINGS_POP_()
 #endif
 
   // Assignment operator.
-  AssertionResult& operator=(AssertionResult other) {
+  AssertionResult & operator=(AssertionResult other)
+  {
     swap(other);
     return *this;
   }
@@ -180,36 +184,39 @@ class GTEST_API_ AssertionResult {
   // use it when they fail (i.e., the predicate's outcome doesn't match the
   // assertion's expectation). When nothing has been streamed into the
   // object, returns an empty string.
-  const char* message() const {
-    return message_.get() != nullptr ? message_->c_str() : "";
-  }
+  const char * message() const { return message_.get() != nullptr ? message_->c_str() : ""; }
   // Deprecated; please use message() instead.
-  const char* failure_message() const { return message(); }
+  const char * failure_message() const { return message(); }
 
   // Streams a custom failure message into this object.
   template <typename T>
-  AssertionResult& operator<<(const T& value) {
+  AssertionResult & operator<<(const T & value)
+  {
     AppendMessage(Message() << value);
     return *this;
   }
 
   // Allows streaming basic output manipulators such as endl or flush into
   // this object.
-  AssertionResult& operator<<(
-      ::std::ostream& (*basic_manipulator)(::std::ostream& stream)) {
+  AssertionResult & operator<<(::std::ostream & (*basic_manipulator)(::std::ostream & stream))
+  {
     AppendMessage(Message() << basic_manipulator);
     return *this;
   }
 
- private:
+private:
   // Appends the contents of message to message_.
-  void AppendMessage(const Message& a_message) {
-    if (message_.get() == nullptr) message_.reset(new ::std::string);
+  void AppendMessage(const Message & a_message)
+  {
+    if (message_.get() == nullptr)
+    {
+      message_.reset(new ::std::string);
+    }
     message_->append(a_message.GetString().c_str());
   }
 
   // Swap the contents of this AssertionResult with other.
-  void swap(AssertionResult& other);
+  void swap(AssertionResult & other);
 
   // Stores result of the assertion predicate.
   bool success_;
@@ -228,7 +235,7 @@ GTEST_API_ AssertionResult AssertionFailure();
 
 // Makes a failed assertion result with the given failure message.
 // Deprecated; use AssertionFailure() << msg.
-GTEST_API_ AssertionResult AssertionFailure(const Message& msg);
+GTEST_API_ AssertionResult AssertionFailure(const Message & msg);
 
 }  // namespace testing
 

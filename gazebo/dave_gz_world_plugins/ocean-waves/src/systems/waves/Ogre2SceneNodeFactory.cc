@@ -30,17 +30,14 @@ namespace gz
 {
 namespace rendering
 {
-inline namespace GZ_RENDERING_VERSION_NAMESPACE {
+inline namespace GZ_RENDERING_VERSION_NAMESPACE
+{
 
 //////////////////////////////////////////////////
-Ogre2SceneNodeFactory::Ogre2SceneNodeFactory()
-{
-}
+Ogre2SceneNodeFactory::Ogre2SceneNodeFactory() {}
 
 //////////////////////////////////////////////////
-Ogre2SceneNodeFactory::~Ogre2SceneNodeFactory()
-{
-}
+Ogre2SceneNodeFactory::~Ogre2SceneNodeFactory() {}
 
 //////////////////////////////////////////////////
 OceanVisualPtr Ogre2SceneNodeFactory::CreateOceanVisual(ScenePtr _scene)
@@ -51,8 +48,7 @@ OceanVisualPtr Ogre2SceneNodeFactory::CreateOceanVisual(ScenePtr _scene)
   std::string objName = ss.str();
 
   // create visual
-  rendering::OceanVisualPtr visual =
-      std::make_shared<rendering::Ogre2OceanVisual>();
+  rendering::OceanVisualPtr visual = std::make_shared<rendering::Ogre2OceanVisual>();
   visual->InitObject(_scene, objId, objName);
 
   return visual;
@@ -67,8 +63,7 @@ OceanGeometryPtr Ogre2SceneNodeFactory::CreateOceanGeometry(ScenePtr _scene)
   std::string objName = ss.str();
 
   // create geometry
-  rendering::OceanGeometryPtr geometry =
-      std::make_shared<rendering::Ogre2OceanGeometry>();
+  rendering::OceanGeometryPtr geometry = std::make_shared<rendering::Ogre2OceanGeometry>();
   geometry->InitObject(_scene, objId, objName);
 
   return geometry;
@@ -76,19 +71,14 @@ OceanGeometryPtr Ogre2SceneNodeFactory::CreateOceanGeometry(ScenePtr _scene)
 
 //////////////////////////////////////////////////
 DisplacementMapPtr Ogre2SceneNodeFactory::CreateDisplacementMap(
-    ScenePtr _scene,
-    MaterialPtr _material,
-    uint64_t _entity,
-    uint32_t _width,
-    uint32_t _height)
+  ScenePtr _scene, MaterialPtr _material, uint64_t _entity, uint32_t _width, uint32_t _height)
 {
   rendering::DisplacementMapPtr displacementMap =
-      std::make_shared<rendering::Ogre2DisplacementMap>(
-          _scene, _material, _entity, _width, _height);
+    std::make_shared<rendering::Ogre2DisplacementMap>(_scene, _material, _entity, _width, _height);
 
   return displacementMap;
 }
 
-}
+}  // namespace GZ_RENDERING_VERSION_NAMESPACE
 }  // namespace rendering
 }  // namespace gz

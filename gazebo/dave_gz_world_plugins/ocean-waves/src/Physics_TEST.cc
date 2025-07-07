@@ -21,19 +21,19 @@
 #include <thread>
 
 #include <gz/common/Console.hh>
-#include <gz/common/Util.hh>
 #include <gz/common/MeshManager.hh>
+#include <gz/common/Util.hh>
 #include <gz/math/Vector3.hh>
 
 #include "gz/waves/CGALTypes.hh"
-#include "gz/waves/Physics.hh"
 #include "gz/waves/Geometry.hh"
 #include "gz/waves/Grid.hh"
 #include "gz/waves/MeshTools.hh"
 #include "gz/waves/PhysicalConstants.hh"
+#include "gz/waves/Physics.hh"
+#include "gz/waves/WaveParameters.hh"
 #include "gz/waves/Wavefield.hh"
 #include "gz/waves/WavefieldSampler.hh"
-#include "gz/waves/WaveParameters.hh"
 
 namespace cgal
 {
@@ -55,7 +55,7 @@ using gz::waves::WavefieldSampler;
 //////////////////////////////////////////////////
 TEST(Physics, CenterOfForce)
 {
-  { // Limits
+  {  // Limits
     double fU = 10;
     double fL = 0;
     cgal::Point3 CU(10, 20, 30);
@@ -64,7 +64,7 @@ TEST(Physics, CenterOfForce)
     EXPECT_EQ(CF, CU);
   }
 
-  { // Equal forces
+  {  // Equal forces
     double fU = 10;
     double fL = 10;
     cgal::Point3 CU(0, 0, 0);
@@ -79,7 +79,7 @@ TEST(Physics, BuoyancyForceAtCenterOfPressure)
 {
   double eps = 1E-8;
 
-  { // H on surface
+  {  // H on surface
     cgal::Point3 H(5, 0, 0);
     cgal::Point3 M(-5, 0, -2);
     cgal::Point3 L(5, 0, -2);
@@ -87,9 +87,8 @@ TEST(Physics, BuoyancyForceAtCenterOfPressure)
     cgal::Vector3 force;
     cgal::Vector3 normal = Geometry::Normal(H, M, L);
     cgal::Point3 C = Geometry::TriangleCentroid(H, M, L);
-    double depthC = - C.z();
-    Physics::BuoyancyForceAtCenterOfPressure(depthC, C, H, M, L,
-        normal, center, force);
+    double depthC = -C.z();
+    Physics::BuoyancyForceAtCenterOfPressure(depthC, C, H, M, L, normal, center, force);
     EXPECT_NEAR(center[0], 1.25, eps);
     EXPECT_NEAR(center[1], 0.0, eps);
     EXPECT_NEAR(center[2], -1.5, eps);
@@ -101,7 +100,7 @@ TEST(Physics, BuoyancyForceAtCenterOfPressure)
     EXPECT_NEAR(force[2], 0, eps);
   }
 
-  { // H below surface
+  {  // H below surface
     cgal::Point3 H(5, 0, -9);
     cgal::Point3 M(-5, 0, -11);
     cgal::Point3 L(5, 0, -11);
@@ -109,9 +108,8 @@ TEST(Physics, BuoyancyForceAtCenterOfPressure)
     cgal::Vector3 force;
     cgal::Vector3 normal = Geometry::Normal(H, M, L);
     cgal::Point3 C = Geometry::TriangleCentroid(H, M, L);
-    double depthC = - C.z();
-    Physics::BuoyancyForceAtCenterOfPressure(depthC, C, H, M, L,
-        normal, center, force);
+    double depthC = -C.z();
+    Physics::BuoyancyForceAtCenterOfPressure(depthC, C, H, M, L, normal, center, force);
     EXPECT_NEAR(center[0], 1.6129032258, eps);
     EXPECT_NEAR(center[1], 0.0, eps);
     EXPECT_NEAR(center[2], -10.35483871, eps);
@@ -123,7 +121,7 @@ TEST(Physics, BuoyancyForceAtCenterOfPressure)
     EXPECT_NEAR(force[2], 0, eps);
   }
 
-  { // M on surface
+  {  // M on surface
     cgal::Point3 H(5, 0, -0);
     cgal::Point3 M(-5, 0, -0);
     cgal::Point3 L(-5, 0, -2);
@@ -131,11 +129,10 @@ TEST(Physics, BuoyancyForceAtCenterOfPressure)
     cgal::Vector3 force;
     cgal::Vector3 normal = Geometry::Normal(H, M, L);
     cgal::Point3 C = Geometry::TriangleCentroid(H, M, L);
-    double depthC = - C.z();
-    Physics::BuoyancyForceAtCenterOfPressure(depthC, C, H, M, L,
-        normal, center, force);
+    double depthC = -C.z();
+    Physics::BuoyancyForceAtCenterOfPressure(depthC, C, H, M, L, normal, center, force);
     EXPECT_NEAR(center[0], -2.5, eps);
-    EXPECT_NEAR(center[1],  0.0, eps);
+    EXPECT_NEAR(center[1], 0.0, eps);
     EXPECT_NEAR(center[2], -1.0, eps);
     EXPECT_NEAR(force[0], 0, eps);
     // rho =  998.6, g = -9.8
@@ -145,7 +142,7 @@ TEST(Physics, BuoyancyForceAtCenterOfPressure)
     EXPECT_NEAR(force[2], 0, eps);
   }
 
-  { // M below surface
+  {  // M below surface
     cgal::Point3 H(5, 0, -9);
     cgal::Point3 M(-5, 0, -9);
     cgal::Point3 L(-5, 0, -11);
@@ -153,9 +150,8 @@ TEST(Physics, BuoyancyForceAtCenterOfPressure)
     cgal::Vector3 force;
     cgal::Vector3 normal = Geometry::Normal(H, M, L);
     cgal::Point3 C = Geometry::TriangleCentroid(H, M, L);
-    double depthC = - C.z();
-    Physics::BuoyancyForceAtCenterOfPressure(depthC, C, H, M, L,
-        normal, center, force);
+    double depthC = -C.z();
+    Physics::BuoyancyForceAtCenterOfPressure(depthC, C, H, M, L, normal, center, force);
     EXPECT_NEAR(center[0], -1.724137931, eps);
     EXPECT_NEAR(center[1], 0.0, eps);
     EXPECT_NEAR(center[2], -9.689655172, eps);
@@ -177,33 +173,26 @@ TEST(Hydrodynamics, BuoyancyUnitBox)
   gz::math::Pose3d linkPose;
   std::string linkMeshName("box_1x1x1");
   gz::common::MeshManager::Instance()->CreateBox(
-    linkMeshName,
-    gz::math::Vector3d(1, 1, 1),
-    gz::math::Vector2d(1, 1));
+    linkMeshName, gz::math::Vector3d(1, 1, 1), gz::math::Vector2d(1, 1));
   std::shared_ptr<cgal::Mesh> linkMesh = std::make_shared<cgal::Mesh>();
   MeshTools::MakeSurfaceMesh(
-    *gz::common::MeshManager::Instance()->MeshByName(linkMeshName),
-    *linkMesh);
+    *gz::common::MeshManager::Instance()->MeshByName(linkMeshName), *linkMesh);
 
   // Wavefield and water patch 2x2
-  std::shared_ptr<const Wavefield> wavefield(new  Wavefield("waves"));
-  std::shared_ptr<Grid> patch(
-    new  Grid({ 2, 2 }, { 2, 2 }));
-  std::shared_ptr<const WavefieldSampler> wavefieldSampler(
-    new WavefieldSampler(wavefield, patch));
+  std::shared_ptr<const Wavefield> wavefield(new Wavefield("waves"));
+  std::shared_ptr<Grid> patch(new Grid({2, 2}, {2, 2}));
+  std::shared_ptr<const WavefieldSampler> wavefieldSampler(new WavefieldSampler(wavefield, patch));
 
   // Hydrodynamics
   std::shared_ptr<HydrodynamicsParameters> hydroParams =
-      std::make_shared<HydrodynamicsParameters>();
+    std::make_shared<HydrodynamicsParameters>();
   Hydrodynamics hydrodynamics(hydroParams, linkMesh, wavefieldSampler);
-  hydrodynamics.Update(wavefieldSampler, linkPose,
-      CGAL::NULL_VECTOR, CGAL::NULL_VECTOR);
+  hydrodynamics.Update(wavefieldSampler, linkPose, CGAL::NULL_VECTOR, CGAL::NULL_VECTOR);
   cgal::Vector3 force = hydrodynamics.Force();
 
   double h = 0.5;
   double A = 1.0;
-  double f = - PhysicalConstants::WaterDensity()
-      * PhysicalConstants::Gravity() * A * h;
+  double f = -PhysicalConstants::WaterDensity() * PhysicalConstants::Gravity() * A * h;
   EXPECT_NEAR(force[0], 0, eps);
   EXPECT_NEAR(force[1], 0, eps);
   EXPECT_NEAR(force[2], f, eps);
@@ -218,32 +207,25 @@ TEST(Hydrodynamics, Buoyancy10x4x2Box)
   gz::math::Pose3d linkPose;
   std::string linkMeshName("box_10x4x2");
   gz::common::MeshManager::Instance()->CreateBox(
-    linkMeshName,
-    gz::math::Vector3d(10, 4, 2),
-    gz::math::Vector2d(1, 1));
+    linkMeshName, gz::math::Vector3d(10, 4, 2), gz::math::Vector2d(1, 1));
   std::shared_ptr<cgal::Mesh> linkMesh = std::make_shared<cgal::Mesh>();
   MeshTools::MakeSurfaceMesh(
-    *gz::common::MeshManager::Instance()->MeshByName(linkMeshName),
-    *linkMesh);
+    *gz::common::MeshManager::Instance()->MeshByName(linkMeshName), *linkMesh);
 
   // Wavefield and water patch 4x4
-  std::shared_ptr<const Wavefield> wavefield(new  Wavefield("waves"));
-  std::shared_ptr<Grid> patch(
-    new  Grid({ 20, 20 }, { 4, 4 }));
-  std::shared_ptr<const WavefieldSampler> wavefieldSampler(
-    new WavefieldSampler(wavefield, patch));
+  std::shared_ptr<const Wavefield> wavefield(new Wavefield("waves"));
+  std::shared_ptr<Grid> patch(new Grid({20, 20}, {4, 4}));
+  std::shared_ptr<const WavefieldSampler> wavefieldSampler(new WavefieldSampler(wavefield, patch));
 
   // Hydrodynamics
   std::shared_ptr<HydrodynamicsParameters> hydroParams =
-      std::make_shared<HydrodynamicsParameters>();
+    std::make_shared<HydrodynamicsParameters>();
   Hydrodynamics hydrodynamics(hydroParams, linkMesh, wavefieldSampler);
-  hydrodynamics.Update(wavefieldSampler, linkPose,
-      CGAL::NULL_VECTOR, CGAL::NULL_VECTOR);
-  cgal::Vector3 force =  hydrodynamics.Force();
+  hydrodynamics.Update(wavefieldSampler, linkPose, CGAL::NULL_VECTOR, CGAL::NULL_VECTOR);
+  cgal::Vector3 force = hydrodynamics.Force();
   double h = 0.5 * 2.0;
   double A = 10.0 * 4.0;
-  double f = - PhysicalConstants::WaterDensity()
-      * PhysicalConstants::Gravity() * A * h;
+  double f = -PhysicalConstants::WaterDensity() * PhysicalConstants::Gravity() * A * h;
   EXPECT_NEAR(force[0], 0, eps);
   EXPECT_NEAR(force[1], 0, eps);
   EXPECT_NEAR(force[2], f, eps);
@@ -386,9 +368,8 @@ TEST(Hydrodynamics, FrameTransforms)
 }
 
 //////////////////////////////////////////////////
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
-

@@ -24,7 +24,6 @@
 
 #include "gz/waves/CGALTypes.hh"
 
-
 namespace gz
 {
 namespace waves
@@ -40,7 +39,7 @@ class WavefieldSamplerPrivate;
 /// \brief A class to manage sampling depths from a wave field.
 class WavefieldSampler
 {
- public:
+public:
   /// \brief Destructor
   ~WavefieldSampler();
 
@@ -48,9 +47,7 @@ class WavefieldSampler
   ///
   /// \param[in] wavefield  The wave field being sampled.
   /// \param[in] patch      The area of the wave field being sampled.
-  WavefieldSampler(
-    std::shared_ptr<const Wavefield> wavefield,
-    std::shared_ptr<const Grid> patch);
+  WavefieldSampler(std::shared_ptr<const Wavefield> wavefield, std::shared_ptr<const Grid> patch);
 
   /// \brief Get the water patch (i.e. the area of the wave field sampled).
   std::shared_ptr<const Grid> GetWaterPatch() const;
@@ -58,7 +55,7 @@ class WavefieldSampler
   /// \brief Translate the initial water patch using the Pose X Y coordinates.
   ///
   /// \param[in] pose     The pose of the rigid body the water patch supports.
-  void ApplyPose(const math::Pose3d& pose);
+  void ApplyPose(const math::Pose3d & pose);
 
   /// \brief Update the water patch
   void UpdatePatch();
@@ -67,14 +64,14 @@ class WavefieldSampler
   ///
   /// \param[in] point       The point at which we want the depth
   /// \return                The depth 'h' at the point.
-  double ComputeDepth(const cgal::Point3& point) const;
+  double ComputeDepth(const cgal::Point3 & point) const;
 
   /// \brief Compute the depth at a point.
   ///
   /// \param[in] patch       A water patch.
   /// \param[in] point       The point at which we want the depth
   /// \return                The depth 'h' at the point.
-  static double ComputeDepth(const Grid& patch, const cgal::Point3& point);
+  static double ComputeDepth(const Grid & patch, const cgal::Point3 & point);
 
   /// \brief Compute the depth at a point directly (no sampling).
   ///
@@ -91,11 +88,9 @@ class WavefieldSampler
   /// \param[in] point       The point at which we want the depth.
   /// \return                 The depth 'h' at the point.
   static double ComputeDepthDirectly(
-    const WaveParameters& wave_params,
-    const cgal::Point3& point,
-    double time);
+    const WaveParameters & wave_params, const cgal::Point3 & point, double time);
 
- private:
+private:
   /// \internal Private implementation.
   std::shared_ptr<WavefieldSamplerPrivate> impl_;
 };

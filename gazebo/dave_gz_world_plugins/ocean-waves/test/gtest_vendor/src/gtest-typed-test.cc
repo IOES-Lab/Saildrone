@@ -31,20 +31,28 @@
 
 #include "gtest/gtest.h"
 
-namespace testing {
-namespace internal {
+namespace testing
+{
+namespace internal
+{
 
 // Skips to the first non-space char in str. Returns an empty string if str
 // contains only whitespace characters.
-static const char* SkipSpaces(const char* str) {
-  while (IsSpace(*str)) str++;
+static const char * SkipSpaces(const char * str)
+{
+  while (IsSpace(*str))
+  {
+    str++;
+  }
   return str;
 }
 
-static std::vector<std::string> SplitIntoTestNames(const char* src) {
+static std::vector<std::string> SplitIntoTestNames(const char * src)
+{
   std::vector<std::string> name_vec;
   src = SkipSpaces(src);
-  for (; src != nullptr; src = SkipComma(src)) {
+  for (; src != nullptr; src = SkipComma(src))
+  {
     name_vec.push_back(StripTrailingSpaces(GetPrefixUntilComma(src)));
   }
   return name_vec;
@@ -53,9 +61,9 @@ static std::vector<std::string> SplitIntoTestNames(const char* src) {
 // Verifies that registered_tests match the test names in
 // registered_tests_; returns registered_tests if successful, or
 // aborts the program otherwise.
-const char* TypedTestSuitePState::VerifyRegisteredTestNames(
-    const char* test_suite_name, const char* file, int line,
-    const char* registered_tests) {
+const char * TypedTestSuitePState::VerifyRegisteredTestNames(
+  const char * test_suite_name, const char * file, int line, const char * registered_tests)
+{
   RegisterTypeParameterizedTestSuite(test_suite_name, CodeLocation(file, line));
 
   typedef RegisteredTestsMap::const_iterator RegisteredTestIter;
@@ -67,32 +75,37 @@ const char* TypedTestSuitePState::VerifyRegisteredTestNames(
 
   std::set<std::string> tests;
   for (std::vector<std::string>::const_iterator name_it = name_vec.begin();
-       name_it != name_vec.end(); ++name_it) {
-    const std::string& name = *name_it;
-    if (tests.count(name) != 0) {
+       name_it != name_vec.end(); ++name_it)
+  {
+    const std::string & name = *name_it;
+    if (tests.count(name) != 0)
+    {
       errors << "Test " << name << " is listed more than once.\n";
       continue;
     }
 
-    if (registered_tests_.count(name) != 0) {
+    if (registered_tests_.count(name) != 0)
+    {
       tests.insert(name);
-    } else {
-      errors << "No test named " << name
-             << " can be found in this test suite.\n";
+    }
+    else
+    {
+      errors << "No test named " << name << " can be found in this test suite.\n";
     }
   }
 
-  for (RegisteredTestIter it = registered_tests_.begin();
-       it != registered_tests_.end(); ++it) {
-    if (tests.count(it->first) == 0) {
+  for (RegisteredTestIter it = registered_tests_.begin(); it != registered_tests_.end(); ++it)
+  {
+    if (tests.count(it->first) == 0)
+    {
       errors << "You forgot to list test " << it->first << ".\n";
     }
   }
 
-  const std::string& errors_str = errors.GetString();
-  if (errors_str != "") {
-    fprintf(stderr, "%s %s", FormatFileLocation(file, line).c_str(),
-            errors_str.c_str());
+  const std::string & errors_str = errors.GetString();
+  if (errors_str != "")
+  {
+    fprintf(stderr, "%s %s", FormatFileLocation(file, line).c_str(), errors_str.c_str());
     fflush(stderr);
     posix::Abort();
   }

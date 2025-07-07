@@ -29,57 +29,67 @@ namespace sim
 // Inline bracket to help doxygen filtering.
 inline namespace GZ_WAVES_VERSION_NAMESPACE
 {
-  class WavesControlPrivate;
+class WavesControlPrivate;
 
-  /// \brief Edit parameters controlling the waves systems plugins.
-  class WavesControl : public gz::sim::GuiSystem
-  {
-    Q_OBJECT
+/// \brief Edit parameters controlling the waves systems plugins.
+class WavesControl : public gz::sim::GuiSystem
+{
+  Q_OBJECT
 
-    /// \brief Constructor
-    public: WavesControl();
+  /// \brief Constructor
+public:
+  WavesControl();
 
-    /// \brief Destructor
-    public: ~WavesControl() override;
+  /// \brief Destructor
+public:
+  ~WavesControl() override;
 
-    // Documentation inherited
-    public: void LoadConfig(const tinyxml2::XMLElement *_pluginElem) override;
+  // Documentation inherited
+public:
+  void LoadConfig(const tinyxml2::XMLElement * _pluginElem) override;
 
-    // Documentation inherited
-    public: void Update(const gz::sim::UpdateInfo &_info,
-        gz::sim::EntityComponentManager &_ecm) override;
+  // Documentation inherited
+public:
+  void Update(const gz::sim::UpdateInfo & _info, gz::sim::EntityComponentManager & _ecm) override;
 
-    /// \brief Callback when water patch marker checkbox state is changed
-    /// \param[in] _checked indicates show or hide contacts
-    public slots: void OnShowWaterPatchMarkers(bool _checked);
+  /// \brief Callback when water patch marker checkbox state is changed
+  /// \param[in] _checked indicates show or hide contacts
+public slots:
+  void OnShowWaterPatchMarkers(bool _checked);
 
-    /// \brief Callback when waterline marker checkbox state is changed
-    /// \param[in] _checked indicates show or hide contacts
-    public slots: void OnShowWaterlineMarkers(bool _checked);
+  /// \brief Callback when waterline marker checkbox state is changed
+  /// \param[in] _checked indicates show or hide contacts
+public slots:
+  void OnShowWaterlineMarkers(bool _checked);
 
-    /// \brief Callback when submerged triangle marker checkbox state is changed
-    /// \param[in] _checked indicates show or hide contacts
-    public slots: void OnShowSubmergedTriangleMarkers(bool _checked);
+  /// \brief Callback when submerged triangle marker checkbox state is changed
+  /// \param[in] _checked indicates show or hide contacts
+public slots:
+  void OnShowSubmergedTriangleMarkers(bool _checked);
 
-    /// \brief Update the wind speed
-    /// \param[in] _windSpeed new wind speed
-    public slots: void UpdateWindSpeed(double _windSpeed);
+  /// \brief Update the wind speed
+  /// \param[in] _windSpeed new wind speed
+public slots:
+  void UpdateWindSpeed(double _windSpeed);
 
-    /// \brief Update the wind angle
-    /// \param[in] _windAngle new wind angle
-    public slots: void UpdateWindAngle(double _windAngle);
+  /// \brief Update the wind angle
+  /// \param[in] _windAngle new wind angle
+public slots:
+  void UpdateWindAngle(double _windAngle);
 
-    /// \brief Update the wave steepness
-    /// \param[in] _steepness new steepness
-    public slots: void UpdateSteepness(double _steepness);
+  /// \brief Update the wave steepness
+  /// \param[in] _steepness new steepness
+public slots:
+  void UpdateSteepness(double _steepness);
 
-    /// \internal
-    /// \brief Pointer to private data
-    private: std::unique_ptr<WavesControlPrivate> dataPtr;
-  };
+  /// \internal
+  /// \brief Pointer to private data
+private:
+  std::unique_ptr<WavesControlPrivate> dataPtr;
+};
 
-}
-}
-}
+}  // namespace GZ_WAVES_VERSION_NAMESPACE
+}  // namespace sim
+}  // namespace gz
 
 #endif

@@ -36,7 +36,7 @@ namespace waves
 ///        Gazebo and CGAL meshes.
 class MeshTools
 {
- public:
+public:
   /// \brief Wrapper around gz::sim::common::Mesh::FillArrays
   ///        to populate vectors instead of raw arrays.
   ///
@@ -44,17 +44,13 @@ class MeshTools
   /// \param[out] _vertices   The vector of vertices to populate.
   /// \param[out] _indices    The vector of indices to populate.
   static void FillArrays(
-    const gz::common::Mesh& _source,
-    std::vector<float>& _vertices,
-    std::vector<int>& _indices);
+    const gz::common::Mesh & _source, std::vector<float> & _vertices, std::vector<int> & _indices);
 
   /// \brief Make a SurfaceMesh from a Gazebo Mesh.
   ///
   /// \param[in] _source      The source mesh (a Gazebo Mesh).
   /// \param[out] _target     The target mesg (a CGAL SurfaceMesh).
-  static void MakeSurfaceMesh(
-    const gz::common::Mesh& _source,
-    cgal::Mesh& _target);
+  static void MakeSurfaceMesh(const gz::common::Mesh & _source, cgal::Mesh & _target);
 };
 
 }  // namespace waves

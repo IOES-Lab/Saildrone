@@ -23,13 +23,13 @@
 #include <string>
 #include <vector>
 
-#include <gz/waves/WaveSimulation.hh>
 #include <gz/waves/LinearRandomFFTWaveSimulation.hh>
+#include <gz/waves/WaveSimulation.hh>
 
 using gz::waves::Index;
 using gz::waves::LinearRandomFFTWaveSimulation;
 
-int main(int /*argc*/, const char **/*argv*/)
+int main(int /*argc*/, const char ** /*argv*/)
 {
   try
   {
@@ -45,9 +45,9 @@ int main(int /*argc*/, const char **/*argv*/)
     Index nx = 128;
     Index ny = 128;
 
-    { // wave elevation vs time
+    {  // wave elevation vs time
       std::unique_ptr<LinearRandomFFTWaveSimulation> wave_sim(
-          new LinearRandomFFTWaveSimulation(lx, ly, nx, ny));
+        new LinearRandomFFTWaveSimulation(lx, ly, nx, ny));
       wave_sim->SetWindVelocity(10.0, 0.0);
       wave_sim->SetLambda(0.0);
       wave_sim->SetTime(5.0);
@@ -74,9 +74,9 @@ int main(int /*argc*/, const char **/*argv*/)
       gp.send1d(std::make_tuple(pts_t, pts_eta));
     }
 
-    { // wave elevation vs position
+    {  // wave elevation vs position
       std::unique_ptr<LinearRandomFFTWaveSimulation> wave_sim(
-          new LinearRandomFFTWaveSimulation(lx, ly, nx, ny));
+        new LinearRandomFFTWaveSimulation(lx, ly, nx, ny));
       wave_sim->SetWindVelocity(10.0, 0.0);
       wave_sim->SetLambda(0.0);
       wave_sim->SetTime(5.0);
@@ -112,12 +112,12 @@ int main(int /*argc*/, const char **/*argv*/)
       gp.send1d(std::make_tuple(pts_x, pts_eta2));
     }
 
-    { // wave pressure vs position
+    {  // wave pressure vs position
       Index nz = 10;
       double lz = 50.0;
 
       std::unique_ptr<LinearRandomFFTWaveSimulation> wave_sim(
-          new LinearRandomFFTWaveSimulation(lx, ly, lz, nx, ny, nz));
+        new LinearRandomFFTWaveSimulation(lx, ly, lz, nx, ny, nz));
       wave_sim->SetWindVelocity(10.0, 0.0);
       wave_sim->SetLambda(0.0);
       wave_sim->SetTime(5.0);
@@ -141,8 +141,7 @@ int main(int /*argc*/, const char **/*argv*/)
       std::string plot_str("plot '-' w l title 'p0'");
       for (Index iz = 1; iz < nz; ++iz)
       {
-        plot_str.append(",'-' w l title 'p")
-          .append(std::to_string(iz)).append("'");
+        plot_str.append(",'-' w l title 'p").append(std::to_string(iz)).append("'");
       }
       plot_str.append("\n");
 
@@ -159,11 +158,10 @@ int main(int /*argc*/, const char **/*argv*/)
       }
     }
   }
-  catch(...)
+  catch (...)
   {
     std::cerr << "Unknown exception\n";
     return -1;
   }
   return 0;
 }
-

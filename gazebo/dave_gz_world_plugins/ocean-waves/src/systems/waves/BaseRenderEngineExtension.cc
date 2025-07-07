@@ -24,21 +24,17 @@ namespace gz
 {
 namespace rendering
 {
-inline namespace GZ_RENDERING_VERSION_NAMESPACE {
-
-//////////////////////////////////////////////////
-BaseRenderEngineExtension::BaseRenderEngineExtension()
+inline namespace GZ_RENDERING_VERSION_NAMESPACE
 {
-}
 
 //////////////////////////////////////////////////
-BaseRenderEngineExtension::~BaseRenderEngineExtension()
-{
-}
+BaseRenderEngineExtension::BaseRenderEngineExtension() {}
 
 //////////////////////////////////////////////////
-bool BaseRenderEngineExtension::Load(
-    const std::map<std::string, std::string> &_params)
+BaseRenderEngineExtension::~BaseRenderEngineExtension() {}
+
+//////////////////////////////////////////////////
+bool BaseRenderEngineExtension::Load(const std::map<std::string, std::string> & _params)
 {
   if (this->loaded)
   {
@@ -55,15 +51,13 @@ bool BaseRenderEngineExtension::Init()
 {
   if (!this->loaded)
   {
-    gzerr << "Render-engine extension must be loaded first"
-        << std::endl;
+    gzerr << "Render-engine extension must be loaded first" << std::endl;
     return false;
   }
 
   if (this->initialized)
   {
-    gzwarn << "Render-engine extension has already been initialized"
-        << std::endl;
+    gzwarn << "Render-engine extension has already been initialized" << std::endl;
     return true;
   }
 
@@ -72,16 +66,11 @@ bool BaseRenderEngineExtension::Init()
 }
 
 //////////////////////////////////////////////////
-bool BaseRenderEngineExtension::IsInitialized() const
-{
-  return this->initialized;
-}
+bool BaseRenderEngineExtension::IsInitialized() const { return this->initialized; }
 
 //////////////////////////////////////////////////
-void BaseRenderEngineExtension::Destroy()
-{
-}
+void BaseRenderEngineExtension::Destroy() {}
 
-}
+}  // namespace GZ_RENDERING_VERSION_NAMESPACE
 }  // namespace rendering
 }  // namespace gz

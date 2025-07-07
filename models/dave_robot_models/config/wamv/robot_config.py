@@ -3,6 +3,7 @@ from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
+
 def launch_setup(context, *args, **kwargs):
     # Get the namespace from the launch arguments
     namespace = LaunchConfiguration("namespace").perform(context)
@@ -10,17 +11,22 @@ def launch_setup(context, *args, **kwargs):
     # Build up the list of topics to bridge: thrust commands, angular velocity, deadband enable, etc.
     # Adjust these topics (add/remove) if you have additional sensors or different naming.
     wamv_arguments = (
-        [f"/model/{namespace}/joint/left_engine_joint/cmd_force@std_msgs/msg/Float64@gz.msgs.Double",
-        f"/model/{namespace}/joint/left_propeller_joint/cmd_thrust@std_msgs/msg/Float64@gz.msgs.Double",
-        f"/model/{namespace}/joint/left_propeller_joint/ang_vel@std_msgs/msg/Float64@gz.msgs.Double",
-        f"/model/{namespace}/joint/right_engine_joint/cmd_force@std_msgs/msg/Float64@gz.msgs.Double",
-        f"/model/{namespace}/joint/right_propeller_joint/cmd_thrust@std_msgs/msg/Float64@gz.msgs.Double",
-        f"/model/{namespace}/joint/right_propeller_joint/ang_vel@std_msgs/msg/Float64@gz.msgs.Double"]
-        + [f"/world/waves/model/{namespace}/link/imu_link/sensor/imu_sensor/imu@sensor_msgs/msg/Imu@gz.msgs.IMU",
-           f"/model/{namespace}/pose@geometry_msgs/msg/PoseStamped[gz.msgs.Pose"]
-        + ["/world/waves/clock@rosgraph_msgs/msg/Clock@gz.msgs.Clock",
-           "/clock@rosgraph_msgs/msg/Clock@gz.msgs.Clock",
-           ]
+        [
+            f"/model/{namespace}/joint/left_engine_joint/cmd_force@std_msgs/msg/Float64@gz.msgs.Double",
+            f"/model/{namespace}/joint/left_propeller_joint/cmd_thrust@std_msgs/msg/Float64@gz.msgs.Double",
+            f"/model/{namespace}/joint/left_propeller_joint/ang_vel@std_msgs/msg/Float64@gz.msgs.Double",
+            f"/model/{namespace}/joint/right_engine_joint/cmd_force@std_msgs/msg/Float64@gz.msgs.Double",
+            f"/model/{namespace}/joint/right_propeller_joint/cmd_thrust@std_msgs/msg/Float64@gz.msgs.Double",
+            f"/model/{namespace}/joint/right_propeller_joint/ang_vel@std_msgs/msg/Float64@gz.msgs.Double",
+        ]
+        + [
+            f"/world/waves/model/{namespace}/link/imu_link/sensor/imu_sensor/imu@sensor_msgs/msg/Imu@gz.msgs.IMU",
+            f"/model/{namespace}/pose@geometry_msgs/msg/PoseStamped[gz.msgs.Pose",
+        ]
+        + [
+            "/world/waves/clock@rosgraph_msgs/msg/Clock@gz.msgs.Clock",
+            "/clock@rosgraph_msgs/msg/Clock@gz.msgs.Clock",
+        ]
         # + [
         #     f"/model/{namespace}/pose@geometry_msgs/msg/PoseArray@gz.msgs.Pose_V",
         #     # f"/model/{namespace}/camera/image@sensor_msgs/msg/Image@gz.msgs.Image",
@@ -60,6 +66,7 @@ def launch_setup(context, *args, **kwargs):
     # processes = [ardusub_process]
 
     return nodes
+
 
 def generate_launch_description():
     # Declare launch arguments for namespacing and parameter file paths

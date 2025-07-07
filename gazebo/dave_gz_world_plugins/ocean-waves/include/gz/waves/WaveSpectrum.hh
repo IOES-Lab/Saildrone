@@ -24,30 +24,26 @@ namespace waves
 {
 class OmniDirectionalWaveSpectrum
 {
- public:
+public:
   virtual ~OmniDirectionalWaveSpectrum();
 
   virtual double Evaluate(double k) const = 0;
 
   virtual void Evaluate(
-      Eigen::Ref<Eigen::ArrayXXd> spectrum,
-      const Eigen::Ref<const Eigen::ArrayXXd>& k) const = 0;
+    Eigen::Ref<Eigen::ArrayXXd> spectrum, const Eigen::Ref<const Eigen::ArrayXXd> & k) const = 0;
 };
 
 class PiersonMoskowitzWaveSpectrum : public OmniDirectionalWaveSpectrum
 {
- public:
+public:
   virtual ~PiersonMoskowitzWaveSpectrum();
 
-  explicit PiersonMoskowitzWaveSpectrum(
-      double u19 = 5.0,
-      double gravity = 9.81);
+  explicit PiersonMoskowitzWaveSpectrum(double u19 = 5.0, double gravity = 9.81);
 
   double Evaluate(double k) const override;
 
-  void Evaluate(
-      Eigen::Ref<Eigen::ArrayXXd> spectrum,
-      const Eigen::Ref<const Eigen::ArrayXXd>& k) const override;
+  void Evaluate(Eigen::Ref<Eigen::ArrayXXd> spectrum, const Eigen::Ref<const Eigen::ArrayXXd> & k)
+    const override;
 
   double Gravity() const;
 
@@ -57,26 +53,22 @@ class PiersonMoskowitzWaveSpectrum : public OmniDirectionalWaveSpectrum
 
   void SetU19(double value);
 
- private:
+private:
   double gravity_{9.81};
   double u19_{5.0};
 };
 
 class ECKVWaveSpectrum : public OmniDirectionalWaveSpectrum
 {
- public:
+public:
   virtual ~ECKVWaveSpectrum();
 
-  explicit ECKVWaveSpectrum(
-      double u10 = 5.0,
-      double cap_omega_c = 0.84,
-      double gravity = 9.81);
+  explicit ECKVWaveSpectrum(double u10 = 5.0, double cap_omega_c = 0.84, double gravity = 9.81);
 
   double Evaluate(double k) const override;
 
-  void Evaluate(
-      Eigen::Ref<Eigen::ArrayXXd> spectrum,
-      const Eigen::Ref<const Eigen::ArrayXXd>& k) const override;
+  void Evaluate(Eigen::Ref<Eigen::ArrayXXd> spectrum, const Eigen::Ref<const Eigen::ArrayXXd> & k)
+    const override;
 
   double Gravity() const;
 
@@ -90,7 +82,7 @@ class ECKVWaveSpectrum : public OmniDirectionalWaveSpectrum
 
   void SetCapOmegaC(double value);
 
- private:
+private:
   double gravity_{9.81};
   double u10_{5.0};
   double cap_omega_c_{0.84};

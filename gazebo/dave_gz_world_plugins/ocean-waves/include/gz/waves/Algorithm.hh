@@ -49,15 +49,14 @@ namespace algorithm
 /// \param[in] v   The array to be indexed.
 /// \return         A vector of indexes in to the input array.
 template <typename T>
-std::vector<Index> sort_indexes(const std::vector<T>& v)
+std::vector<Index> sort_indexes(const std::vector<T> & v)
 {
   // initialize original index locations
   std::vector<Index> idx(v.size());
   std::iota(idx.begin(), idx.end(), 0);
 
   // sort indexes based on comparing values in v
-  std::sort(idx.begin(), idx.end(),
-      [&v](Index i1, Index i2) {return v[i1] > v[i2];});
+  std::sort(idx.begin(), idx.end(), [&v](Index i1, Index i2) { return v[i1] > v[i2]; });
 
   return idx;
 }
@@ -68,14 +67,14 @@ std::vector<Index> sort_indexes(const std::vector<T>& v)
 /// \param[in] v    The array to be indexed.
 /// \return         An array of indexes in to the input array.
 template <typename T, std::size_t N>
-std::array<Index, N> sort_indexes(const std::array<T, N>& v) {
+std::array<Index, N> sort_indexes(const std::array<T, N> & v)
+{
   // initialize original index locations
   std::array<Index, N> idx;
   std::iota(idx.begin(), idx.end(), 0);
 
   // sort indexes based on comparing values in v
-  std::sort(idx.begin(), idx.end(),
-      [&v](Index i1, Index i2) {return v[i1] > v[i2];});
+  std::sort(idx.begin(), idx.end(), [&v](Index i1, Index i2) { return v[i1] > v[i2]; });
 
   return idx;
 }
@@ -85,40 +84,45 @@ std::array<Index, N> sort_indexes(const std::array<T, N>& v) {
 /// Adapted from homer512's SO answer.
 /// https://stackoverflow.com/questions/70868307/c-equivalent-of-numpy-unique-on-stdvector-with-return-index-and-return-inver
 ///
-template<typename T, typename Iterator, typename Idx>
+template <typename T, typename Iterator, typename Idx>
 void unordered_unique(
-    Iterator first, Iterator last,
-    std::vector<T>* unique,
-    std::vector<Idx>* index = nullptr,
-    std::vector<Idx>* inverse = nullptr,
-    std::vector<Idx>* count = nullptr)
+  Iterator first, Iterator last, std::vector<T> * unique, std::vector<Idx> * index = nullptr,
+  std::vector<Idx> * inverse = nullptr, std::vector<Idx> * count = nullptr)
 {
   using index_map = std::unordered_map<T, Idx>;
   using map_iter = typename index_map::iterator;
   using map_value = typename index_map::value_type;
-  for (auto&& arg : {index, inverse, count}) {
-    if (arg) {
+  for (auto && arg : {index, inverse, count})
+  {
+    if (arg)
+    {
       arg->clear();
     }
   }
   index_map map;
   std::size_t cur_idx = 0;
-  for (auto i = first; i != last; ++cur_idx, ++i) {
-    const std::pair<map_iter, bool> inserted =
-      map.emplace(*i, unique->size());
-    map_value& ival = *inserted.first;
-    if (inserted.second) {
+  for (auto i = first; i != last; ++cur_idx, ++i)
+  {
+    const std::pair<map_iter, bool> inserted = map.emplace(*i, unique->size());
+    map_value & ival = *inserted.first;
+    if (inserted.second)
+    {
       unique->push_back(ival.first);
-      if (index) {
+      if (index)
+      {
         index->push_back(cur_idx);
       }
-      if (count) {
+      if (count)
+      {
         count->push_back(1);
       }
-    } else if (count) {
+    }
+    else if (count)
+    {
       (*count)[ival.second] += 1;
     }
-    if (inverse) {
+    if (inverse)
+    {
       inverse->push_back(ival.second);
     }
   }

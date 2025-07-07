@@ -19,10 +19,10 @@
 #include <map>
 #include <string>
 
-#include <gz/rendering/config.hh>
+#include <gz/rendering/Export.hh>
 #include <gz/rendering/GraphicsAPI.hh>
 #include <gz/rendering/RenderTypes.hh>
-#include <gz/rendering/Export.hh>
+#include <gz/rendering/config.hh>
 
 #include "RenderEngineExtension.hh"
 
@@ -30,35 +30,43 @@ namespace gz
 {
 namespace rendering
 {
-inline namespace GZ_RENDERING_VERSION_NAMESPACE {
-
-class GZ_RENDERING_VISIBLE BaseRenderEngineExtension :
-    public virtual RenderEngineExtension
+inline namespace GZ_RENDERING_VERSION_NAMESPACE
 {
-  protected: BaseRenderEngineExtension();
 
-  public: virtual ~BaseRenderEngineExtension();
+class GZ_RENDERING_VISIBLE BaseRenderEngineExtension : public virtual RenderEngineExtension
+{
+protected:
+  BaseRenderEngineExtension();
 
-  public: virtual bool Load(
-      const std::map<std::string, std::string> &_params = {}) override;
+public:
+  virtual ~BaseRenderEngineExtension();
 
-  public: virtual bool Init() override;
+public:
+  virtual bool Load(const std::map<std::string, std::string> & _params = {}) override;
 
-  public: virtual void Destroy() override;
+public:
+  virtual bool Init() override;
 
-  public: virtual bool IsInitialized() const override;
+public:
+  virtual void Destroy() override;
 
-  protected: virtual bool LoadImpl(
-      const std::map<std::string, std::string> &_params) = 0;
+public:
+  virtual bool IsInitialized() const override;
 
-  protected: virtual bool InitImpl() = 0;
+protected:
+  virtual bool LoadImpl(const std::map<std::string, std::string> & _params) = 0;
 
-  protected: bool loaded = false;
+protected:
+  virtual bool InitImpl() = 0;
 
-  protected: bool initialized = false;
+protected:
+  bool loaded = false;
+
+protected:
+  bool initialized = false;
 };
 
-}
+}  // namespace GZ_RENDERING_VERSION_NAMESPACE
 }  // namespace rendering
 }  // namespace gz
 

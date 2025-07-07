@@ -23,25 +23,25 @@
 
 #include "LinearRandomFFTWaveSimulationImpl.hh"
 
-using std::chrono::steady_clock;
-using std::chrono::milliseconds;
 using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+using std::chrono::steady_clock;
 
 using gz::waves::LinearRandomFFTWaveSimulation;
 
 //////////////////////////////////////////////////
 // Define fixture
-class LinearRandomFFTWaveSimDisplacementsTest: public ::testing::Test
+class LinearRandomFFTWaveSimDisplacementsTest : public ::testing::Test
 {
- public:
+public:
   // number of evaluations
   int num_runs_ = 1000;
 
   // wave number grid (nx_, ny_)
   double lx_{200.0};
   double ly_{100.0};
-  int    nx_{256};
-  int    ny_{128};
+  int nx_{256};
+  int ny_{128};
 };
 
 //////////////////////////////////////////////////

@@ -38,7 +38,8 @@ using gz::waves::Point3Range;
 using gz::waves::TriangulatedGrid;
 
 //////////////////////////////////////////////////
-TEST(TriangulatedGrid, Create) {
+TEST(TriangulatedGrid, Create)
+{
   // Create
   Index nx = 16;
   Index ny = 16;
@@ -61,7 +62,8 @@ TEST(TriangulatedGrid, Create) {
 }
 
 //////////////////////////////////////////////////
-TEST(TriangulatedGrid, Height) {
+TEST(TriangulatedGrid, Height)
+{
   // Create
   Index nx = 16;
   Index ny = 16;
@@ -81,11 +83,13 @@ TEST(TriangulatedGrid, Height) {
 
   // Set points
   Point3Range points = source->Points();
-  for (Index iy=0; iy < ny_plus1; ++iy) {
-    for (Index ix=0; ix < nx_plus1; ++ix) {
+  for (Index iy = 0; iy < ny_plus1; ++iy)
+  {
+    for (Index ix = 0; ix < nx_plus1; ++ix)
+    {
       int64_t idx = iy * nx_plus1 + ix;
       double value = ix + iy;
-      const cgal::Point3& p = points[idx];
+      const cgal::Point3 & p = points[idx];
       points[idx] = cgal::Point3(p.x(), p.y(), value);
     }
   }
@@ -97,7 +101,8 @@ TEST(TriangulatedGrid, Height) {
 }
 
 //////////////////////////////////////////////////
-TEST(TriangulatedGrid, Interpolate) {
+TEST(TriangulatedGrid, Interpolate)
+{
   // Create
   Index nx = 16;
   Index ny = 16;
@@ -111,11 +116,13 @@ TEST(TriangulatedGrid, Interpolate) {
 
   // Set points
   Point3Range points = source->Points();
-  for (Index iy=0; iy < ny_plus1; ++iy) {
-    for (Index ix=0; ix < nx_plus1; ++ix) {
+  for (Index iy = 0; iy < ny_plus1; ++iy)
+  {
+    for (Index ix = 0; ix < nx_plus1; ++ix)
+    {
       int64_t idx = iy * nx_plus1 + ix;
       double value = ix + iy;
-      const cgal::Point3& p = points[idx];
+      const cgal::Point3 & p = points[idx];
       points[idx] = cgal::Point3(p.x(), p.y(), value);
     }
   }
@@ -136,7 +143,6 @@ TEST(TriangulatedGrid, Interpolate) {
   // patch->DebugPrintTriangulation();
   EXPECT_TRUE(found);
 
-
   // ApplyPose
   gz::math::Pose3d pose(20.0, 10.0, 0.0, 0.0, 0.0, 0.0);
   patch->ApplyPose(pose);
@@ -152,8 +158,8 @@ TEST(TriangulatedGrid, Interpolate) {
 }
 
 //////////////////////////////////////////////////
-int main(int argc, char **argv) {
+int main(int argc, char ** argv)
+{
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
-

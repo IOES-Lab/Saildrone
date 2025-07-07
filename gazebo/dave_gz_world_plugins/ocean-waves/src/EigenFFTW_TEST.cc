@@ -27,12 +27,7 @@
 
 namespace Eigen
 {
-  typedef Eigen::Array<
-    double,
-    Eigen::Dynamic,
-    Eigen::Dynamic,
-    Eigen::RowMajor
-  > ArrayXXdRowMajor;
+typedef Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> ArrayXXdRowMajor;
 }  // namespace Eigen
 
 //////////////////////////////////////////////////
@@ -56,22 +51,20 @@ TEST(EigenFFWT, DFT_C2C_1D)
   x.real() << 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0;
 
   Eigen::ArrayXcd xhat = Eigen::ArrayXcd::Zero(n);
-  xhat.real() <<  0.25,   -0.2133883476483184,  0.125,  -0.0366116523516816,
-                  0.,     -0.0366116523516816,  0.125,  -0.2133883476483184;
-  xhat.imag() <<  0.,     -0.0883883476483184,  0.125,  -0.0883883476483184,
-                  0.,      0.0883883476483184, -0.125,   0.0883883476483184;
+  xhat.real() << 0.25, -0.2133883476483184, 0.125, -0.0366116523516816, 0., -0.0366116523516816,
+    0.125, -0.2133883476483184;
+  xhat.imag() << 0., -0.0883883476483184, 0.125, -0.0883883476483184, 0., 0.0883883476483184,
+    -0.125, 0.0883883476483184;
 
-  { // using fftw_complex
-    fftw_complex* in  =
-        reinterpret_cast<fftw_complex*>(fftw_malloc(n * sizeof(fftw_complex)));
-    fftw_complex* out =
-        reinterpret_cast<fftw_complex*>(fftw_malloc(n * sizeof(fftw_complex)));
+  {  // using fftw_complex
+    fftw_complex * in = reinterpret_cast<fftw_complex *>(fftw_malloc(n * sizeof(fftw_complex)));
+    fftw_complex * out = reinterpret_cast<fftw_complex *>(fftw_malloc(n * sizeof(fftw_complex)));
 
     // create plan
     fftw_plan plan = fftw_plan_dft_1d(n, in, out, FFTW_BACKWARD, FFTW_ESTIMATE);
 
     // populate input
-    for (int i=0; i < n; ++i)
+    for (int i = 0; i < n; ++i)
     {
       in[i][0] = xhat(i).real();
       in[i][1] = xhat(i).imag();
@@ -81,7 +74,7 @@ TEST(EigenFFWT, DFT_C2C_1D)
     fftw_execute(plan);
 
     // check output
-    for (int i=0; i < n; ++i)
+    for (int i = 0; i < n; ++i)
     {
       // std::cerr << "[" << i << "] "
       //   << out[i][0] << " + " << out[i][1]
@@ -96,20 +89,18 @@ TEST(EigenFFWT, DFT_C2C_1D)
     fftw_free(in);
   }
 
-  { // using std::vector<std::complex>
+  {  // using std::vector<std::complex>
     std::vector<std::complex<double>> in(n, 0.0);
     std::vector<std::complex<double>> out(n, 0.0);
 
     // create plan
     // https://stackoverflow.com/questions/4214400/problem-casting-stl-complexdouble-to-fftw-complex
     fftw_plan plan = fftw_plan_dft_1d(
-      n,
-      reinterpret_cast<fftw_complex*>(in.data()),
-      reinterpret_cast<fftw_complex*>(out.data()),
+      n, reinterpret_cast<fftw_complex *>(in.data()), reinterpret_cast<fftw_complex *>(out.data()),
       FFTW_BACKWARD, FFTW_ESTIMATE);
 
     // populate input
-    for (int i=0; i < n; ++i)
+    for (int i = 0; i < n; ++i)
     {
       in[i] = xhat(i);
     }
@@ -118,26 +109,24 @@ TEST(EigenFFWT, DFT_C2C_1D)
     fftw_execute(plan);
 
     // check output
-    for (int i=0; i < n; ++i)
+    for (int i = 0; i < n; ++i)
     {
       EXPECT_NEAR(out[i].real(), x(i).real(), 1.0E-15);
       EXPECT_NEAR(out[i].imag(), 0.0, 1.0E-15);
     }
   }
 
-  { // Eigen::ArrayXcd
+  {  // Eigen::ArrayXcd
     Eigen::ArrayXcd in = Eigen::ArrayXcd::Zero(n);
     Eigen::ArrayXcd out = Eigen::ArrayXcd::Zero(n);
 
     // create plan
     fftw_plan plan = fftw_plan_dft_1d(
-      n,
-      reinterpret_cast<fftw_complex*>(in.data()),
-      reinterpret_cast<fftw_complex*>(out.data()),
+      n, reinterpret_cast<fftw_complex *>(in.data()), reinterpret_cast<fftw_complex *>(out.data()),
       FFTW_BACKWARD, FFTW_ESTIMATE);
 
     // populate input
-    for (int i=0; i < n; ++i)
+    for (int i = 0; i < n; ++i)
     {
       in(i) = xhat(i);
     }
@@ -146,7 +135,7 @@ TEST(EigenFFWT, DFT_C2C_1D)
     fftw_execute(plan);
 
     // check output
-    for (int i=0; i < n; ++i)
+    for (int i = 0; i < n; ++i)
     {
       EXPECT_NEAR(out(i).real(), x(i).real(), 1.0E-15);
       EXPECT_NEAR(out(i).imag(), 0.0, 1.0E-15);
@@ -164,25 +153,21 @@ TEST(EigenFFWT, DFT_C2R_1D)
   Eigen::ArrayXcd x = Eigen::ArrayXcd::Zero(n);
   x.real() << 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0;
 
-  Eigen::ArrayXcd xhat = Eigen::ArrayXcd::Zero(n/2+1);
-  xhat.real() <<  0.25,   -0.2133883476483184,  0.125,  -0.0366116523516816,
-                  0.;
-  xhat.imag() <<  0.,     -0.0883883476483184,  0.125,  -0.0883883476483184,
-                  0.;
+  Eigen::ArrayXcd xhat = Eigen::ArrayXcd::Zero(n / 2 + 1);
+  xhat.real() << 0.25, -0.2133883476483184, 0.125, -0.0366116523516816, 0.;
+  xhat.imag() << 0., -0.0883883476483184, 0.125, -0.0883883476483184, 0.;
 
   {
-    std::vector<std::complex<double>> in(n/2+1, 0.0);
+    std::vector<std::complex<double>> in(n / 2 + 1, 0.0);
     std::vector<double> out(n, 0.0);
 
     // create plan
     fftw_plan plan = fftw_plan_dft_c2r_1d(
-        n,
-        reinterpret_cast<fftw_complex*>(in.data()),
-        reinterpret_cast<double*>(out.data()),
-        FFTW_ESTIMATE);
+      n, reinterpret_cast<fftw_complex *>(in.data()), reinterpret_cast<double *>(out.data()),
+      FFTW_ESTIMATE);
 
     // populate input
-    for (int i=0; i < n/2+1; ++i)
+    for (int i = 0; i < n / 2 + 1; ++i)
     {
       in[i] = xhat(i);
     }
@@ -191,7 +176,7 @@ TEST(EigenFFWT, DFT_C2R_1D)
     fftw_execute(plan);
 
     // check output
-    for (int i=0; i < n; ++i)
+    for (int i = 0; i < n; ++i)
     {
       EXPECT_NEAR(out[i], x(i).real(), 1.0E-15);
     }
@@ -261,9 +246,8 @@ TEST(EigenFFWT, EigenStorageOrdering)
 #endif
 
 //////////////////////////////////////////////////
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
-

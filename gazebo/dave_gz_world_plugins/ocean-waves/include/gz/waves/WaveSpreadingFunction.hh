@@ -24,42 +24,35 @@ namespace waves
 {
 class DirectionalSpreadingFunction
 {
- public:
+public:
   virtual ~DirectionalSpreadingFunction();
 
-  virtual double Evaluate(
-      double theta, double theta_mean, double k = 1.0) const = 0;
+  virtual double Evaluate(double theta, double theta_mean, double k = 1.0) const = 0;
 
   virtual void Evaluate(
-      Eigen::Ref<Eigen::ArrayXXd> phi,
-      const Eigen::Ref<const Eigen::ArrayXXd>& theta,
-      double theta_mean,
-      const Eigen::Ref<const Eigen::ArrayXXd>& k = Eigen::ArrayXXd())
-      const = 0;
+    Eigen::Ref<Eigen::ArrayXXd> phi, const Eigen::Ref<const Eigen::ArrayXXd> & theta,
+    double theta_mean, const Eigen::Ref<const Eigen::ArrayXXd> & k = Eigen::ArrayXXd()) const = 0;
 };
 
 class Cos2sSpreadingFunction : public DirectionalSpreadingFunction
 {
- public:
+public:
   virtual ~Cos2sSpreadingFunction();
 
   explicit Cos2sSpreadingFunction(double spread = 10.0);
 
-  double Evaluate(
-      double theta, double theta_mean, double k = 1.0) const override;
+  double Evaluate(double theta, double theta_mean, double k = 1.0) const override;
 
   void Evaluate(
-      Eigen::Ref<Eigen::ArrayXXd> phi,
-      const Eigen::Ref<const Eigen::ArrayXXd>& theta,
-      double theta_mean,
-      const Eigen::Ref<const Eigen::ArrayXXd>& k = Eigen::ArrayXXd())
-      const override;
+    Eigen::Ref<Eigen::ArrayXXd> phi, const Eigen::Ref<const Eigen::ArrayXXd> & theta,
+    double theta_mean,
+    const Eigen::Ref<const Eigen::ArrayXXd> & k = Eigen::ArrayXXd()) const override;
 
   double Spread() const;
 
   void SetSpread(double value);
 
- private:
+private:
   void RecalcCoeffs();
 
   double spread_{10.0};
@@ -68,23 +61,18 @@ class Cos2sSpreadingFunction : public DirectionalSpreadingFunction
 
 class ECKVSpreadingFunction : public DirectionalSpreadingFunction
 {
- public:
+public:
   virtual ~ECKVSpreadingFunction();
 
   explicit ECKVSpreadingFunction(
-      double u10 = 5.0,
-      double cap_omega_c = 0.84,
-      double gravity = 9.81);
+    double u10 = 5.0, double cap_omega_c = 0.84, double gravity = 9.81);
 
-  double Evaluate(
-      double theta, double theta_mean, double k = 1.0) const override;
+  double Evaluate(double theta, double theta_mean, double k = 1.0) const override;
 
   void Evaluate(
-      Eigen::Ref<Eigen::ArrayXXd> phi,
-      const Eigen::Ref<const Eigen::ArrayXXd>& theta,
-      double theta_mean,
-      const Eigen::Ref<const Eigen::ArrayXXd>& k = Eigen::ArrayXXd())
-      const override;
+    Eigen::Ref<Eigen::ArrayXXd> phi, const Eigen::Ref<const Eigen::ArrayXXd> & theta,
+    double theta_mean,
+    const Eigen::Ref<const Eigen::ArrayXXd> & k = Eigen::ArrayXXd()) const override;
 
   double Gravity() const;
 
@@ -98,7 +86,7 @@ class ECKVSpreadingFunction : public DirectionalSpreadingFunction
 
   void SetCapOmegaC(double value);
 
- private:
+private:
   double gravity_{9.81};
   double u10_{5.0};
   double cap_omega_c_{0.84};

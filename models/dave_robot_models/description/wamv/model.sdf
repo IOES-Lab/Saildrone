@@ -40,8 +40,8 @@
       https://github.com/osrf/vrx/blob/master/wamv_gazebo/urdf/thruster_layouts/wamv_aft_thrusters.xacro
 
       Joints
-      https://github.com/osrf/vrx/blob/master/wamv_description/urdf/thrusters/engine.xacro 
-    
+      https://github.com/osrf/vrx/blob/master/wamv_description/urdf/thrusters/engine.xacro
+
     -->
     <link name="left_engine_link">
       <pose>-2.373776 1.027135 0.318237 0 0 0</pose>
@@ -325,7 +325,7 @@
     <plugin
         filename="wave-hydrodynamics-system"
         name="gz::sim::systems::Hydrodynamics">
-        
+
         <enable>wamv::base_link</enable>
 
         <!-- <enable>wamv::left_engine_link</enable>
@@ -337,13 +337,13 @@
           <damping_on>1</damping_on>
           <viscous_drag_on>1</viscous_drag_on>
           <pressure_drag_on>1</pressure_drag_on>
-        
+
           <!-- Linear and Angular Damping -->
           <cDampL1>1.0E-6</cDampL1>
           <cDampL2>1.0E-6</cDampL2>
           <cDampR1>1.0E-6</cDampR1>
           <cDampR2>1.0E-6</cDampR2>
-        
+
           <!-- 'Pressure' Drag -->
           <cPDrag1>1.0E+2</cPDrag1>
           <cPDrag2>1.0E+2</cPDrag2>

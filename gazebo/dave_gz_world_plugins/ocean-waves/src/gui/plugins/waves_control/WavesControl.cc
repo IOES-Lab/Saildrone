@@ -23,9 +23,9 @@
 
 #include <gz/plugin/Register.hh>
 
+#include <gz/sim/EntityComponentManager.hh>
 #include <gz/sim/components/Name.hh>
 #include <gz/sim/components/World.hh>
-#include <gz/sim/EntityComponentManager.hh>
 #include <gz/sim/gui/GuiEvents.hh>
 
 #include <mutex>
@@ -37,65 +37,82 @@ namespace sim
 {
 inline namespace GZ_WAVES_VERSION_NAMESPACE
 {
-  /// \brief Private data class for WavesControl
-  class WavesControlPrivate
-  {
-    /// \brief Publish a wave parameters message to /world/<world>/waves
-    public: void PublishWaveParams();
+/// \brief Private data class for WavesControl
+class WavesControlPrivate
+{
+  /// \brief Publish a wave parameters message to /world/<world>/waves
+public:
+  void PublishWaveParams();
 
-    /// \brief Publish a wave markers message to /world/<world>/waves/markers
-    public: void PublishWaveMarkers();
+  /// \brief Publish a wave markers message to /world/<world>/waves/markers
+public:
+  void PublishWaveMarkers();
 
-    /// \brief Transport node
-    public: transport::Node node;
+  /// \brief Transport node
+public:
+  transport::Node node;
 
-    /// \brief Publish to topic /world/<world>/waves
-    public: transport::Node::Publisher pubWaveParams;
+  /// \brief Publish to topic /world/<world>/waves
+public:
+  transport::Node::Publisher pubWaveParams;
 
-    /// \brief Publish to topic /world/<world>/waves/markers
-    public: transport::Node::Publisher pubWaveMarkers;
+  /// \brief Publish to topic /world/<world>/waves/markers
+public:
+  transport::Node::Publisher pubWaveMarkers;
 
-    /// \brief Current state of the water patch checkbox
-    public: bool waterPatchCheckboxState{false};
+  /// \brief Current state of the water patch checkbox
+public:
+  bool waterPatchCheckboxState{false};
 
-    /// \brief Previous state of the water patch checkbox
-    public: bool waterPatchCheckboxPrevState{false};
+  /// \brief Previous state of the water patch checkbox
+public:
+  bool waterPatchCheckboxPrevState{false};
 
-    /// \brief Current state of the waterline checkbox
-    public: bool waterlineCheckboxState{false};
+  /// \brief Current state of the waterline checkbox
+public:
+  bool waterlineCheckboxState{false};
 
-    /// \brief Previous state of the waterline checkbox
-    public: bool waterlineCheckboxPrevState{false};
+  /// \brief Previous state of the waterline checkbox
+public:
+  bool waterlineCheckboxPrevState{false};
 
-    /// \brief Current state of the submerged triangle checkbox
-    public: bool submergedTriangleCheckboxState{false};
+  /// \brief Current state of the submerged triangle checkbox
+public:
+  bool submergedTriangleCheckboxState{false};
 
-    /// \brief Previous state of the submerged triangle checkbox
-    public: bool submergedTriangleCheckboxPrevState{false};
+  /// \brief Previous state of the submerged triangle checkbox
+public:
+  bool submergedTriangleCheckboxPrevState{false};
 
-    /// \brief Wind speed
-    public: double windSpeed{5.0};
+  /// \brief Wind speed
+public:
+  double windSpeed{5.0};
 
-    /// \brief Wind angle
-    public: double windAngle{135.0};
+  /// \brief Wind angle
+public:
+  double windAngle{135.0};
 
-    /// \brief Wave steepness
-    public: double steepness{2.0};
+  /// \brief Wave steepness
+public:
+  double steepness{2.0};
 
-    /// \brief Mutex for variable mutated by the checkbox and spinboxes
-    /// callbacks.
-    /// The variables are: windSpeed and windAngle
-    public: std::mutex serviceMutex;
+  /// \brief Mutex for variable mutated by the checkbox and spinboxes
+  /// callbacks.
+  /// The variables are: windSpeed and windAngle
+public:
+  std::mutex serviceMutex;
 
-    /// \brief Initialization flag
-    public: bool initialized{false};
+  /// \brief Initialization flag
+public:
+  bool initialized{false};
 
-    /// \brief Name of the world
-    public: std::string worldName;
-  };
-}
-}
-}
+  /// \brief Name of the world
+public:
+  std::string worldName;
+};
+}  // namespace GZ_WAVES_VERSION_NAMESPACE
+}  // namespace sim
+}  // namespace gz
 
 using namespace gz;
 using namespace sim;
@@ -166,10 +183,7 @@ void WavesControlPrivate::PublishWaveMarkers()
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
-WavesControl::WavesControl()
-  : GuiSystem(), dataPtr(new WavesControlPrivate)
-{
-}
+WavesControl::WavesControl() : GuiSystem(), dataPtr(new WavesControlPrivate) {}
 
 /////////////////////////////////////////////////
 WavesControl::~WavesControl() = default;
@@ -184,8 +198,8 @@ void WavesControl::LoadConfig(const tinyxml2::XMLElement * /*_pluginElem*/)
 }
 
 //////////////////////////////////////////////////
-void WavesControl::Update(const gz::sim::UpdateInfo & /*_info*/,
-    gz::sim::EntityComponentManager &_ecm)
+void WavesControl::Update(
+  const gz::sim::UpdateInfo & /*_info*/, gz::sim::EntityComponentManager & _ecm)
 {
   if (!this->dataPtr->initialized)
   {
@@ -193,9 +207,7 @@ void WavesControl::Update(const gz::sim::UpdateInfo & /*_info*/,
     if (this->dataPtr->worldName.empty())
     {
       _ecm.Each<components::World, components::Name>(
-        [&](const Entity &,
-            const components::World *,
-            const components::Name *_name) -> bool
+        [&](const Entity &, const components::World *, const components::Name * _name) -> bool
         {
           // Assume there's only one world
           this->dataPtr->worldName = _name->Data();
@@ -229,34 +241,31 @@ void WavesControl::Update(const gz::sim::UpdateInfo & /*_info*/,
     std::lock_guard<std::mutex> lock(this->dataPtr->serviceMutex);
 
     // water patch markers
-    if (this->dataPtr->waterPatchCheckboxPrevState &&
-        !this->dataPtr->waterPatchCheckboxState)
+    if (this->dataPtr->waterPatchCheckboxPrevState && !this->dataPtr->waterPatchCheckboxState)
     {
       gzmsg << "Removing water patch markers...\n";
     }
 
-    this->dataPtr->waterPatchCheckboxPrevState =
-        this->dataPtr->waterPatchCheckboxState;
-    
+    this->dataPtr->waterPatchCheckboxPrevState = this->dataPtr->waterPatchCheckboxState;
+
     // waterline markers
-    if (this->dataPtr->waterlineCheckboxPrevState &&
-        !this->dataPtr->waterlineCheckboxState)
+    if (this->dataPtr->waterlineCheckboxPrevState && !this->dataPtr->waterlineCheckboxState)
     {
       gzmsg << "Removing waterline markers...\n";
     }
 
-    this->dataPtr->waterlineCheckboxPrevState =
-        this->dataPtr->waterlineCheckboxState;
+    this->dataPtr->waterlineCheckboxPrevState = this->dataPtr->waterlineCheckboxState;
 
     // submerged triangle markers
-    if (this->dataPtr->submergedTriangleCheckboxPrevState &&
-        !this->dataPtr->submergedTriangleCheckboxState)
+    if (
+      this->dataPtr->submergedTriangleCheckboxPrevState &&
+      !this->dataPtr->submergedTriangleCheckboxState)
     {
       gzmsg << "Removing submerged triangle markers...\n";
     }
 
     this->dataPtr->submergedTriangleCheckboxPrevState =
-        this->dataPtr->submergedTriangleCheckboxState;
+      this->dataPtr->submergedTriangleCheckboxState;
   }
 }
 
@@ -319,5 +328,4 @@ void WavesControl::UpdateSteepness(double _steepness)
 
 //////////////////////////////////////////////////
 // Register this plugin
-GZ_ADD_PLUGIN(WavesControl,
-              gz::gui::Plugin)
+GZ_ADD_PLUGIN(WavesControl, gz::gui::Plugin)

@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 
-int main(int /*argc*/, const char **/*argv*/)
+int main(int /*argc*/, const char ** /*argv*/)
 {
   try
   {
@@ -57,11 +57,10 @@ int main(int /*argc*/, const char **/*argv*/)
       gp.send1d(std::make_tuple(pts_t, pts_eta));
     }
   }
-  catch(...)
+  catch (...)
   {
     std::cerr << "Unknown exception\n";
     return -1;
   }
   return 0;
 }
-

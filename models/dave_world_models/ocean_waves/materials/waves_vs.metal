@@ -37,12 +37,12 @@ using namespace metal;
 struct VS_INPUT
 {
   float4 position [[attribute(VES_POSITION)]];
-  float2 uv0      [[attribute(VES_TEXTURE_COORDINATES0)]];
+  float2 uv0 [[attribute(VES_TEXTURE_COORDINATES0)]];
 };
 
 struct PS_INPUT
 {
-  float4 gl_Position  [[position]];
+  float4 gl_Position [[position]];
   float2 uv0;
   float3 T;
   float3 B;
@@ -73,12 +73,12 @@ float m_det(float3x3 m)
   float g = m[2][0];
   float h = m[2][1];
   float i = m[2][2];
-  float A =  (e*i - f*h);
-  float B = -(d*i - f*g);
-  float C =  (d*h - e*g);
-  float det = a*A + b*B + c*C;
+  float A = (e * i - f * h);
+  float B = -(d * i - f * g);
+  float C = (d * h - e * g);
+  float det = a * A + b * B + c * C;
   return det;
- }
+}
 
 float3x3 m_inverse(float3x3 m)
 {
@@ -91,36 +91,30 @@ float3x3 m_inverse(float3x3 m)
   float g = m[2][0];
   float h = m[2][1];
   float i = m[2][2];
-  float A =  (e*i - f*h);
-  float B = -(d*i - f*g);
-  float C =  (d*h - e*g);
-  float D = -(b*i - c*h);
-  float E =  (a*i - c*g);
-  float F = -(a*h - b*g);
-  float G =  (b*f - c*e);
-  float H = -(a*f - c*d);
-  float I =  (a*e - b*d);
-  float det = a*A + b*B + c*C;
-  float inv_det = 1.0/det;
+  float A = (e * i - f * h);
+  float B = -(d * i - f * g);
+  float C = (d * h - e * g);
+  float D = -(b * i - c * h);
+  float E = (a * i - c * g);
+  float F = -(a * h - b * g);
+  float G = (b * f - c * e);
+  float H = -(a * f - c * d);
+  float I = (a * e - b * d);
+  float det = a * A + b * B + c * C;
+  float inv_det = 1.0 / det;
 
-  float3x3 inv = float3x3(
-      A, D, G, B, E, H, C, F, I);
+  float3x3 inv = float3x3(A, D, G, B, E, H, C, F, I);
   inv = inv * inv_det;
 
   return inv;
 }
 
-vertex PS_INPUT main_metal
-(
-  VS_INPUT input [[stage_in]]
-  , texture2d<float, access::sample>  heightMap   [[texture(0)]]
-  , texture2d<float, access::sample>  normalMap   [[texture(1)]]
-  , texture2d<float, access::sample>  tangentMap  [[texture(2)]]
-  , sampler heightMapSampler  [[sampler(0)]]
-  , sampler normalMapSampler  [[sampler(1)]]
-  , sampler tangentMapSampler [[sampler(2)]]
-  , constant Params &p [[buffer(PARAMETER_SLOT)]]
-)
+vertex PS_INPUT main_metal(
+  VS_INPUT input [[stage_in]], texture2d<float, access::sample> heightMap [[texture(0)]],
+  texture2d<float, access::sample> normalMap [[texture(1)]],
+  texture2d<float, access::sample> tangentMap [[texture(2)]],
+  sampler heightMapSampler [[sampler(0)]], sampler normalMapSampler [[sampler(1)]],
+  sampler tangentMapSampler [[sampler(2)]], constant Params & p [[buffer(PARAMETER_SLOT)]])
 {
   PS_INPUT outVs;
 
@@ -136,9 +130,7 @@ vertex PS_INPUT main_metal
   float3 model1 = worldM[1].xyz;
   float3 model2 = worldM[2].xyz;
   float3x3 model = float3x3(
-    model0.x, model0.y, model0.z,  
-    model1.x, model1.y, model1.z,  
-    model2.x, model2.y, model2.z);
+    model0.x, model0.y, model0.z, model1.x, model1.y, model1.z, model2.x, model2.y, model2.z);
   float3x3 inv_model = m_inverse(model);
   float3x3 normal_matrix = transpose(inv_model);
 
@@ -159,7 +151,7 @@ vertex PS_INPUT main_metal
 
   float4 normal = normalMap.sample(normalMapSampler, texcoord);
   float3 N = normal.xyz;
- 
+
   T = normalize(normal_matrix * T);
   N = normalize(normal_matrix * N);
 

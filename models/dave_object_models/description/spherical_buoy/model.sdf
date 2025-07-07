@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.6">
-  <model name="spherical_buoy">        
+  <model name="spherical_buoy">
     <plugin
         filename="wave-hydrodynamics-system"
         name="gz::sim::systems::Hydrodynamics">

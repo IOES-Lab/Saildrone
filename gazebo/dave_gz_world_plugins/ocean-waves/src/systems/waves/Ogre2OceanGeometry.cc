@@ -29,25 +29,27 @@ namespace gz
 {
 namespace rendering
 {
-inline namespace GZ_RENDERING_VERSION_NAMESPACE {
+inline namespace GZ_RENDERING_VERSION_NAMESPACE
+{
 
 /// \brief Private implementation
 class Ogre2OceanGeometryPrivate
 {
   /// \brief OceanGeometry materal
-  public: Ogre2MaterialPtr material{nullptr};
+public:
+  Ogre2MaterialPtr material{nullptr};
 
   /// \brief OceanGeometry dynamic mesh
-  public: Ogre2DynamicMeshPtr dynMesh{nullptr};
+public:
+  Ogre2DynamicMeshPtr dynMesh{nullptr};
 
   /// \brief Lazy evaluation flag
   // public: bool dirty{true};
 };
 
 //////////////////////////////////////////////////
-Ogre2OceanGeometry::Ogre2OceanGeometry() :
-    Ogre2Geometry(),
-    dataPtr(std::make_unique<Ogre2OceanGeometryPrivate>())
+Ogre2OceanGeometry::Ogre2OceanGeometry()
+: Ogre2Geometry(), dataPtr(std::make_unique<Ogre2OceanGeometryPrivate>())
 {
 }
 
@@ -78,12 +80,16 @@ void Ogre2OceanGeometry::Destroy()
 }
 
 //////////////////////////////////////////////////
-Ogre::MovableObject *Ogre2OceanGeometry::OgreObject() const
+Ogre::MovableObject * Ogre2OceanGeometry::OgreObject() const
 {
   if (this->dataPtr->dynMesh)
+  {
     return this->dataPtr->dynMesh->OgreObject();
+  }
   else
+  {
     return nullptr;
+  }
 }
 
 //////////////////////////////////////////////////
@@ -97,23 +103,18 @@ void Ogre2OceanGeometry::PreRender()
 }
 
 //////////////////////////////////////////////////
-MaterialPtr Ogre2OceanGeometry::Material() const
-{
-  return this->dataPtr->material;
-}
+MaterialPtr Ogre2OceanGeometry::Material() const { return this->dataPtr->material; }
 
 //////////////////////////////////////////////////
 void Ogre2OceanGeometry::SetMaterial(MaterialPtr _material, bool _unique)
 {
   _material = (_unique) ? _material->Clone() : _material;
 
-  Ogre2MaterialPtr derived =
-      std::dynamic_pointer_cast<Ogre2Material>(_material);
+  Ogre2MaterialPtr derived = std::dynamic_pointer_cast<Ogre2Material>(_material);
 
   if (!derived)
   {
-    gzerr << "Cannot assign material created by another render-engine"
-        << std::endl;
+    gzerr << "Cannot assign material created by another render-engine" << std::endl;
 
     return;
   }
@@ -128,8 +129,7 @@ void Ogre2OceanGeometry::LoadMesh(gz::common::MeshPtr _mesh)
 {
   if (!this->dataPtr->dynMesh)
   {
-    this->dataPtr->dynMesh.reset(
-      new Ogre2DynamicMesh(this->Scene()));
+    this->dataPtr->dynMesh.reset(new Ogre2DynamicMesh(this->Scene()));
     // this->ogreNode->attachObject(this->dataPtr->dynMesh->OgreObject());
   }
 
@@ -140,8 +140,7 @@ void Ogre2OceanGeometry::LoadMesh(gz::common::MeshPtr _mesh)
   this->dataPtr->dynMesh->SetOperationType(MarkerType::MT_TRIANGLE_LIST);
   if (this->dataPtr->material == nullptr)
   {
-    MaterialPtr defaultMat =
-        this->Scene()->Material("Default/TransBlue")->Clone();
+    MaterialPtr defaultMat = this->Scene()->Material("Default/TransBlue")->Clone();
     this->SetMaterial(defaultMat, false);
   }
 
@@ -150,8 +149,7 @@ void Ogre2OceanGeometry::LoadMesh(gz::common::MeshPtr _mesh)
 
   // Get the submesh
   auto baseSubMesh = _mesh->SubMeshByIndex(0).lock();
-  auto subMesh = std::dynamic_pointer_cast<
-      gz::common::SubMeshWithTangents>(baseSubMesh);
+  auto subMesh = std::dynamic_pointer_cast<gz::common::SubMeshWithTangents>(baseSubMesh);
   if (!subMesh)
   {
     gzwarn << "Ogre2OceanGeometry: submesh does not support tangents\n";
@@ -159,7 +157,7 @@ void Ogre2OceanGeometry::LoadMesh(gz::common::MeshPtr _mesh)
   }
 
   // Loop over all indices
-  for (size_t i=0; i < subMesh->IndexCount(); ++i)
+  for (size_t i = 0; i < subMesh->IndexCount(); ++i)
   {
     auto index = subMesh->Index(i);
     auto vertex = subMesh->Vertex(index);
@@ -184,8 +182,7 @@ void Ogre2OceanGeometry::UpdateMesh(gz::common::MeshPtr _mesh)
 
   // Get the submesh
   auto baseSubMesh = _mesh->SubMeshByIndex(0).lock();
-  auto subMesh = std::dynamic_pointer_cast<
-      gz::common::SubMeshWithTangents>(baseSubMesh);
+  auto subMesh = std::dynamic_pointer_cast<gz::common::SubMeshWithTangents>(baseSubMesh);
   if (!subMesh)
   {
     gzwarn << "Ogre2OceanGeometry: submesh does not support tangents\n";
@@ -193,7 +190,7 @@ void Ogre2OceanGeometry::UpdateMesh(gz::common::MeshPtr _mesh)
   }
 
   // Loop over all indices
-  for (size_t i=0; i < subMesh->IndexCount(); ++i)
+  for (size_t i = 0; i < subMesh->IndexCount(); ++i)
   {
     auto index = subMesh->Index(i);
     auto vertex = subMesh->Vertex(index);
@@ -211,11 +208,9 @@ void Ogre2OceanGeometry::UpdateMesh(gz::common::MeshPtr _mesh)
 }
 
 //////////////////////////////////////////////////
-void Ogre2OceanGeometry::InitObject(ScenePtr _scene,
-    unsigned int _id, const std::string &_name)
+void Ogre2OceanGeometry::InitObject(ScenePtr _scene, unsigned int _id, const std::string & _name)
 {
-  rendering::Ogre2ScenePtr ogre2Scene =
-      std::dynamic_pointer_cast<rendering::Ogre2Scene>(_scene);
+  rendering::Ogre2ScenePtr ogre2Scene = std::dynamic_pointer_cast<rendering::Ogre2Scene>(_scene);
 
   this->id = _id;
   this->name = _name;
@@ -226,6 +221,6 @@ void Ogre2OceanGeometry::InitObject(ScenePtr _scene,
   this->Init();
 }
 
-}
+}  // namespace GZ_RENDERING_VERSION_NAMESPACE
 }  // namespace rendering
 }  // namespace gz

@@ -13,7 +13,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
 #include "gz/waves/LinearRandomFFTWaveSimulation.hh"
 
 #include <Eigen/Dense>
@@ -27,29 +26,22 @@
 
 #include <gz/common/Console.hh>
 
+#include "LinearRandomFFTWaveSimulationImpl.hh"
 #include "gz/waves/Algorithm.hh"
 #include "gz/waves/Types.hh"
 #include "gz/waves/WaveSpectrum.hh"
 #include "gz/waves/WaveSpreadingFunction.hh"
-#include "LinearRandomFFTWaveSimulationImpl.hh"
 
 namespace gz
 {
 namespace waves
 {
 //////////////////////////////////////////////////
-LinearRandomFFTWaveSimulation::Impl::~Impl()
-{
-  DestroyFFTWPlans();
-}
+LinearRandomFFTWaveSimulation::Impl::~Impl() { DestroyFFTWPlans(); }
 
 //////////////////////////////////////////////////
-LinearRandomFFTWaveSimulation::Impl::Impl(
-  double lx, double ly, Index nx, Index ny) :
-  lx_(lx),
-  ly_(ly),
-  nx_(nx),
-  ny_(ny)
+LinearRandomFFTWaveSimulation::Impl::Impl(double lx, double ly, Index nx, Index ny)
+: lx_(lx), ly_(ly), nx_(nx), ny_(ny)
 {
   CreateFFTWPlans();
   ComputeBaseAmplitudes();
@@ -57,13 +49,8 @@ LinearRandomFFTWaveSimulation::Impl::Impl(
 
 //////////////////////////////////////////////////
 LinearRandomFFTWaveSimulation::Impl::Impl(
-  double lx, double ly, double lz, Index nx, Index ny, Index nz) :
-  lx_(lx),
-  ly_(ly),
-  lz_(lz),
-  nx_(nx),
-  ny_(ny),
-  nz_(nz)
+  double lx, double ly, double lz, Index nx, Index ny, Index nz)
+: lx_(lx), ly_(ly), lz_(lz), nx_(nx), ny_(ny), nz_(nz)
 {
   CreateFFTWPlans();
   ComputeBaseAmplitudes();
@@ -77,31 +64,23 @@ void LinearRandomFFTWaveSimulation::Impl::SetLambda(double value)
 }
 
 //////////////////////////////////////////////////
-void LinearRandomFFTWaveSimulation::Impl::SetWindVelocity(
-    double ux, double uy)
+void LinearRandomFFTWaveSimulation::Impl::SetWindVelocity(double ux, double uy)
 {
   // Update wind velocity and recompute base amplitudes.
-  u10_ = sqrt(ux*ux + uy *uy);
+  u10_ = sqrt(ux * ux + uy * uy);
   phi10_ = atan2(uy, ux);
 
   ComputeBaseAmplitudes();
 }
 
 //////////////////////////////////////////////////
-void LinearRandomFFTWaveSimulation::Impl::SetSteepness(double value)
-{
-  lambda_ = value;
-}
+void LinearRandomFFTWaveSimulation::Impl::SetSteepness(double value) { lambda_ = value; }
 
 //////////////////////////////////////////////////
-void LinearRandomFFTWaveSimulation::Impl::SetTime(double time)
-{
-  ComputeCurrentAmplitudes(time);
-}
+void LinearRandomFFTWaveSimulation::Impl::SetTime(double time) { ComputeCurrentAmplitudes(time); }
 
 //////////////////////////////////////////////////
-void LinearRandomFFTWaveSimulation::Impl::ElevationAt(
-    Eigen::Ref<Eigen::ArrayXXd> h)
+void LinearRandomFFTWaveSimulation::Impl::ElevationAt(Eigen::Ref<Eigen::ArrayXXd> h)
 {
   // run the FFT
   if (fft_needs_update_[0])
@@ -117,8 +96,7 @@ void LinearRandomFFTWaveSimulation::Impl::ElevationAt(
 
 //////////////////////////////////////////////////
 void LinearRandomFFTWaveSimulation::Impl::ElevationDerivAt(
-    Eigen::Ref<Eigen::ArrayXXd> dhdx,
-    Eigen::Ref<Eigen::ArrayXXd> dhdy)
+  Eigen::Ref<Eigen::ArrayXXd> dhdx, Eigen::Ref<Eigen::ArrayXXd> dhdy)
 {
   // run the FFTs
   if (fft_needs_update_[1])
@@ -139,8 +117,7 @@ void LinearRandomFFTWaveSimulation::Impl::ElevationDerivAt(
 
 //////////////////////////////////////////////////
 void LinearRandomFFTWaveSimulation::Impl::DisplacementAt(
-    Eigen::Ref<Eigen::ArrayXXd> sx,
-    Eigen::Ref<Eigen::ArrayXXd> sy)
+  Eigen::Ref<Eigen::ArrayXXd> sx, Eigen::Ref<Eigen::ArrayXXd> sy)
 {
   // run the FFTs
   if (fft_needs_update_[3])
@@ -162,9 +139,8 @@ void LinearRandomFFTWaveSimulation::Impl::DisplacementAt(
 
 //////////////////////////////////////////////////
 void LinearRandomFFTWaveSimulation::Impl::DisplacementDerivAt(
-    Eigen::Ref<Eigen::ArrayXXd> dsxdx,
-    Eigen::Ref<Eigen::ArrayXXd> dsydy,
-    Eigen::Ref<Eigen::ArrayXXd> dsxdy)
+  Eigen::Ref<Eigen::ArrayXXd> dsxdx, Eigen::Ref<Eigen::ArrayXXd> dsydy,
+  Eigen::Ref<Eigen::ArrayXXd> dsxdy)
 {
   // run the FFTs
   if (fft_needs_update_[5])
@@ -187,13 +163,11 @@ void LinearRandomFFTWaveSimulation::Impl::DisplacementDerivAt(
   Index n2 = nx_ * ny_;
   dsydy = fft_out5_.reshaped<Eigen::ColMajor>(n2, 1) * lambda_ * -1.0;
   dsxdx = fft_out6_.reshaped<Eigen::ColMajor>(n2, 1) * lambda_ * -1.0;
-  dsxdy = fft_out7_.reshaped<Eigen::ColMajor>(n2, 1) * lambda_ *  1.0;
+  dsxdy = fft_out7_.reshaped<Eigen::ColMajor>(n2, 1) * lambda_ * 1.0;
 }
 
 //////////////////////////////////////////////////
-void LinearRandomFFTWaveSimulation::Impl::PressureAt(
-    Index iz,
-    Eigen::Ref<Eigen::ArrayXXd> pressure)
+void LinearRandomFFTWaveSimulation::Impl::PressureAt(Index iz, Eigen::Ref<Eigen::ArrayXXd> pressure)
 {
   // run the FFTs
   if (fft_needs_update_[8 + iz])
@@ -208,9 +182,7 @@ void LinearRandomFFTWaveSimulation::Impl::PressureAt(
 }
 
 //////////////////////////////////////////////////
-void LinearRandomFFTWaveSimulation::Impl::ElevationAt(
-    Index ix, Index iy,
-    double &eta)
+void LinearRandomFFTWaveSimulation::Impl::ElevationAt(Index ix, Index iy, double & eta)
 {
   /// \todo(srmainwaring) running the FFT destroys the inputs for c2r plans
 
@@ -227,8 +199,7 @@ void LinearRandomFFTWaveSimulation::Impl::ElevationAt(
 
 //////////////////////////////////////////////////
 void LinearRandomFFTWaveSimulation::Impl::DisplacementAt(
-    Index ix, Index iy,
-    double &sx, double &sy)
+  Index ix, Index iy, double & sx, double & sy)
 {
   // run the FFTs
   if (fft_needs_update_[3])
@@ -249,8 +220,7 @@ void LinearRandomFFTWaveSimulation::Impl::DisplacementAt(
 
 //////////////////////////////////////////////////
 void LinearRandomFFTWaveSimulation::Impl::PressureAt(
-    Index ix, Index iy, Index iz,
-    double &pressure)
+  Index ix, Index iy, Index iz, double & pressure)
 {
   // run the FFT
   if (fft_needs_update_[8 + iz])
@@ -273,11 +243,11 @@ void LinearRandomFFTWaveSimulation::Impl::ComputeBaseAmplitudes()
   Index n2 = nx_ * ny_;
   Eigen::ArrayXd omega_k;
   {
-    cap_psi_2s_root_  = Eigen::ArrayXd::Zero(n2);
-    rho_              = Eigen::ArrayXd::Zero(n2);
-    sigma_            = Eigen::ArrayXd::Zero(n2);
-    omega_k           = Eigen::ArrayXd::Zero(n2);
-    zhat_             = Eigen::ArrayXd::Zero(n2);
+    cap_psi_2s_root_ = Eigen::ArrayXd::Zero(n2);
+    rho_ = Eigen::ArrayXd::Zero(n2);
+    sigma_ = Eigen::ArrayXd::Zero(n2);
+    omega_k = Eigen::ArrayXd::Zero(n2);
+    zhat_ = Eigen::ArrayXd::Zero(n2);
   }
 
   // spectrum and spreading functions
@@ -310,11 +280,11 @@ void LinearRandomFFTWaveSimulation::Impl::ComputeBaseAmplitudes()
   for (Index ikx = 0; ikx < nx_; ++ikx)
   {
     double kx = kx_fft_(ikx);
-    double kx2 = kx*kx;
+    double kx2 = kx * kx;
     for (Index iky = 0; iky < ny_; ++iky)
     {
       double ky = ky_fft_(iky);
-      double ky2 = ky*ky;
+      double ky2 = ky * ky;
 
       double k = sqrt(kx2 + ky2);
       double phi = atan2(ky, kx);
@@ -327,7 +297,9 @@ void LinearRandomFFTWaveSimulation::Impl::ComputeBaseAmplitudes()
       {
         // standing waves - symmetric spreading function
         cap_psi = spreadingFn1.Evaluate(phi, phi10_, k);
-      } else {
+      }
+      else
+      {
         // travelling waves - asymmetric spreading function
         cap_psi = spreadingFn2.Evaluate(phi, phi10_, k);
       }
@@ -335,8 +307,7 @@ void LinearRandomFFTWaveSimulation::Impl::ComputeBaseAmplitudes()
       double cap_psi_2s_fft = cap_s * cap_psi / k;
 
       // square-root of two-sided discrete elevation variance spectrum
-      cap_psi_2s_root_(idx) =
-          cap_psi_norm * sqrt(cap_psi_2s_fft * delta_kx * delta_ky);
+      cap_psi_2s_root_(idx) = cap_psi_norm * sqrt(cap_psi_2s_fft * delta_kx * delta_ky);
 
       // iid random normals
       rho_(idx) = distribution(generator);
@@ -348,12 +319,7 @@ void LinearRandomFFTWaveSimulation::Impl::ComputeBaseAmplitudes()
   }
 
   // compute unique elements of omega_k
-  algorithm::unordered_unique(
-      omega_k.cbegin(),
-      omega_k.cend(),
-      &uomega_k_,
-      &uindex_,
-      &uinverse_);
+  algorithm::unordered_unique(omega_k.cbegin(), omega_k.cend(), &uomega_k_, &uindex_, &uinverse_);
 
   // resize workspace for time dependent phase
   ucos_wt_.resize(uomega_k_.size());
@@ -361,15 +327,12 @@ void LinearRandomFFTWaveSimulation::Impl::ComputeBaseAmplitudes()
 }
 
 //////////////////////////////////////////////////
-void LinearRandomFFTWaveSimulation::Impl::ComputeCurrentAmplitudes(
-    double time)
+void LinearRandomFFTWaveSimulation::Impl::ComputeCurrentAmplitudes(double time)
 {
   // set all true
   std::transform(
-    fft_needs_update_.cbegin(),
-    fft_needs_update_.cend(),
-    fft_needs_update_.begin(),
-    [] (bool) -> bool { return true; });
+    fft_needs_update_.cbegin(), fft_needs_update_.cend(), fft_needs_update_.begin(),
+    [](bool) -> bool { return true; });
 
   // create 1d views
   auto r = rho_.reshaped();
@@ -387,24 +350,24 @@ void LinearRandomFFTWaveSimulation::Impl::ComputeCurrentAmplitudes(
   // flattened index version
   for (Index ikx = 1; ikx < nx_; ++ikx)
   {
-    for (Index iky = 1; iky < ny_/2 + 1; ++iky)
+    for (Index iky = 1; iky < ny_ / 2 + 1; ++iky)
     {
       // index for flattened array (ikx, iky)
       Index idx = ikx * ny_ + iky;
       Index uidx = uinverse_[idx];
 
       // index for conjugate (nx_-ikx, ny_-iky)
-      Index cdx = (nx_-ikx) * ny_ + (ny_-iky);
+      Index cdx = (nx_ - ikx) * ny_ + (ny_ - iky);
 
       zhat_(idx) = complex(
-          + (r(idx) * psi_root(idx) + r(cdx) * psi_root(cdx)) * ucos_wt_(uidx)
-          + (s(idx) * psi_root(idx) + s(cdx) * psi_root(cdx)) * usin_wt_(uidx),
-          - (r(idx) * psi_root(idx) - r(cdx) * psi_root(cdx)) * usin_wt_(uidx)
-          + (s(idx) * psi_root(idx) - s(cdx) * psi_root(cdx)) * ucos_wt_(uidx));
+        +(r(idx) * psi_root(idx) + r(cdx) * psi_root(cdx)) * ucos_wt_(uidx) +
+          (s(idx) * psi_root(idx) + s(cdx) * psi_root(cdx)) * usin_wt_(uidx),
+        -(r(idx) * psi_root(idx) - r(cdx) * psi_root(cdx)) * usin_wt_(uidx) +
+          (s(idx) * psi_root(idx) - s(cdx) * psi_root(cdx)) * ucos_wt_(uidx));
     }
   }
 
-  for (Index iky = 1; iky < ny_/2 + 1; ++iky)
+  for (Index iky = 1; iky < ny_ / 2 + 1; ++iky)
   {
     Index ikx = 0;
 
@@ -413,17 +376,17 @@ void LinearRandomFFTWaveSimulation::Impl::ComputeCurrentAmplitudes(
     Index uidx = uinverse_[idx];
 
     // index for conjugate (ikx, ny_-iky)
-    Index cdx = ikx * ny_ + (ny_-iky);
+    Index cdx = ikx * ny_ + (ny_ - iky);
 
     zhat_(idx) = complex(
-        + (r(idx) * psi_root(idx) + r(cdx) * psi_root(cdx)) * ucos_wt_(uidx)
-        + (s(idx) * psi_root(idx) + s(cdx) * psi_root(cdx)) * usin_wt_(uidx),
-        - (r(idx) * psi_root(idx) - r(cdx) * psi_root(cdx)) * usin_wt_(uidx)
-        + (s(idx) * psi_root(idx) - s(cdx) * psi_root(cdx)) * ucos_wt_(uidx));
+      +(r(idx) * psi_root(idx) + r(cdx) * psi_root(cdx)) * ucos_wt_(uidx) +
+        (s(idx) * psi_root(idx) + s(cdx) * psi_root(cdx)) * usin_wt_(uidx),
+      -(r(idx) * psi_root(idx) - r(cdx) * psi_root(cdx)) * usin_wt_(uidx) +
+        (s(idx) * psi_root(idx) - s(cdx) * psi_root(cdx)) * ucos_wt_(uidx));
     zhat_(cdx, 0) = std::conj(zhat_(idx));
   }
 
-  for (Index ikx = 1; ikx < nx_/2 + 1; ++ikx)
+  for (Index ikx = 1; ikx < nx_ / 2 + 1; ++ikx)
   {
     Index iky = 0;
 
@@ -432,13 +395,13 @@ void LinearRandomFFTWaveSimulation::Impl::ComputeCurrentAmplitudes(
     Index uidx = uinverse_[idx];
 
     // index for conjugate (nx_-ikx, iky)
-    Index cdx = (nx_-ikx) * ny_ + iky;
+    Index cdx = (nx_ - ikx) * ny_ + iky;
 
     zhat_(idx) = complex(
-        + (r(idx) * psi_root(idx) + r(cdx) * psi_root(cdx)) * ucos_wt_(uidx)
-        + (s(idx) * psi_root(idx) + s(cdx) * psi_root(cdx)) * usin_wt_(uidx),
-        - (r(idx) * psi_root(idx) - r(cdx) * psi_root(cdx)) * usin_wt_(uidx)
-        + (s(idx) * psi_root(idx) - s(cdx) * psi_root(cdx)) * ucos_wt_(uidx));
+      +(r(idx) * psi_root(idx) + r(cdx) * psi_root(cdx)) * ucos_wt_(uidx) +
+        (s(idx) * psi_root(idx) + s(cdx) * psi_root(cdx)) * usin_wt_(uidx),
+      -(r(idx) * psi_root(idx) - r(cdx) * psi_root(cdx)) * usin_wt_(uidx) +
+        (s(idx) * psi_root(idx) - s(cdx) * psi_root(cdx)) * ucos_wt_(uidx));
     zhat_(cdx, 0) = std::conj(zhat_(idx));
   }
 
@@ -453,17 +416,17 @@ void LinearRandomFFTWaveSimulation::Impl::ComputeCurrentAmplitudes(
   for (Index ikx = 0; ikx < nx_; ++ikx)
   {
     double kx = kx_fft_(ikx);
-    double kx2 = kx*kx;
-    for (Index iky = 0; iky < ny_/2 + 1; ++iky)
+    double kx2 = kx * kx;
+    for (Index iky = 0; iky < ny_ / 2 + 1; ++iky)
     {
       double ky = ky_fft_(iky);
-      double ky2 = ky*ky;
+      double ky2 = ky * ky;
       double k = sqrt(kx2 + ky2);
 
       // index for flattened arrays
       Index idx = ikx * ny_ + iky;
 
-      complex h  = zhat_(idx);
+      complex h = zhat_(idx);
       complex hi = h * iunit;
       complex hikx = hi * kx;
       complex hiky = hi * ky;
@@ -472,9 +435,13 @@ void LinearRandomFFTWaveSimulation::Impl::ComputeCurrentAmplitudes(
       // For an explanation see:
       // https://math.mit.edu/~stevenj/fft-deriv.pdf
       if (ikx == nx_ / 2)
+      {
         hikx = czero;
+      }
       if (iky == ny_ / 2)
+      {
         hiky = czero;
+      }
 
       // elevation
       fft_h_(ikx, iky) = h;
@@ -496,28 +463,34 @@ void LinearRandomFFTWaveSimulation::Impl::ComputeCurrentAmplitudes(
       // displacement and derivatives
       if (std::abs(k) < 1.0E-8)
       {
-        fft_sx_(ikx, iky)     = czero;
-        fft_sy_(ikx, iky)     = czero;
+        fft_sx_(ikx, iky) = czero;
+        fft_sy_(ikx, iky) = czero;
         fft_h_kxkx_(ikx, iky) = czero;
         fft_h_kyky_(ikx, iky) = czero;
         fft_h_kxky_(ikx, iky) = czero;
-      } else {
+      }
+      else
+      {
         complex ook = 1.0 / k;
         complex hok = h * ook;
         complex hiok = hi * ook;
-        complex dx = - hiok * kx;
-        complex dy = - hiok * ky;
+        complex dx = -hiok * kx;
+        complex dy = -hiok * ky;
         complex hkxkx = hok * kx2;
         complex hkyky = hok * ky2;
         complex hkxky = hok * kx * ky;
 
         if (ikx == nx_ / 2)
+        {
           dx = czero;
+        }
         if (iky == ny_ / 2)
+        {
           dy = czero;
+        }
 
-        fft_sx_(ikx, iky)     = dx;
-        fft_sy_(ikx, iky)     = dy;
+        fft_sx_(ikx, iky) = dx;
+        fft_sy_(ikx, iky) = dy;
         fft_h_kxkx_(ikx, iky) = hkxkx;
         fft_h_kyky_(ikx, iky) = hkyky;
         fft_h_kxky_(ikx, iky) = hkxky;
@@ -529,20 +502,20 @@ void LinearRandomFFTWaveSimulation::Impl::ComputeCurrentAmplitudes(
 //////////////////////////////////////////////////
 void LinearRandomFFTWaveSimulation::Impl::InitWaveNumbers()
 {
-  kx_fft_  = Eigen::ArrayXd::Zero(nx_);
-  ky_fft_  = Eigen::ArrayXd::Zero(ny_);
+  kx_fft_ = Eigen::ArrayXd::Zero(nx_);
+  ky_fft_ = Eigen::ArrayXd::Zero(ny_);
 
   // wavenumbers in fft and math ordering
   for (Index ikx = 0; ikx < nx_; ++ikx)
   {
-    double kx = (ikx - nx_/2) * kx_f_;
-    kx_fft_((ikx + nx_/2) % nx_) = kx;
+    double kx = (ikx - nx_ / 2) * kx_f_;
+    kx_fft_((ikx + nx_ / 2) % nx_) = kx;
   }
 
   for (Index iky = 0; iky < ny_; ++iky)
   {
-    double ky = (iky - ny_/2) * ky_f_;
-    ky_fft_((iky + ny_/2) % ny_) = ky;
+    double ky = (iky - ny_ / 2) * ky_f_;
+    ky_fft_((iky + ny_ / 2) % ny_) = ky;
   }
 }
 
@@ -554,8 +527,7 @@ void LinearRandomFFTWaveSimulation::Impl::InitPressureGrid()
   if (nz_ > 1)
   {
     // first element is zero - fill nz - 1 remaining elements
-    Eigen::ArrayXd ln_z = Eigen::ArrayXd::LinSpaced(
-        nz_ - 1, -std::log(lz_), std::log(lz_));
+    Eigen::ArrayXd ln_z = Eigen::ArrayXd::LinSpaced(nz_ - 1, -std::log(lz_), std::log(lz_));
     zr(Eigen::seq(1, nz_ - 1)) = -1 * Eigen::exp(ln_z);
   }
   z_ = zr.reverse();
@@ -569,14 +541,14 @@ void LinearRandomFFTWaveSimulation::Impl::CreateFFTWPlans()
   ///       https://www.fftw.org/fftw3_doc/Complex-DFTs.html
 
   // allocate storage for Fourier coefficients
-  fft_h_      = Eigen::ArrayXXcdRowMajor::Zero(nx_, ny_/2+1);
-  fft_h_ikx_  = Eigen::ArrayXXcdRowMajor::Zero(nx_, ny_/2+1);
-  fft_h_iky_  = Eigen::ArrayXXcdRowMajor::Zero(nx_, ny_/2+1);
-  fft_sx_     = Eigen::ArrayXXcdRowMajor::Zero(nx_, ny_/2+1);
-  fft_sy_     = Eigen::ArrayXXcdRowMajor::Zero(nx_, ny_/2+1);
-  fft_h_kxkx_ = Eigen::ArrayXXcdRowMajor::Zero(nx_, ny_/2+1);
-  fft_h_kyky_ = Eigen::ArrayXXcdRowMajor::Zero(nx_, ny_/2+1);
-  fft_h_kxky_ = Eigen::ArrayXXcdRowMajor::Zero(nx_, ny_/2+1);
+  fft_h_ = Eigen::ArrayXXcdRowMajor::Zero(nx_, ny_ / 2 + 1);
+  fft_h_ikx_ = Eigen::ArrayXXcdRowMajor::Zero(nx_, ny_ / 2 + 1);
+  fft_h_iky_ = Eigen::ArrayXXcdRowMajor::Zero(nx_, ny_ / 2 + 1);
+  fft_sx_ = Eigen::ArrayXXcdRowMajor::Zero(nx_, ny_ / 2 + 1);
+  fft_sy_ = Eigen::ArrayXXcdRowMajor::Zero(nx_, ny_ / 2 + 1);
+  fft_h_kxkx_ = Eigen::ArrayXXcdRowMajor::Zero(nx_, ny_ / 2 + 1);
+  fft_h_kyky_ = Eigen::ArrayXXcdRowMajor::Zero(nx_, ny_ / 2 + 1);
+  fft_h_kxky_ = Eigen::ArrayXXcdRowMajor::Zero(nx_, ny_ / 2 + 1);
 
   // elevation
   fft_out0_ = Eigen::ArrayXXdRowMajor::Zero(nx_, ny_);
@@ -591,62 +563,51 @@ void LinearRandomFFTWaveSimulation::Impl::CreateFFTWPlans()
   fft_out7_ = Eigen::ArrayXXdRowMajor::Zero(nx_, ny_);
 
   // elevation
-  fft_plan0_ = fftw_plan_dft_c2r_2d(nx_, ny_,
-      reinterpret_cast<fftw_complex*>(fft_h_.data()),
-      reinterpret_cast<double*>(fft_out0_.data()),
-      FFTW_ESTIMATE);
-  fft_plan1_ = fftw_plan_dft_c2r_2d(nx_, ny_,
-      reinterpret_cast<fftw_complex*>(fft_h_ikx_.data()),
-      reinterpret_cast<double*>(fft_out1_.data()),
-      FFTW_ESTIMATE);
-  fft_plan2_ = fftw_plan_dft_c2r_2d(nx_, ny_,
-      reinterpret_cast<fftw_complex*>(fft_h_iky_.data()),
-      reinterpret_cast<double*>(fft_out2_.data()),
-      FFTW_ESTIMATE);
+  fft_plan0_ = fftw_plan_dft_c2r_2d(
+    nx_, ny_, reinterpret_cast<fftw_complex *>(fft_h_.data()),
+    reinterpret_cast<double *>(fft_out0_.data()), FFTW_ESTIMATE);
+  fft_plan1_ = fftw_plan_dft_c2r_2d(
+    nx_, ny_, reinterpret_cast<fftw_complex *>(fft_h_ikx_.data()),
+    reinterpret_cast<double *>(fft_out1_.data()), FFTW_ESTIMATE);
+  fft_plan2_ = fftw_plan_dft_c2r_2d(
+    nx_, ny_, reinterpret_cast<fftw_complex *>(fft_h_iky_.data()),
+    reinterpret_cast<double *>(fft_out2_.data()), FFTW_ESTIMATE);
 
   // xy-displacements
-  fft_plan3_ = fftw_plan_dft_c2r_2d(nx_, ny_,
-      reinterpret_cast<fftw_complex*>(fft_sx_.data()),
-      reinterpret_cast<double*>(fft_out3_.data()),
-      FFTW_ESTIMATE);
-  fft_plan4_ = fftw_plan_dft_c2r_2d(nx_, ny_,
-      reinterpret_cast<fftw_complex*>(fft_sy_.data()),
-      reinterpret_cast<double*>(fft_out4_.data()),
-      FFTW_ESTIMATE);
-  fft_plan5_ = fftw_plan_dft_c2r_2d(nx_, ny_,
-      reinterpret_cast<fftw_complex*>(fft_h_kxkx_.data()),
-      reinterpret_cast<double*>(fft_out5_.data()),
-      FFTW_ESTIMATE);
-  fft_plan6_ = fftw_plan_dft_c2r_2d(nx_, ny_,
-      reinterpret_cast<fftw_complex*>(fft_h_kyky_.data()),
-      reinterpret_cast<double*>(fft_out6_.data()),
-      FFTW_ESTIMATE);
-  fft_plan7_ = fftw_plan_dft_c2r_2d(nx_, ny_,
-      reinterpret_cast<fftw_complex*>(fft_h_kxky_.data()),
-      reinterpret_cast<double*>(fft_out7_.data()),
-      FFTW_ESTIMATE);
+  fft_plan3_ = fftw_plan_dft_c2r_2d(
+    nx_, ny_, reinterpret_cast<fftw_complex *>(fft_sx_.data()),
+    reinterpret_cast<double *>(fft_out3_.data()), FFTW_ESTIMATE);
+  fft_plan4_ = fftw_plan_dft_c2r_2d(
+    nx_, ny_, reinterpret_cast<fftw_complex *>(fft_sy_.data()),
+    reinterpret_cast<double *>(fft_out4_.data()), FFTW_ESTIMATE);
+  fft_plan5_ = fftw_plan_dft_c2r_2d(
+    nx_, ny_, reinterpret_cast<fftw_complex *>(fft_h_kxkx_.data()),
+    reinterpret_cast<double *>(fft_out5_.data()), FFTW_ESTIMATE);
+  fft_plan6_ = fftw_plan_dft_c2r_2d(
+    nx_, ny_, reinterpret_cast<fftw_complex *>(fft_h_kyky_.data()),
+    reinterpret_cast<double *>(fft_out6_.data()), FFTW_ESTIMATE);
+  fft_plan7_ = fftw_plan_dft_c2r_2d(
+    nx_, ny_, reinterpret_cast<fftw_complex *>(fft_h_kxky_.data()),
+    reinterpret_cast<double *>(fft_out7_.data()), FFTW_ESTIMATE);
 
   /// \todo(srmainwaring) pressure optimisation - adjust so that the
   /// entry for z = 0 is obtained from  fft_h_ / fft_out0_ / fft_plan0_
 
   // pressure
-  for (Index iz=0; iz < nz_; ++iz)
+  for (Index iz = 0; iz < nz_; ++iz)
   {
-    fft_in_p_.push_back(Eigen::ArrayXXcdRowMajor::Zero(nx_, ny_/2+1));
+    fft_in_p_.push_back(Eigen::ArrayXXcdRowMajor::Zero(nx_, ny_ / 2 + 1));
     fft_out_p_.push_back(Eigen::ArrayXXdRowMajor::Zero(nx_, ny_));
-    fft_plan_p_.push_back(fftw_plan_dft_c2r_2d(nx_, ny_,
-        reinterpret_cast<fftw_complex*>(fft_in_p_[iz].data()),
-        reinterpret_cast<double*>(fft_out_p_[iz].data()),
-        FFTW_ESTIMATE));
+    fft_plan_p_.push_back(fftw_plan_dft_c2r_2d(
+      nx_, ny_, reinterpret_cast<fftw_complex *>(fft_in_p_[iz].data()),
+      reinterpret_cast<double *>(fft_out_p_[iz].data()), FFTW_ESTIMATE));
   }
 
   // set lazy evaluation flags.
   fft_needs_update_.resize(8 + nz_);
   std::transform(
-    fft_needs_update_.cbegin(),
-    fft_needs_update_.cend(),
-    fft_needs_update_.begin(),
-    [] (bool) -> bool { return true; });
+    fft_needs_update_.cbegin(), fft_needs_update_.cend(), fft_needs_update_.begin(),
+    [](bool) -> bool { return true; });
 }
 
 //////////////////////////////////////////////////
@@ -664,29 +625,24 @@ void LinearRandomFFTWaveSimulation::Impl::DestroyFFTWPlans()
 
 //////////////////////////////////////////////////
 //////////////////////////////////////////////////
-LinearRandomFFTWaveSimulation::~LinearRandomFFTWaveSimulation()
+LinearRandomFFTWaveSimulation::~LinearRandomFFTWaveSimulation() {}
+
+//////////////////////////////////////////////////
+LinearRandomFFTWaveSimulation::LinearRandomFFTWaveSimulation(
+  double lx, double ly, Index nx, Index ny)
+: impl_(new LinearRandomFFTWaveSimulation::Impl(lx, ly, nx, ny))
 {
 }
 
 //////////////////////////////////////////////////
 LinearRandomFFTWaveSimulation::LinearRandomFFTWaveSimulation(
-    double lx, double ly, Index nx, Index ny) :
-  impl_(new LinearRandomFFTWaveSimulation::Impl(lx, ly, nx, ny))
+  double lx, double ly, double lz, Index nx, Index ny, Index nz)
+: impl_(new LinearRandomFFTWaveSimulation::Impl(lx, ly, lz, nx, ny, nz))
 {
 }
 
 //////////////////////////////////////////////////
-LinearRandomFFTWaveSimulation::LinearRandomFFTWaveSimulation(
-    double lx, double ly, double lz, Index nx, Index ny, Index nz) :
-  impl_(new LinearRandomFFTWaveSimulation::Impl(lx, ly, lz, nx, ny, nz))
-{
-}
-
-//////////////////////////////////////////////////
-void LinearRandomFFTWaveSimulation::SetLambda(double value)
-{
-  impl_->SetLambda(value);
-}
+void LinearRandomFFTWaveSimulation::SetLambda(double value) { impl_->SetLambda(value); }
 
 //////////////////////////////////////////////////
 void LinearRandomFFTWaveSimulation::SetWindVelocity(double ux, double uy)
@@ -695,77 +651,54 @@ void LinearRandomFFTWaveSimulation::SetWindVelocity(double ux, double uy)
 }
 
 //////////////////////////////////////////////////
-void LinearRandomFFTWaveSimulation::SetSteepness(double value)
-{
-  impl_->SetSteepness(value);
-}
+void LinearRandomFFTWaveSimulation::SetSteepness(double value) { impl_->SetSteepness(value); }
 
 //////////////////////////////////////////////////
-void LinearRandomFFTWaveSimulation::SetTime(double value)
-{
-  impl_->SetTime(value);
-}
+void LinearRandomFFTWaveSimulation::SetTime(double value) { impl_->SetTime(value); }
 
 //////////////////////////////////////////////////
-Index LinearRandomFFTWaveSimulation::SizeX() const
-{
-  return impl_->nx_;
-}
+Index LinearRandomFFTWaveSimulation::SizeX() const { return impl_->nx_; }
 
 //////////////////////////////////////////////////
-Index LinearRandomFFTWaveSimulation::SizeY() const
-{
-  return impl_->ny_;
-}
+Index LinearRandomFFTWaveSimulation::SizeY() const { return impl_->ny_; }
 
 //////////////////////////////////////////////////
-Index LinearRandomFFTWaveSimulation::SizeZ() const
-{
-  return impl_->nz_;
-}
+Index LinearRandomFFTWaveSimulation::SizeZ() const { return impl_->nz_; }
 
 //////////////////////////////////////////////////
-void LinearRandomFFTWaveSimulation::ElevationAt(
-    Eigen::Ref<Eigen::ArrayXXd> h) const
+void LinearRandomFFTWaveSimulation::ElevationAt(Eigen::Ref<Eigen::ArrayXXd> h) const
 {
   impl_->ElevationAt(h);
 }
 
 //////////////////////////////////////////////////
 void LinearRandomFFTWaveSimulation::ElevationDerivAt(
-    Eigen::Ref<Eigen::ArrayXXd> dhdx,
-    Eigen::Ref<Eigen::ArrayXXd> dhdy) const
+  Eigen::Ref<Eigen::ArrayXXd> dhdx, Eigen::Ref<Eigen::ArrayXXd> dhdy) const
 {
   impl_->ElevationDerivAt(dhdx, dhdy);
 }
 
 //////////////////////////////////////////////////
 void LinearRandomFFTWaveSimulation::DisplacementAt(
-    Eigen::Ref<Eigen::ArrayXXd> sx,
-    Eigen::Ref<Eigen::ArrayXXd> sy) const
+  Eigen::Ref<Eigen::ArrayXXd> sx, Eigen::Ref<Eigen::ArrayXXd> sy) const
 {
   impl_->DisplacementAt(sx, sy);
 }
 
 //////////////////////////////////////////////////
 void LinearRandomFFTWaveSimulation::DisplacementDerivAt(
-    Eigen::Ref<Eigen::ArrayXXd> dsxdx,
-    Eigen::Ref<Eigen::ArrayXXd> dsydy,
-    Eigen::Ref<Eigen::ArrayXXd> dsxdy) const
+  Eigen::Ref<Eigen::ArrayXXd> dsxdx, Eigen::Ref<Eigen::ArrayXXd> dsydy,
+  Eigen::Ref<Eigen::ArrayXXd> dsxdy) const
 {
   impl_->DisplacementDerivAt(dsxdx, dsydy, dsxdy);
 }
 
 //////////////////////////////////////////////////
 void LinearRandomFFTWaveSimulation::DisplacementAndDerivAt(
-    Eigen::Ref<Eigen::ArrayXXd> h,
-    Eigen::Ref<Eigen::ArrayXXd> sx,
-    Eigen::Ref<Eigen::ArrayXXd> sy,
-    Eigen::Ref<Eigen::ArrayXXd> dhdx,
-    Eigen::Ref<Eigen::ArrayXXd> dhdy,
-    Eigen::Ref<Eigen::ArrayXXd> dsxdx,
-    Eigen::Ref<Eigen::ArrayXXd> dsydy,
-    Eigen::Ref<Eigen::ArrayXXd> dsxdy) const
+  Eigen::Ref<Eigen::ArrayXXd> h, Eigen::Ref<Eigen::ArrayXXd> sx, Eigen::Ref<Eigen::ArrayXXd> sy,
+  Eigen::Ref<Eigen::ArrayXXd> dhdx, Eigen::Ref<Eigen::ArrayXXd> dhdy,
+  Eigen::Ref<Eigen::ArrayXXd> dsxdx, Eigen::Ref<Eigen::ArrayXXd> dsydy,
+  Eigen::Ref<Eigen::ArrayXXd> dsxdy) const
 {
   impl_->ElevationAt(h);
   impl_->ElevationDerivAt(dhdx, dhdy);
@@ -774,33 +707,27 @@ void LinearRandomFFTWaveSimulation::DisplacementAndDerivAt(
 }
 
 //////////////////////////////////////////////////
-void LinearRandomFFTWaveSimulation::PressureAt(
-    Index iz,
-    Eigen::Ref<Eigen::ArrayXXd> pressure) const
+void LinearRandomFFTWaveSimulation::PressureAt(Index iz, Eigen::Ref<Eigen::ArrayXXd> pressure) const
 {
   impl_->PressureAt(iz, pressure);
 }
 
 //////////////////////////////////////////////////
-void LinearRandomFFTWaveSimulation::ElevationAt(
-    Index ix, Index iy,
-    double& eta) const
+void LinearRandomFFTWaveSimulation::ElevationAt(Index ix, Index iy, double & eta) const
 {
   impl_->ElevationAt(ix, iy, eta);
 }
 
 //////////////////////////////////////////////////
 void LinearRandomFFTWaveSimulation::DisplacementAt(
-    Index ix, Index iy,
-    double& sx, double& sy) const
+  Index ix, Index iy, double & sx, double & sy) const
 {
   impl_->DisplacementAt(ix, iy, sx, sy);
 }
 
 //////////////////////////////////////////////////
 void LinearRandomFFTWaveSimulation::PressureAt(
-    Index ix, Index iy, Index iz,
-    double& pressure) const
+  Index ix, Index iy, Index iz, double & pressure) const
 {
   impl_->PressureAt(ix, iy, iz, pressure);
 }

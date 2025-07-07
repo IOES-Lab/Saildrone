@@ -19,11 +19,11 @@ namespace gz
 {
 namespace rendering
 {
-inline namespace GZ_RENDERING_VERSION_NAMESPACE {
+inline namespace GZ_RENDERING_VERSION_NAMESPACE
+{
 
 SceneNodeFactory::~SceneNodeFactory() = default;
 
 }
 }  // namespace rendering
 }  // namespace gz
-

@@ -13,7 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.s
 
-
 // Copyright (c) 2019 Rhys Mainwaring.
 //
 // Modified to accept vector parameters and use the form
@@ -33,7 +32,6 @@
 // The derivative terms (Tangent, Binormal, Normal) have been
 // updated to be consistent with this convention.
 
-
 // original concept:
 // https://developer.nvidia.com/gpugems/gpugems/part-i-natural-effects/chapter-1-effective-water-simulation-physical-models
 
@@ -43,12 +41,12 @@ using namespace metal;
 struct VS_INPUT
 {
   float4 position [[attribute(VES_POSITION)]];
-  float2 uv0      [[attribute(VES_TEXTURE_COORDINATES0)]];
+  float2 uv0 [[attribute(VES_TEXTURE_COORDINATES0)]];
 };
 
 struct PS_INPUT
 {
-  float4 gl_Position  [[position]];
+  float4 gl_Position [[position]];
   float2 uv0;
   float3 T;
   float3 B;
@@ -68,17 +66,12 @@ struct Params
   float2 bumpSpeed;
 };
 
-vertex PS_INPUT main_metal
-(
-  VS_INPUT input [[stage_in]]
-  , texture2d<float, access::sample>  heightMap   [[texture(0)]]
-  , texture2d<float, access::sample>  normalMap   [[texture(1)]]
-  , texture2d<float, access::sample>  tangentMap  [[texture(2)]]
-  , sampler heightMapSampler  [[sampler(0)]]
-  , sampler normalMapSampler  [[sampler(1)]]
-  , sampler tangentMapSampler [[sampler(2)]]
-  , constant Params &p [[buffer(PARAMETER_SLOT)]]
-)
+vertex PS_INPUT main_metal(
+  VS_INPUT input [[stage_in]], texture2d<float, access::sample> heightMap [[texture(0)]],
+  texture2d<float, access::sample> normalMap [[texture(1)]],
+  texture2d<float, access::sample> tangentMap [[texture(2)]],
+  sampler heightMapSampler [[sampler(0)]], sampler normalMapSampler [[sampler(1)]],
+  sampler tangentMapSampler [[sampler(2)]], constant Params & p [[buffer(PARAMETER_SLOT)]])
 {
   PS_INPUT outVs;
 
@@ -88,11 +81,7 @@ vertex PS_INPUT main_metal
   // constexpr sampler s(coord::normalized, address::repeat, filter::linear);
 
   // DEBUG - switch TBN between object and world space
-  float4x4 identity(
-      1, 0, 0, 0,
-      0, 1, 0, 0,
-      0, 0, 1, 0,
-      0, 0, 0, 1);
+  float4x4 identity(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 
   // float4x4 worldM = identity;
   float4x4 worldM = p.world_matrix;
@@ -110,7 +99,7 @@ vertex PS_INPUT main_metal
   // Resampling at different scales
   float sampleScale = 1.0;
   float sampleWeight = 1.0;
-  for (int i=0; i<1; ++i)
+  for (int i = 0; i < 1; ++i)
   {
     // float4 displacements = heightMap.read(ushort2(texcoord * resolution));
     float4 displacements = heightMap.sample(heightMapSampler, sampleScale * texcoord);
@@ -130,7 +119,7 @@ vertex PS_INPUT main_metal
     sampleScale *= 3;
     sampleWeight *= 0.5;
   }
- 
+
   T = normalize(T);
   N = normalize(N);
 

@@ -19,9 +19,9 @@
 #include <iostream>
 #include <string>
 
-#include "gz/waves/Grid.hh"
-#include "gz/waves/Geometry.hh"
 #include "gz/waves/CGALTypes.hh"
+#include "gz/waves/Geometry.hh"
+#include "gz/waves/Grid.hh"
 #include "gz/waves/Types.hh"
 
 namespace cgal
@@ -30,15 +30,15 @@ using gz::cgal::Direction3;
 using gz::cgal::Point3;
 }  // namespace cgal
 
-using gz::waves::Index;
 using gz::waves::Grid;
 using gz::waves::GridTools;
+using gz::waves::Index;
 
 //////////////////////////////////////////////////
 TEST(Grid, Constructor)
 {
-  std::array<double, 2> size = { 2, 2 };
-  std::array<Index, 2> cellCount = { 2, 2 };
+  std::array<double, 2> size = {2, 2};
+  std::array<Index, 2> cellCount = {2, 2};
   Grid grid(size, cellCount);
 
   double Lx = size[0];
@@ -71,7 +71,7 @@ TEST(Grid, Constructor)
   // }
 
   // VertexCount
-  EXPECT_EQ(grid.GetVertexCount(), (cellCount[0]+1) * (cellCount[1]+1));
+  EXPECT_EQ(grid.GetVertexCount(), (cellCount[0] + 1) * (cellCount[1] + 1));
 
   // GetPoint
   // for (Index i=0; i<grid.GetVertexCount(); ++i)
@@ -109,8 +109,8 @@ TEST(Grid, Constructor)
 //////////////////////////////////////////////////
 TEST(Grid, FindIntersectionIndex)
 {
-  std::array<double, 2> size = { 4, 2 };
-  std::array<Index, 2> cellCount = { 4, 2 };
+  std::array<double, 2> size = {4, 2};
+  std::array<Index, 2> cellCount = {4, 2};
   Grid grid(size, cellCount);
 
   // double Lx = size[0];
@@ -119,80 +119,80 @@ TEST(Grid, FindIntersectionIndex)
   // Index ny = cellCount[1];
 
   // 16 cases to check...
-  { // cell(0, 0)
+  {  // cell(0, 0)
     double x = -1.25;
     double y = -0.50;
-    std::array<Index, 3> index = { 0, 0, 0 };
+    std::array<Index, 3> index = {0, 0, 0};
     bool isFound = GridTools::FindIntersectionIndex(grid, x, y, index);
     EXPECT_EQ(isFound, true);
     EXPECT_EQ(index[0], 0);
     EXPECT_EQ(index[1], 0);
     EXPECT_EQ(index[2], 0);
   }
-  { // cell(0, 0)
+  {  // cell(0, 0)
     double x = -1.75;
     double y = -0.50;
-    std::array<Index, 3> index = { 0, 0, 0 };
+    std::array<Index, 3> index = {0, 0, 0};
     bool isFound = GridTools::FindIntersectionIndex(grid, x, y, index);
     EXPECT_EQ(isFound, true);
     EXPECT_EQ(index[0], 0);
     EXPECT_EQ(index[1], 0);
     EXPECT_EQ(index[2], 1);
   }
-  { // cell(1, 0)
+  {  // cell(1, 0)
     double x = -0.25;
     double y = -0.50;
-    std::array<Index, 3> index = { 0, 0, 0 };
+    std::array<Index, 3> index = {0, 0, 0};
     bool isFound = GridTools::FindIntersectionIndex(grid, x, y, index);
     EXPECT_EQ(isFound, true);
     EXPECT_EQ(index[0], 1);
     EXPECT_EQ(index[1], 0);
     EXPECT_EQ(index[2], 0);
   }
-  { // cell(1, 0)
+  {  // cell(1, 0)
     double x = -0.75;
     double y = -0.50;
-    std::array<Index, 3> index = { 0, 0, 0 };
+    std::array<Index, 3> index = {0, 0, 0};
     bool isFound = GridTools::FindIntersectionIndex(grid, x, y, index);
     EXPECT_EQ(isFound, true);
     EXPECT_EQ(index[0], 1);
     EXPECT_EQ(index[1], 0);
     EXPECT_EQ(index[2], 1);
   }
-  { // cell(2, 0)
-    double x =  0.75;
+  {  // cell(2, 0)
+    double x = 0.75;
     double y = -0.50;
-    std::array<Index, 3> index = { 0, 0, 0 };
+    std::array<Index, 3> index = {0, 0, 0};
     bool isFound = GridTools::FindIntersectionIndex(grid, x, y, index);
     EXPECT_EQ(isFound, true);
     EXPECT_EQ(index[0], 2);
     EXPECT_EQ(index[1], 0);
     EXPECT_EQ(index[2], 0);
   }
-  { // cell(2, 0)
-    double x =  0.25;
+  {  // cell(2, 0)
+    double x = 0.25;
     double y = -0.50;
-    std::array<Index, 3> index = { 0, 0, 0 };
+    std::array<Index, 3> index = {0, 0, 0};
     bool isFound = GridTools::FindIntersectionIndex(grid, x, y, index);
     EXPECT_EQ(isFound, true);
     EXPECT_EQ(index[0], 2);
     EXPECT_EQ(index[1], 0);
     EXPECT_EQ(index[2], 1);
   }
-  { // cell(3, 0)
-    double x =  1.75;
+  {  // cell(3, 0)
+    double x = 1.75;
     double y = -0.50;
-    std::array<Index, 3> index = { 0, 0, 0 };
+    std::array<Index, 3> index = {0, 0, 0};
     bool isFound = GridTools::FindIntersectionIndex(grid, x, y, index);
     EXPECT_EQ(isFound, true);
     EXPECT_EQ(index[0], 3);
     EXPECT_EQ(index[1], 0);
     EXPECT_EQ(index[2], 0);
   }
-  { // cell(3, 0)
-    double x =  1.25;
+  {  // cell(3, 0)
+    double x = 1.25;
     double y = -0.50;
-    std::array<Index, 3> index = { 0, 0, 0 };
+    std::array<Index, 3> index = {0, 0, 0};
     bool isFound = GridTools::FindIntersectionIndex(grid, x, y, index);
     EXPECT_EQ(isFound, true);
     EXPECT_EQ(index[0], 3);
@@ -200,80 +200,80 @@ TEST(Grid, FindIntersectionIndex)
     EXPECT_EQ(index[2], 1);
   }
 
-  { // cell(0, 1)
+  {  // cell(0, 1)
     double x = -1.25;
-    double y =  0.50;
-    std::array<Index, 3> index = { 0, 0, 0 };
+    double y = 0.50;
+    std::array<Index, 3> index = {0, 0, 0};
     bool isFound = GridTools::FindIntersectionIndex(grid, x, y, index);
     EXPECT_EQ(isFound, true);
     EXPECT_EQ(index[0], 0);
     EXPECT_EQ(index[1], 1);
     EXPECT_EQ(index[2], 0);
   }
-  { // cell(0, 1)
+  {  // cell(0, 1)
     double x = -1.75;
-    double y =  0.50;
-    std::array<Index, 3> index = { 0, 0, 0 };
+    double y = 0.50;
+    std::array<Index, 3> index = {0, 0, 0};
     bool isFound = GridTools::FindIntersectionIndex(grid, x, y, index);
     EXPECT_EQ(isFound, true);
     EXPECT_EQ(index[0], 0);
     EXPECT_EQ(index[1], 1);
     EXPECT_EQ(index[2], 1);
   }
-  { // cell(1, 1)
+  {  // cell(1, 1)
     double x = -0.25;
-    double y =  0.50;
-    std::array<Index, 3> index = { 0, 0, 0 };
+    double y = 0.50;
+    std::array<Index, 3> index = {0, 0, 0};
     bool isFound = GridTools::FindIntersectionIndex(grid, x, y, index);
     EXPECT_EQ(isFound, true);
     EXPECT_EQ(index[0], 1);
     EXPECT_EQ(index[1], 1);
     EXPECT_EQ(index[2], 0);
   }
-  { // cell(1, 1)
+  {  // cell(1, 1)
     double x = -0.75;
-    double y =  0.50;
-    std::array<Index, 3> index = { 0, 0, 0 };
+    double y = 0.50;
+    std::array<Index, 3> index = {0, 0, 0};
     bool isFound = GridTools::FindIntersectionIndex(grid, x, y, index);
     EXPECT_EQ(isFound, true);
     EXPECT_EQ(index[0], 1);
     EXPECT_EQ(index[1], 1);
     EXPECT_EQ(index[2], 1);
   }
-  { // cell(2, 1)
-    double x =  0.75;
-    double y =  0.50;
-    std::array<Index, 3> index = { 0, 0, 0 };
+  {  // cell(2, 1)
+    double x = 0.75;
+    double y = 0.50;
+    std::array<Index, 3> index = {0, 0, 0};
     bool isFound = GridTools::FindIntersectionIndex(grid, x, y, index);
     EXPECT_EQ(isFound, true);
     EXPECT_EQ(index[0], 2);
     EXPECT_EQ(index[1], 1);
     EXPECT_EQ(index[2], 0);
   }
-  { // cell(2, 1)
-    double x =  0.25;
-    double y =  0.50;
-    std::array<Index, 3> index = { 0, 0, 0 };
+  {  // cell(2, 1)
+    double x = 0.25;
+    double y = 0.50;
+    std::array<Index, 3> index = {0, 0, 0};
     bool isFound = GridTools::FindIntersectionIndex(grid, x, y, index);
     EXPECT_EQ(isFound, true);
     EXPECT_EQ(index[0], 2);
     EXPECT_EQ(index[1], 1);
     EXPECT_EQ(index[2], 1);
   }
-  { // cell(3, 1)
-    double x =  1.75;
-    double y =  0.50;
-    std::array<Index, 3> index = { 0, 0, 0 };
+  {  // cell(3, 1)
+    double x = 1.75;
+    double y = 0.50;
+    std::array<Index, 3> index = {0, 0, 0};
     bool isFound = GridTools::FindIntersectionIndex(grid, x, y, index);
     EXPECT_EQ(isFound, true);
     EXPECT_EQ(index[0], 3);
     EXPECT_EQ(index[1], 1);
     EXPECT_EQ(index[2], 0);
   }
-  { // cell(3, 1)
-    double x =  1.25;
-    double y =  0.50;
-    std::array<Index, 3> index = { 0, 0, 0 };
+  {  // cell(3, 1)
+    double x = 1.25;
+    double y = 0.50;
+    std::array<Index, 3> index = {0, 0, 0};
     bool isFound = GridTools::FindIntersectionIndex(grid, x, y, index);
     EXPECT_EQ(isFound, true);
     EXPECT_EQ(index[0], 3);
@@ -285,8 +285,8 @@ TEST(Grid, FindIntersectionIndex)
 //////////////////////////////////////////////////
 TEST(Grid, FindIntersectionTriangle)
 {
-  std::array<double, 2> size = { 4, 2 };
-  std::array<Index, 2> cellCount = { 4, 2 };
+  std::array<double, 2> size = {4, 2};
+  std::array<Index, 2> cellCount = {4, 2};
   Grid grid(size, cellCount);
 
   // double Lx = size[0];
@@ -296,10 +296,10 @@ TEST(Grid, FindIntersectionTriangle)
 
   std::cout << std::endl;
 
-  { // cell(0, 0)
+  {  // cell(0, 0)
     double x = -1.25;
     double y = -0.50;
-    std::array<Index, 3> index = { 0, 0, 0 };
+    std::array<Index, 3> index = {0, 0, 0};
 
     // Initial guess
     bool isFound = GridTools::FindIntersectionIndex(grid, x, y, index);
@@ -312,16 +312,15 @@ TEST(Grid, FindIntersectionTriangle)
     cgal::Point3 origin = cgal::Point3(x, y, 10);
     cgal::Direction3 direction = cgal::Direction3(0, 0, 1);
     cgal::Point3 point = CGAL::ORIGIN;
-    isFound = GridTools::FindIntersectionTriangle(
-      grid, origin, direction, index, point);
+    isFound = GridTools::FindIntersectionTriangle(grid, origin, direction, index, point);
     EXPECT_EQ(isFound, true);
     EXPECT_EQ(point, cgal::Point3(x, y, 0));
   }
 
-  { // cell(0, 0)
+  {  // cell(0, 0)
     double x = -1.75;
     double y = -0.50;
-    std::array<Index, 3> index = { 0, 0, 0 };
+    std::array<Index, 3> index = {0, 0, 0};
 
     // Initial guess
     bool isFound = GridTools::FindIntersectionIndex(grid, x, y, index);
@@ -334,16 +333,15 @@ TEST(Grid, FindIntersectionTriangle)
     cgal::Point3 origin = cgal::Point3(x, y, 10);
     cgal::Direction3 direction = cgal::Direction3(0, 0, 1);
     cgal::Point3 point = CGAL::ORIGIN;
-    isFound = GridTools::FindIntersectionTriangle(
-      grid, origin, direction, index, point);
+    isFound = GridTools::FindIntersectionTriangle(grid, origin, direction, index, point);
     EXPECT_EQ(isFound, true);
     EXPECT_EQ(point, cgal::Point3(x, y, 0));
   }
 
-  { // cell(2, 1)
-    double x =  0.75;
-    double y =  0.50;
-    std::array<Index, 3> index = { 0, 0, 0 };
+  {  // cell(2, 1)
+    double x = 0.75;
+    double y = 0.50;
+    std::array<Index, 3> index = {0, 0, 0};
 
     // Initial guess
     bool isFound = GridTools::FindIntersectionIndex(grid, x, y, index);
@@ -356,8 +354,7 @@ TEST(Grid, FindIntersectionTriangle)
     cgal::Point3 origin = cgal::Point3(x, y, 10);
     cgal::Direction3 direction = cgal::Direction3(0, 0, 1);
     cgal::Point3 point = CGAL::ORIGIN;
-    isFound = GridTools::FindIntersectionTriangle(
-      grid, origin, direction, index, point);
+    isFound = GridTools::FindIntersectionTriangle(grid, origin, direction, index, point);
     EXPECT_EQ(isFound, true);
     EXPECT_EQ(point, cgal::Point3(x, y, 0));
   }
@@ -366,8 +363,8 @@ TEST(Grid, FindIntersectionTriangle)
 //////////////////////////////////////////////////
 TEST(Grid, FindIntersectionCell)
 {
-  std::array<double, 2> size = { 4, 2 };
-  std::array<Index, 2> cellCount = { 4, 2 };
+  std::array<double, 2> size = {4, 2};
+  std::array<Index, 2> cellCount = {4, 2};
   Grid grid(size, cellCount);
 
   // double Lx = size[0];
@@ -377,10 +374,10 @@ TEST(Grid, FindIntersectionCell)
 
   std::cout << std::endl;
 
-  { // cell(0, 0)
+  {  // cell(0, 0)
     double x = -1.25;
     double y = -0.50;
-    std::array<Index, 3> index = { 0, 0, 0 };
+    std::array<Index, 3> index = {0, 0, 0};
 
     // Initial guess
     bool isFound = GridTools::FindIntersectionIndex(grid, x, y, index);
@@ -399,8 +396,7 @@ TEST(Grid, FindIntersectionCell)
     cgal::Point3 origin = cgal::Point3(x, y, 10);
     cgal::Direction3 direction = cgal::Direction3(0, 0, 1);
     cgal::Point3 point = CGAL::ORIGIN;
-    isFound = GridTools::FindIntersectionCell(
-      grid, origin, direction, index, point);
+    isFound = GridTools::FindIntersectionCell(grid, origin, direction, index, point);
     EXPECT_EQ(isFound, true);
     EXPECT_EQ(point, cgal::Point3(x, y, 0));
 
@@ -411,8 +407,8 @@ TEST(Grid, FindIntersectionCell)
 //////////////////////////////////////////////////
 TEST(Grid, FindIntersectionGrid)
 {
-  std::array<double, 2> size = { 4, 2 };
-  std::array<Index, 2> cellCount = { 4, 2 };
+  std::array<double, 2> size = {4, 2};
+  std::array<Index, 2> cellCount = {4, 2};
   Grid grid(size, cellCount);
 
   // double Lx = size[0];
@@ -422,10 +418,10 @@ TEST(Grid, FindIntersectionGrid)
 
   std::cout << std::endl;
 
-  { // cell(3, 1)
-    double x =  1.75;
-    double y =  0.50;
-    std::array<Index, 3> index = { 0, 0, 0 };
+  {  // cell(3, 1)
+    double x = 1.75;
+    double y = 0.50;
+    std::array<Index, 3> index = {0, 0, 0};
 
     // Initial guess
     bool isFound = GridTools::FindIntersectionIndex(grid, x, y, index);
@@ -435,14 +431,13 @@ TEST(Grid, FindIntersectionGrid)
     EXPECT_EQ(index[2], 0);
 
     // Reset index
-    index = { 0, 0, 0 };
+    index = {0, 0, 0};
 
     // Find intersection
     cgal::Point3 origin = cgal::Point3(x, y, 10);
     cgal::Direction3 direction = cgal::Direction3(0, 0, 1);
     cgal::Point3 point = CGAL::ORIGIN;
-    isFound = GridTools::FindIntersectionGrid(
-      grid, origin, direction, index, point);
+    isFound = GridTools::FindIntersectionGrid(grid, origin, direction, index, point);
     EXPECT_EQ(isFound, true);
     EXPECT_EQ(point, cgal::Point3(x, y, 0));
 
@@ -456,7 +451,7 @@ TEST(Grid, FindIntersectionGrid)
 }
 
 //////////////////////////////////////////////////
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

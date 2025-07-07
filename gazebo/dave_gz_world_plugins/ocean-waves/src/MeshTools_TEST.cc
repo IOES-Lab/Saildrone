@@ -21,18 +21,18 @@
 #include <vector>
 
 #include <gz/common/Console.hh>
-#include <gz/common/Util.hh>
-#include <gz/common/MeshManager.hh>
 #include <gz/common/Mesh.hh>
+#include <gz/common/MeshManager.hh>
 #include <gz/common/SubMesh.hh>
+#include <gz/common/Util.hh>
 
-#include "gz/waves/MeshTools.hh"
+#include "gz/waves/CGALTypes.hh"
 #include "gz/waves/Convert.hh"
 #include "gz/waves/Geometry.hh"
 #include "gz/waves/Grid.hh"
-#include "gz/waves/Wavefield.hh"
+#include "gz/waves/MeshTools.hh"
 #include "gz/waves/WaveParameters.hh"
-#include "gz/waves/CGALTypes.hh"
+#include "gz/waves/Wavefield.hh"
 
 typedef CGAL::Timer Timer;
 
@@ -56,16 +56,13 @@ void TestFillArraysUnitBox()
   // Mesh: 1 x 1 x 1 box
   std::string meshName("box_1x1x1");
   gz::common::MeshManager::Instance()->CreateBox(
-    meshName,
-    gz::math::Vector3d(1, 1, 1),
-    gz::math::Vector2d(1, 1));
+    meshName, gz::math::Vector3d(1, 1, 1), gz::math::Vector2d(1, 1));
 
   cgal::Mesh mesh;
   std::vector<float> vertices;
   std::vector<int> indices;
   MeshTools::FillArrays(
-    *gz::common::MeshManager::Instance()->MeshByName(meshName),
-    vertices, indices);
+    *gz::common::MeshManager::Instance()->MeshByName(meshName), vertices, indices);
 
   // std::cout << "Vertices..." << std::endl;
   // for (auto&& v : vertices)
@@ -77,11 +74,11 @@ void TestFillArraysUnitBox()
 
   // Vertices: 6 sides, 4 points per side, 3 coordinates per point
   std::cout << "test: " << vertices.size() << std::endl;
-  std::cout << "chck: " << 6*4*3 << std::endl;
+  std::cout << "chck: " << 6 * 4 * 3 << std::endl;
 
   // Indices: 6 sides, 2 faces per side, 3 vertices per face
   std::cout << "test: " << indices.size() << std::endl;
-  std::cout << "chck: " << 6*2*3 << std::endl;
+  std::cout << "chck: " << 6 * 2 * 3 << std::endl;
 }
 
 void TestMakeSurfaceMeshUnitBox()
@@ -91,14 +88,10 @@ void TestMakeSurfaceMeshUnitBox()
   // Mesh: 1 x 1 x 1 box
   std::string meshName("box_1x1x1");
   gz::common::MeshManager::Instance()->CreateBox(
-    meshName,
-    gz::math::Vector3d(1, 1, 1),
-    gz::math::Vector2d(1, 1));
+    meshName, gz::math::Vector3d(1, 1, 1), gz::math::Vector2d(1, 1));
 
   cgal::Mesh mesh;
-  MeshTools::MakeSurfaceMesh(
-    *gz::common::MeshManager::Instance()->MeshByName(meshName),
-    mesh);
+  MeshTools::MakeSurfaceMesh(*gz::common::MeshManager::Instance()->MeshByName(meshName), mesh);
 
   // std::cout << "Vertices " << std::endl;
   // for(auto&& vertex : mesh.vertices())
@@ -193,7 +186,7 @@ void TestExportGridMesh()
   Grid grid({500, 500}, {100, 100});
 
   // Get Mesh
-  const auto& mesh = *grid.GetMesh();
+  const auto & mesh = *grid.GetMesh();
 
   // Create GzMesh
   Timer t;
@@ -205,9 +198,9 @@ void TestExportGridMesh()
 
   std::unique_ptr<gz::common::SubMesh> gzSubMesh(new gz::common::SubMesh());
   int64_t iv = 0;
-  for (auto&& face : mesh.faces())
+  for (auto && face : mesh.faces())
   {
-    cgal::Triangle tri  = Geometry::MakeTriangle(mesh, face);
+    cgal::Triangle tri = Geometry::MakeTriangle(mesh, face);
     cgal::Vector3 normal = Geometry::Normal(tri);
 
     gz::math::Vector3d gzP0(ToGz(tri[0]));
@@ -234,12 +227,10 @@ void TestExportGridMesh()
   t.stop();
   std::cout << "MakeGzMesh: " << t.time() << " sec" << std::endl;
 
-  auto& meshManager = *gz::common::MeshManager::Instance();
+  auto & meshManager = *gz::common::MeshManager::Instance();
 
   meshManager.Export(
-    gzMesh.get(),
-    std::string("/Users/rhys/Code/ros/asv_ws/tmp/").append(name),
-    "dae");
+    gzMesh.get(), std::string("/Users/rhys/Code/ros/asv_ws/tmp/").append(name), "dae");
 }
 
 //////////////////////////////////////////////////

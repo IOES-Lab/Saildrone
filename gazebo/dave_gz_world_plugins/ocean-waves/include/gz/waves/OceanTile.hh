@@ -36,11 +36,10 @@ class OceanTilePrivate;
 template <typename Vector3>
 class OceanTileT
 {
- public:
+public:
   virtual ~OceanTileT();
 
-  explicit OceanTileT(Index nx, Index ny, double lx, double ly,
-      bool has_visuals = true);
+  explicit OceanTileT(Index nx, Index ny, double lx, double ly, bool has_visuals = true);
 
   explicit OceanTileT(WaveParametersPtr params, bool has_visuals = true);
 
@@ -58,11 +57,11 @@ class OceanTileT
   void Create();
 
   // Returns a new gz::common::Mesh. The caller must take ownership.
-  gz::common::Mesh* CreateMesh();
+  gz::common::Mesh * CreateMesh();
 
   void Update(double time);
 
-  void UpdateMesh(double time, gz::common::Mesh* mesh);
+  void UpdateMesh(double time, gz::common::Mesh * mesh);
 
   // Access to vertices, texture coordinates and faces
   Index VertexCount() const;
@@ -75,9 +74,9 @@ class OceanTileT
 
   gz::math::Vector3i Face(Index index) const;
 
-  const std::vector<Vector3>& Vertices() const;
+  const std::vector<Vector3> & Vertices() const;
 
- private:
+private:
   std::unique_ptr<OceanTilePrivate<Vector3>> impl_;
 };
 
@@ -89,7 +88,7 @@ typedef std::shared_ptr<OceanTile> OceanTilePtr;
 
 namespace physics
 {
-typedef OceanTileT<cgal::Point3>   OceanTile;
+typedef OceanTileT<cgal::Point3> OceanTile;
 typedef std::shared_ptr<OceanTile> OceanTilePtr;
 }  // namespace physics
 

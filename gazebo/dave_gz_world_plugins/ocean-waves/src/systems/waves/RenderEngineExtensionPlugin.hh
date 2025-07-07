@@ -38,15 +38,16 @@
 #include <memory>
 #include <string>
 
-#include <gz/utils/SuppressWarning.hh>
-#include <gz/rendering/config.hh>
 #include <gz/rendering/Export.hh>
+#include <gz/rendering/config.hh>
+#include <gz/utils/SuppressWarning.hh>
 
 namespace gz
 {
 namespace rendering
 {
-inline namespace GZ_RENDERING_VERSION_NAMESPACE {
+inline namespace GZ_RENDERING_VERSION_NAMESPACE
+{
 
 // Forward declarations
 class RenderEngineExtension;
@@ -56,26 +57,31 @@ class RenderEngineExtensionPluginPrivate;
 class GZ_RENDERING_VISIBLE RenderEngineExtensionPlugin
 {
   /// \brief Constructor
-  public: RenderEngineExtensionPlugin();
+public:
+  RenderEngineExtensionPlugin();
 
   /// \brief Destructor
-  public: virtual ~RenderEngineExtensionPlugin();
+public:
+  virtual ~RenderEngineExtensionPlugin();
 
   /// \brief Get the name of extension
   /// \return Name of render engine extension
-  public: virtual std::string Name() const = 0;
+public:
+  virtual std::string Name() const = 0;
 
   /// \brief Get a pointer to the extension
   /// \return Render engine extension instance
-  public: virtual RenderEngineExtension *Extension() const = 0;
+public:
+  virtual RenderEngineExtension * Extension() const = 0;
 
   /// \brief Pointer to private data class
   GZ_UTILS_WARN_IGNORE__DLL_INTERFACE_MISSING
-  public: std::unique_ptr<RenderEngineExtensionPluginPrivate> dataPtr;
+public:
+  std::unique_ptr<RenderEngineExtensionPluginPrivate> dataPtr;
   GZ_UTILS_WARN_RESUME__DLL_INTERFACE_MISSING
 };
 
-}
+}  // namespace GZ_RENDERING_VERSION_NAMESPACE
 }  // namespace rendering
 }  // namespace gz
 

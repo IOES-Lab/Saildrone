@@ -152,7 +152,7 @@ void main()
 
   vec3 B = cross(N, T);
   B = normalize(B);
-  
+
   gl_Position = worldviewproj_matrix * P.xyzw;
   outVs.uv0 = uv0.xy;
 

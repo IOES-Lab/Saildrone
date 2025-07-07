@@ -42,13 +42,10 @@ namespace waves
 ///   the size of _indices will be Mesh::GetIndexCount()
 ///
 void MeshTools::FillArrays(
-  const gz::common::Mesh& _source,
-  std::vector<float>& _vertices,
-  std::vector<int>& _indices
-)
+  const gz::common::Mesh & _source, std::vector<float> & _vertices, std::vector<int> & _indices)
 {
-  double *vertices = nullptr;
-  int   *indices  = nullptr;
+  double * vertices = nullptr;
+  int * indices = nullptr;
 
   // No leaks...
   try
@@ -65,32 +62,35 @@ void MeshTools::FillArrays(
     _vertices.insert(_vertices.end(), vertices, vertices + 3 * nv);
     _indices.insert(_indices.end(), indices, indices + ni);
   }
-  catch(...)
+  catch (...)
   {
     gzerr << "Unknown Error in Mesh::FillArrays" << std::endl;
   }
   // Clean up
   if (vertices)
+  {
     delete[] vertices;
+  }
   if (indices)
+  {
     delete[] indices;
+  }
 }
 
 //////////////////////////////////////////////////
-void MeshTools::MakeSurfaceMesh(const gz::common::Mesh& _source,
-    cgal::Mesh& _target)
+void MeshTools::MakeSurfaceMesh(const gz::common::Mesh & _source, cgal::Mesh & _target)
 {
   std::vector<float> vertices;
-  std::vector<int>   indices;
+  std::vector<int> indices;
 
   FillArrays(_source, vertices, indices);
 
   // Vertices
-  for (size_t i=0; i < vertices.size(); )
+  for (size_t i = 0; i < vertices.size();)
   {
-    auto&& v0 = vertices[i++];
-    auto&& v1 = vertices[i++];
-    auto&& v2 = vertices[i++];
+    auto && v0 = vertices[i++];
+    auto && v1 = vertices[i++];
+    auto && v2 = vertices[i++];
     cgal::Point3 p(v0, v1, v2);
 
     // @DEBUG_INFO
@@ -100,7 +100,7 @@ void MeshTools::MakeSurfaceMesh(const gz::common::Mesh& _source,
   }
 
   // Faces
-  for (size_t i=0; i < indices.size(); )
+  for (size_t i = 0; i < indices.size();)
   {
     // @DEBUG_INFO
     // gzmsg << "face" << i/3 << std::endl;

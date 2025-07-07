@@ -18,9 +18,9 @@
 
 #include <string>
 
+#include <gz/rendering/Scene.hh>
 #include <gz/rendering/base/BaseObject.hh>
 #include <gz/rendering/base/BaseRenderTypes.hh>
-#include <gz/rendering/Scene.hh>
 
 #include "OceanVisual.hh"
 
@@ -28,57 +28,64 @@ namespace gz
 {
 namespace rendering
 {
-inline namespace GZ_RENDERING_VERSION_NAMESPACE {
+inline namespace GZ_RENDERING_VERSION_NAMESPACE
+{
 
 /// \brief Base implementation of an Ocean visual
 template <class T>
-class BaseOceanVisual :
-  public virtual OceanVisual,
-  public virtual T
+class BaseOceanVisual : public virtual OceanVisual, public virtual T
 {
   /// \brief Constructor
-  public: BaseOceanVisual();
+public:
+  BaseOceanVisual();
 
   /// \brief Destructor
-  public: virtual ~BaseOceanVisual();
+public:
+  virtual ~BaseOceanVisual();
 
   // Documentation inherited.
-  public: virtual void Init() override;
+public:
+  virtual void Init() override;
 
   // Documentation inherited.
-  public: virtual void PreRender() override;
+public:
+  virtual void PreRender() override;
 
   // Documentation inherited.
-  protected: virtual void Destroy() override;
+protected:
+  virtual void Destroy() override;
 
   // Documentation inherited.
-  public: virtual MaterialPtr Material() const override;
+public:
+  virtual MaterialPtr Material() const override;
 
   // Documentation inherited.
-  public: virtual void SetMaterial(
-    MaterialPtr _material, bool _unique) override;
+public:
+  virtual void SetMaterial(MaterialPtr _material, bool _unique) override;
 
   /// \brief Load a dynamic cube (example)
-  public: virtual void LoadCube() override;
+public:
+  virtual void LoadCube() override;
 
   /// \brief Load from an ocean tile
-  public: virtual void LoadOceanTile(
-      waves::visual::OceanTilePtr _oceanTile) override;
+public:
+  virtual void LoadOceanTile(waves::visual::OceanTilePtr _oceanTile) override;
 
   /// \brief Update from an ocean tile
-  public: virtual void UpdateOceanTile(
-      waves::visual::OceanTilePtr _oceanTile) override;
+public:
+  virtual void UpdateOceanTile(waves::visual::OceanTilePtr _oceanTile) override;
 
   /// \brief Load from a mesh
-  public: virtual void LoadMesh(gz::common::MeshPtr _mesh) override;
+public:
+  virtual void LoadMesh(gz::common::MeshPtr _mesh) override;
 
   /// \brief Update from a mesh
-  public: virtual void UpdateMesh(gz::common::MeshPtr _mesh) override;
+public:
+  virtual void UpdateMesh(gz::common::MeshPtr _mesh) override;
 
   /// \brief Work-around the protected accessors and protected methods in Scene
-  public: virtual void InitObject(ScenePtr _scene,
-      unsigned int _id, const std::string &_name) override;
-
+public:
+  virtual void InitObject(ScenePtr _scene, unsigned int _id, const std::string & _name) override;
 };
 
 //////////////////////////////////////////////////
@@ -123,8 +130,7 @@ MaterialPtr BaseOceanVisual<T>::Material() const
 
 //////////////////////////////////////////////////
 template <class T>
-void BaseOceanVisual<T>::SetMaterial(
-  MaterialPtr _material, bool _unique)
+void BaseOceanVisual<T>::SetMaterial(MaterialPtr _material, bool _unique)
 {
   T::SetMaterial(_material, _unique);
 }
@@ -138,16 +144,14 @@ void BaseOceanVisual<T>::LoadCube()
 
 //////////////////////////////////////////////////
 template <class T>
-void BaseOceanVisual<T>::LoadOceanTile(
-  waves::visual::OceanTilePtr /*_oceanTile*/)
+void BaseOceanVisual<T>::LoadOceanTile(waves::visual::OceanTilePtr /*_oceanTile*/)
 {
   // no default implementation
 }
 
 //////////////////////////////////////////////////
 template <class T>
-void BaseOceanVisual<T>::UpdateOceanTile(
-  waves::visual::OceanTilePtr /*_oceanTile*/)
+void BaseOceanVisual<T>::UpdateOceanTile(waves::visual::OceanTilePtr /*_oceanTile*/)
 {
   // no default implementation
 }
@@ -168,13 +172,13 @@ void BaseOceanVisual<T>::UpdateMesh(gz::common::MeshPtr /*_mesh*/)
 
 //////////////////////////////////////////////////
 template <class T>
-void BaseOceanVisual<T>::InitObject(ScenePtr /*_scene*/,
-    unsigned int /*_id*/, const std::string &/*_name*/)
+void BaseOceanVisual<T>::InitObject(
+  ScenePtr /*_scene*/, unsigned int /*_id*/, const std::string & /*_name*/)
 {
   // no default implementation
 }
 
-}
+}  // namespace GZ_RENDERING_VERSION_NAMESPACE
 }  // namespace rendering
 }  // namespace gz
 

@@ -30,7 +30,7 @@ target_link_libraries(${rendering_target}
     gz-common${GZ_COMMON_VER}::gz-common${GZ_COMMON_VER}
     gz-rendering${GZ_RENDERING_VER}::gz-rendering${GZ_RENDERING_VER}
   PRIVATE
-    gz-plugin${GZ_PLUGIN_VER}::loader  
+    gz-plugin${GZ_PLUGIN_VER}::loader
 )
 
 #################################################
@@ -66,7 +66,7 @@ target_link_libraries(${rendering_ogre2_target}
 )
 
 # Suppress an Ogre warning about adding _DEBUG to precompiler definitions.
-# TODO: set conditional on the cmake build type. 
+# TODO: set conditional on the cmake build type.
 target_compile_definitions(${rendering_ogre2_target}
   PUBLIC
     OGRE_IGNORE_UNKNOWN_DEBUG

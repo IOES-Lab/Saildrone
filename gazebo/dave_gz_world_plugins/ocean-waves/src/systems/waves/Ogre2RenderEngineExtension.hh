@@ -22,68 +22,83 @@
 
 #include <gz/common/SingletonT.hh>
 
-#include <gz/rendering/config.hh>
 #include <gz/rendering/Export.hh>
+#include <gz/rendering/config.hh>
 
-#include "gz/rendering/ogre2/Ogre2RenderTypes.hh"
 #include <gz/rendering/ogre2/Export.hh>
+#include "gz/rendering/ogre2/Ogre2RenderTypes.hh"
 
 #include "BaseRenderEngineExtension.hh"
-#include "RenderEngineExtensionPlugin.hh"
 #include "RenderEngineExtension.hh"
+#include "RenderEngineExtensionPlugin.hh"
 
 namespace gz
 {
 namespace rendering
 {
-inline namespace GZ_RENDERING_VERSION_NAMESPACE {
+inline namespace GZ_RENDERING_VERSION_NAMESPACE
+{
 
 // Forward declaration
-class  Ogre2RenderEngineExtensionPrivate;
+class Ogre2RenderEngineExtensionPrivate;
 
-class GZ_RENDERING_OGRE2_VISIBLE Ogre2RenderEngineExtensionPlugin :
-  public RenderEngineExtensionPlugin
+class GZ_RENDERING_OGRE2_VISIBLE Ogre2RenderEngineExtensionPlugin
+: public RenderEngineExtensionPlugin
 {
-  public: Ogre2RenderEngineExtensionPlugin();
+public:
+  Ogre2RenderEngineExtensionPlugin();
 
-  public: ~Ogre2RenderEngineExtensionPlugin();
+public:
+  ~Ogre2RenderEngineExtensionPlugin();
 
-  public: std::string Name() const;
+public:
+  std::string Name() const;
 
-  public: RenderEngineExtension *Extension() const;
+public:
+  RenderEngineExtension * Extension() const;
 };
 
-class GZ_RENDERING_OGRE2_VISIBLE Ogre2RenderEngineExtension :
-    public virtual BaseRenderEngineExtension,
-    public common::SingletonT<Ogre2RenderEngineExtension>
+class GZ_RENDERING_OGRE2_VISIBLE Ogre2RenderEngineExtension
+: public virtual BaseRenderEngineExtension,
+  public common::SingletonT<Ogre2RenderEngineExtension>
 {
-  private: Ogre2RenderEngineExtension();
+private:
+  Ogre2RenderEngineExtension();
 
-  public: virtual ~Ogre2RenderEngineExtension();
+public:
+  virtual ~Ogre2RenderEngineExtension();
 
-  public: virtual void Destroy() override;
+public:
+  virtual void Destroy() override;
 
-  public: virtual std::string Name() const override;
+public:
+  virtual std::string Name() const override;
 
-  public: virtual SceneNodeFactoryPtr SceneNodeFactory() const override;
+public:
+  virtual SceneNodeFactoryPtr SceneNodeFactory() const override;
 
-  protected: virtual bool LoadImpl(
-      const std::map<std::string, std::string> &_params) override;
+protected:
+  virtual bool LoadImpl(const std::map<std::string, std::string> & _params) override;
 
-  protected: virtual bool InitImpl() override;
+protected:
+  virtual bool InitImpl() override;
 
-  private: void LoadAttempt();
+private:
+  void LoadAttempt();
 
-  private: void InitAttempt();
+private:
+  void InitAttempt();
 
   /// \brief Pointer to private data
-  private: std::unique_ptr<Ogre2RenderEngineExtensionPrivate> dataPtr;
+private:
+  std::unique_ptr<Ogre2RenderEngineExtensionPrivate> dataPtr;
 
   /// \brief Singleton setup
-  private: friend class common::SingletonT<Ogre2RenderEngineExtension>;
+private:
+  friend class common::SingletonT<Ogre2RenderEngineExtension>;
 };
 
-}
+}  // namespace GZ_RENDERING_VERSION_NAMESPACE
 }  // namespace rendering
 }  // namespace gz
 

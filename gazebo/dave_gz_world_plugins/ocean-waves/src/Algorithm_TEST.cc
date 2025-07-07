@@ -29,15 +29,15 @@ using gz::waves::algorithm::sort_indexes;
 //////////////////////////////////////////////////
 TEST(Algorithm, SortIndexArray2)
 {
-  { // Case 1
-    std::array<double, 2> v {0, 1};
+  {  // Case 1
+    std::array<double, 2> v{0, 1};
     std::array<Index, 2> idx = sort_indexes(v);
     EXPECT_EQ(v[idx[0]], 1.0);
     EXPECT_EQ(v[idx[1]], 0.0);
   }
 
-  { // Case 2
-    std::array<double, 2> v {1, 0};
+  {  // Case 2
+    std::array<double, 2> v{1, 0};
     std::array<Index, 2> idx = sort_indexes(v);
     EXPECT_EQ(v[idx[0]], 1.0);
     EXPECT_EQ(v[idx[1]], 0.0);
@@ -47,15 +47,15 @@ TEST(Algorithm, SortIndexArray2)
 //////////////////////////////////////////////////
 TEST(Algorithm, SortIndexVector2)
 {
-  { // Case 1
-    std::vector<double> v {0, 1};
+  {  // Case 1
+    std::vector<double> v{0, 1};
     std::vector<Index> idx = sort_indexes(v);
     EXPECT_EQ(v[idx[0]], 1.0);
     EXPECT_EQ(v[idx[1]], 0.0);
   }
 
-  { // Case 2
-    std::vector<double> v {1, 0};
+  {  // Case 2
+    std::vector<double> v{1, 0};
     std::vector<Index> idx = sort_indexes(v);
     EXPECT_EQ(v[idx[0]], 1.0);
     EXPECT_EQ(v[idx[1]], 0.0);
@@ -65,48 +65,48 @@ TEST(Algorithm, SortIndexVector2)
 //////////////////////////////////////////////////
 TEST(Algorithm, SortIndex3)
 {
-  { // Case 1
-    std::vector<double> v {0, 1, 2};
+  {  // Case 1
+    std::vector<double> v{0, 1, 2};
     std::vector<Index> idx = sort_indexes(v);
     EXPECT_EQ(v[idx[0]], 2.0);
     EXPECT_EQ(v[idx[1]], 1.0);
     EXPECT_EQ(v[idx[2]], 0.0);
   }
 
-  { // Case 2
-    std::vector<double> v {0, 2, 1};
+  {  // Case 2
+    std::vector<double> v{0, 2, 1};
     std::vector<Index> idx = sort_indexes(v);
     EXPECT_EQ(v[idx[0]], 2.0);
     EXPECT_EQ(v[idx[1]], 1.0);
     EXPECT_EQ(v[idx[2]], 0.0);
   }
 
-  { // Case 3
-    std::vector<double> v {1, 0, 2};
+  {  // Case 3
+    std::vector<double> v{1, 0, 2};
     std::vector<Index> idx = sort_indexes(v);
     EXPECT_EQ(v[idx[0]], 2.0);
     EXPECT_EQ(v[idx[1]], 1.0);
     EXPECT_EQ(v[idx[2]], 0.0);
   }
 
-  { // Case 4
-    std::vector<double> v {1, 2, 0};
+  {  // Case 4
+    std::vector<double> v{1, 2, 0};
     std::vector<Index> idx = sort_indexes(v);
     EXPECT_EQ(v[idx[0]], 2.0);
     EXPECT_EQ(v[idx[1]], 1.0);
     EXPECT_EQ(v[idx[2]], 0.0);
   }
 
-  { // Case 5
-    std::vector<double> v {2, 0, 1};
+  {  // Case 5
+    std::vector<double> v{2, 0, 1};
     std::vector<Index> idx = sort_indexes(v);
     EXPECT_EQ(v[idx[0]], 2.0);
     EXPECT_EQ(v[idx[1]], 1.0);
     EXPECT_EQ(v[idx[2]], 0.0);
   }
 
-  { // Case 6
-    std::vector<double> v {2, 1, 0};
+  {  // Case 6
+    std::vector<double> v{2, 1, 0};
     std::vector<Index> idx = sort_indexes(v);
     EXPECT_EQ(v[idx[0]], 2.0);
     EXPECT_EQ(v[idx[1]], 1.0);
@@ -115,9 +115,8 @@ TEST(Algorithm, SortIndex3)
 }
 
 //////////////////////////////////////////////////
-int main(int argc, char **argv)
+int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
-

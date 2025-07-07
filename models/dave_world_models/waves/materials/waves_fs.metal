@@ -34,24 +34,16 @@ struct Params
   float hdrMultiplier;
 };
 
-fragment float4 main_metal
-(
-  PS_INPUT inPs [[stage_in]]
-  , texture2d<float>    heightMap         [[texture(0)]]
-  , texture2d<float>    normalMap         [[texture(1)]]
-  , texture2d<float>    tangentMap        [[texture(2)]]
-  , texturecube<float>  cubeMap           [[texture(3)]]
-  , texture2d<float>    bumpMap           [[texture(4)]]
-  , sampler             heightMapSampler  [[sampler(0)]]
-  , sampler             normalMapSampler  [[sampler(1)]]
-  , sampler             tangentMapSampler [[sampler(2)]]
-  , sampler             cubeMapSampler    [[sampler(3)]]
-  , sampler             bumpMapSampler    [[sampler(4)]]
-  , constant Params &p [[buffer(PARAMETER_SLOT)]]
-)
+fragment float4 main_metal(
+  PS_INPUT inPs [[stage_in]], texture2d<float> heightMap [[texture(0)]],
+  texture2d<float> normalMap [[texture(1)]], texture2d<float> tangentMap [[texture(2)]],
+  texturecube<float> cubeMap [[texture(3)]], texture2d<float> bumpMap [[texture(4)]],
+  sampler heightMapSampler [[sampler(0)]], sampler normalMapSampler [[sampler(1)]],
+  sampler tangentMapSampler [[sampler(2)]], sampler cubeMapSampler [[sampler(3)]],
+  sampler bumpMapSampler [[sampler(4)]], constant Params & p [[buffer(PARAMETER_SLOT)]])
 {
   // Apply bump mapping to normal vector to make waves look more detailed:
-  float4 bump = bumpMap.sample(bumpMapSampler, inPs.bumpCoord)*2.0 - 1.0;
+  float4 bump = bumpMap.sample(bumpMapSampler, inPs.bumpCoord) * 2.0 - 1.0;
   float3x3 rotMatrix(inPs.T, inPs.B, inPs.N);
   float3 N = normalize(rotMatrix * bump.xyz);
   // float3 N = normalize(rotMatrix * float3(0, 0, 1));
@@ -72,7 +64,7 @@ fragment float4 main_metal
   // float4 envColor(0.5, 0.5, 0.5, 1.0);
 
   // Cheap hdr effect:
-  envColor.rgb *= (envColor.r+envColor.g+envColor.b)*p.hdrMultiplier;
+  envColor.rgb *= (envColor.r + envColor.g + envColor.b) * p.hdrMultiplier;
 
   // Compute refraction ratio (Fresnel):
   float facing = 1.0 - dot(-E, N);

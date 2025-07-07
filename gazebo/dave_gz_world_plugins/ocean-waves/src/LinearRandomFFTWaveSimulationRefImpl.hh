@@ -22,17 +22,13 @@
 
 #include <complex>
 
-#include "gz/waves/WaveSimulation.hh"
 #include "LinearRandomFFTWaveSimulationRef.hh"
+#include "gz/waves/WaveSimulation.hh"
 
 namespace Eigen
 {
-  typedef Eigen::Array<
-    std::complex<double>,
-    Eigen::Dynamic,
-    Eigen::Dynamic,
-    Eigen::RowMajor
-  > ArrayXXcdRowMajor;
+typedef Eigen::Array<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  ArrayXXcdRowMajor;
 }  // namespace Eigen
 
 namespace gz
@@ -53,7 +49,7 @@ typedef std::complex<fftw_data_type> complex;
 ///
 class LinearRandomFFTWaveSimulationRef::Impl
 {
- public:
+public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   /// \brief Destructor
@@ -74,24 +70,18 @@ class LinearRandomFFTWaveSimulationRef::Impl
   void SetLambda(double value);
 
   /// \brief Calculate the sea surface elevation
-  void ElevationAt(
-    Eigen::Ref<Eigen::ArrayXXd> h);
+  void ElevationAt(Eigen::Ref<Eigen::ArrayXXd> h);
 
   /// \brief Calculate the derivative of the elevation wrt x and y
-  void ElevationDerivAt(
-    Eigen::Ref<Eigen::ArrayXXd> dhdx,
-    Eigen::Ref<Eigen::ArrayXXd> dhdy);
+  void ElevationDerivAt(Eigen::Ref<Eigen::ArrayXXd> dhdx, Eigen::Ref<Eigen::ArrayXXd> dhdy);
 
   /// \brief Calculate the sea surface horizontal displacements
-  void DisplacementAt(
-    Eigen::Ref<Eigen::ArrayXXd> sx,
-    Eigen::Ref<Eigen::ArrayXXd> sy);
+  void DisplacementAt(Eigen::Ref<Eigen::ArrayXXd> sx, Eigen::Ref<Eigen::ArrayXXd> sy);
 
   /// \brief Calculate the derivative of the horizontal displacements
   ///        wrt x and y
   void DisplacementDerivAt(
-    Eigen::Ref<Eigen::ArrayXXd> dsxdx,
-    Eigen::Ref<Eigen::ArrayXXd> dsydy,
+    Eigen::Ref<Eigen::ArrayXXd> dsxdx, Eigen::Ref<Eigen::ArrayXXd> dsydy,
     Eigen::Ref<Eigen::ArrayXXd> dsxdy);
 
   /// \brief Base amplitude calculation
@@ -140,26 +130,26 @@ class LinearRandomFFTWaveSimulationRef::Impl
   double lambda_{0.0};
 
   // grid parameters
-  double  lx_{1.0};
-  double  ly_{1.0};
-  Index   nx_{2};
-  Index   ny_{2};
+  double lx_{1.0};
+  double ly_{1.0};
+  Index nx_{2};
+  Index ny_{2};
 
   /// \brief Wind speed at 10m above mean sea level [m]
-  double  u10_{5.0};
+  double u10_{5.0};
 
   /// \brief Direction of u10. Counter clockwise angle from x-axis [rad]
-  double  phi10_{0.0};
+  double phi10_{0.0};
 
   /// \brief Spreading parameter for the cosine-2S model
-  double  s_param_{5.0};
+  double s_param_{5.0};
 
   /// \brief Parameter controlling the maturity of the sea state.
-  double  cap_omega_c_{0.84};
+  double cap_omega_c_{0.84};
 
   // fundamental angular spatial frequency [rad/m]
-  double  kx_f_{2.0 * M_PI / lx_};
-  double  ky_f_{2.0 * M_PI / ly_};
+  double kx_f_{2.0 * M_PI / lx_};
+  double ky_f_{2.0 * M_PI / ly_};
 
   // angular spatial frequencies in fft and math order
   Eigen::ArrayXd kx_fft_;
@@ -184,14 +174,11 @@ class LinearRandomFFTWaveSimulationRef::Impl
   Eigen::ArrayXXd omega_k_;
 
   static double ECKVOmniDirectionalSpectrum(
-      double k, double u10, double cap_omega_c = 0.84,
-      double gravity = 9.81);
+    double k, double u10, double cap_omega_c = 0.84, double gravity = 9.81);
   static double ECKVSpreadingFunction(
-      double k, double phi, double u10, double cap_omega_c = 0.84,
-      double gravity = 9.81);
+    double k, double phi, double u10, double cap_omega_c = 0.84, double gravity = 9.81);
   static double Cos2sSpreadingFunction(
-      double s_param, double phi, double u10, double cap_omega_c = 0.84,
-      double gravity = 9.81);
+    double s_param, double phi, double u10, double cap_omega_c = 0.84, double gravity = 9.81);
 
   /// \brief For testing
   friend class LinearRandomFFTWaveSimFixture;
