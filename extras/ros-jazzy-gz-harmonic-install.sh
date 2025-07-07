@@ -69,6 +69,8 @@ echo -e "\033[34mInstalling ROS Gazebo framework...\033[0m"
 sudo apt update && apt install -y \
     python3-rosdep \
     python3-rosinstall-generator \
+    python3-colcon-core \
+    python3-colcon-common-extensions \
     python3-vcstool \
     $GAZEBO \
     ros-$DIST-desktop-full \
