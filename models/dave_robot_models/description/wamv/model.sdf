@@ -7,14 +7,14 @@
       <visual name="visual">
         <geometry>
           <mesh>
-            <uri>model://wamv/meshes/WAM-V-Base.dae</uri>
+            <uri>model://meshes/wamv/WAM-V-Base.dae</uri>
           </mesh>
         </geometry>
       </visual>
       <collision name="collision">
         <geometry>
           <mesh>
-            <uri>model://wamv/meshes/wamv-base_collision_406.stl</uri>
+            <uri>model://meshes/wamv/wamv-base_collision_406.stl</uri>
           </mesh>
         </geometry>
       </collision>
@@ -48,7 +48,7 @@
       <visual name="visual">
         <geometry>
           <mesh>
-            <uri>model://wamv/meshes/engine.dae</uri>
+            <uri>model://meshes/wamv/engine.dae</uri>
           </mesh>
         </geometry>
       </visual>
@@ -100,7 +100,7 @@
       <visual name="visual">
         <geometry>
           <mesh>
-            <uri>model://wamv/meshes/engine.dae</uri>
+            <uri>model://meshes/wamv/engine.dae</uri>
           </mesh>
         </geometry>
       </visual>
@@ -152,7 +152,7 @@
       <visual name="visual">
         <geometry>
           <mesh>
-            <uri>model://wamv/meshes/propeller.dae</uri>
+            <uri>model://meshes/wamv/propeller.dae</uri>
           </mesh>
         </geometry>
       </visual>
@@ -197,7 +197,7 @@
       <visual name="visual">
         <geometry>
           <mesh>
-            <uri>model://wamv/meshes/propeller.dae</uri>
+            <uri>model://meshes/wamv/propeller.dae</uri>
           </mesh>
         </geometry>
       </visual>
@@ -321,7 +321,7 @@
       <min_thrust_cmd>-2000.0</min_thrust_cmd>
     </plugin>
 
-    <!-- Hydrodynamics plugin -->
+    <!-- Hydrodynamics plugin for surface vehicles -->
     <plugin
         filename="wave-hydrodynamics-system"
         name="gz::sim::systems::Hydrodynamics">
