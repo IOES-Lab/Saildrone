@@ -7,4 +7,4 @@ The DAVE multibeam sonar plugin, adapted for ROS 2 Jazzy and Gazebo Harmonic, us
 
 **Documentation**
 
-The documentation for the plugin and tutorial can be found here: [Wiki](https://www.notion.so/yeongdocat/Multibeam-Sonar-Plugin-223661362ab2803b873bda4878fc55a8?source=copy_link)
+The documentation for the plugin and tutorial can be found here: [Wiki](https://dave-ros2.notion.site/Multibeam-Sonar-Plugin-223661362ab2803b873bda4878fc55a8)
