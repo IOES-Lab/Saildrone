@@ -3,6 +3,7 @@ from launch.actions import (
     DeclareLaunchArgument,
     RegisterEventHandler,
     LogInfo,
+    OpaqueFunction,
     IncludeLaunchDescription,
 )
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
@@ -11,6 +12,30 @@ from launch_ros.substitutions import FindPackageShare
 from launch.event_handlers import OnProcessExit
 from launch_ros.actions import Node
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+import os
+
+
+def launch_setup(context, *args, **kwargs):
+    namespace = LaunchConfiguration("namespace").perform(context)
+
+    config_path = os.path.join(
+        FindPackageShare("dave_sensor_models").perform(context),
+        "config",
+        namespace,
+        "sensor_config.py",
+    )
+
+    actions = []
+
+    if os.path.exists(config_path):
+        actions.append(
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(config_path),
+                launch_arguments={"namespace": namespace}.items(),
+            )
+        )
+
+    return actions
 
 
 def generate_launch_description():
@@ -132,22 +157,6 @@ def generate_launch_description():
         parameters=[{"use_sim_time": use_sim_time}],
     )
 
-    sensor_config = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            PathJoinSubstitution(
-                [
-                    FindPackageShare("dave_sensor_models"),
-                    "config",
-                    LaunchConfiguration("namespace"),
-                    "sensor_config.py",
-                ]
-            )
-        ),
-        launch_arguments={
-            "namespace": namespace,
-        }.items(),
-    )
-
     nodes = [tf2_spawner, gz_spawner]
 
     event_handlers = [
@@ -156,4 +165,6 @@ def generate_launch_description():
         )
     ]
 
-    return LaunchDescription(args + nodes + event_handlers + [sensor_config])
+    return LaunchDescription(
+        args + nodes + event_handlers + [OpaqueFunction(function=launch_setup)]
+    )
