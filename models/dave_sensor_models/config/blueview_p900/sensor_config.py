@@ -26,7 +26,7 @@ def generate_launch_description():
             "/sensor/camera@sensor_msgs/msg/Image@gz.msgs.Image",  # for the multibeam world
             "/sensor/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo",  # for the multibeam world
             "/sensor/depth_camera@sensor_msgs/msg/Image@gz.msgs.Image",  # for the multibeam world
-            "/sensor/multibeam_sonar/point_cloud2@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked",  # the point cloud bridge, must match the model.sdf
+            "/sensor/multibeam_sonar/point_cloud@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked",  # the point cloud bridge, must match the model.sdf
         ],
         output="screen",
     )

@@ -12,30 +12,30 @@ from launch_ros.substitutions import FindPackageShare
 from launch.event_handlers import OnProcessExit
 from launch_ros.actions import Node
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-import os
 
 
 def launch_setup(context, *args, **kwargs):
-    namespace = LaunchConfiguration("namespace").perform(context)
+    namespace_value = LaunchConfiguration("namespace").perform(context)
+    config_path = PathJoinSubstitution(
+        [
+            FindPackageShare("dave_sensor_models"),
+            "config",
+            namespace_value,
+            "sensor_config.py",
+        ]
+    ).perform(context)
 
-    config_path = os.path.join(
-        FindPackageShare("dave_sensor_models").perform(context),
-        "config",
-        namespace,
-        "sensor_config.py",
-    )
-
-    actions = []
-
-    if os.path.exists(config_path):
-        actions.append(
+    try:
+        return [
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(config_path),
-                launch_arguments={"namespace": namespace}.items(),
+                launch_arguments={"namespace": namespace_value}.items(),
             )
-        )
-
-    return actions
+        ]
+    except Exception:
+        return [
+            LogInfo(msg=f"No sensor_config.py found for namespace '{namespace_value}', skipping.")
+        ]
 
 
 def generate_launch_description():
