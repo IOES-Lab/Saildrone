@@ -7,7 +7,9 @@ cmake_policy(SET CMP0144 NEW)
 
 project(multibeam_sonar)
 
+find_package(ament_cmake REQUIRED)
 find_package(CUDAToolkit QUIET)
+
 if(CUDAToolkit_FOUND)
   enable_language(CUDA)
   find_package(CUDA REQUIRED)
@@ -15,7 +17,6 @@ if(CUDAToolkit_FOUND)
   include_directories(${CUDA_INCLUDE_DIRS})
   set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -arch=sm_60")
 
-  find_package(ament_cmake REQUIRED)
   find_package(gz-cmake3 REQUIRED)
   find_package(gz-sim8 REQUIRED)
   find_package(gz-sensors8 REQUIRED)
@@ -101,9 +102,8 @@ if(CUDAToolkit_FOUND)
     "${CMAKE_CURRENT_SOURCE_DIR}/hooks/${PROJECT_NAME}.dsv.in"
   )
 
-  ament_package()
-
-
 else()
   message(STATUS "CUDA Toolkit not found: Skipping CUDA-specific targets")
 endif()
+
+ament_package()
