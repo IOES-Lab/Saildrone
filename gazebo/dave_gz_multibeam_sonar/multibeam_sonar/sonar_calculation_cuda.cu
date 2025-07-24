@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,9 +35,34 @@
 #include <thrust/device_vector.h>
 #include <list>
 
+#include <cublas_v2.h>
 #include <chrono>
 
 #define BLOCK_SIZE 32
+
+// Existing SAFE_CALL (for cudaError_t)
+#define SAFE_CALL(call, msg) _safe_cuda_call((call), msg, __FILE__, __LINE__)
+
+// New SAFE_CUBLAS_CALL (for cublasStatus_t)
+#define SAFE_CUBLAS_CALL(call, msg)                                                             \
+  {                                                                                             \
+    cublasStatus_t err = (call);                                                                \
+    if (err != CUBLAS_STATUS_SUCCESS)                                                           \
+    {                                                                                           \
+      fprintf(stderr, "CUBLAS Error: %s in %s at line %d: %d\n", msg, __FILE__, __LINE__, err); \
+      exit(EXIT_FAILURE);                                                                       \
+    }                                                                                           \
+  }
+
+#define SAFE_CUFFT_CALL(call, msg)                                                             \
+  {                                                                                            \
+    cufftResult err = (call);                                                                  \
+    if (err != CUFFT_SUCCESS)                                                                  \
+    {                                                                                          \
+      fprintf(stderr, "CUFFT Error: %s in %s at line %d: %d\n", msg, __FILE__, __LINE__, err); \
+      exit(EXIT_FAILURE);                                                                      \
+    }                                                                                          \
+  }
 
 static inline void _safe_cuda_call(
   cudaError err, const char * msg, const char * file_name, const int line_number)
@@ -52,7 +77,8 @@ static inline void _safe_cuda_call(
   }
 }
 
-#define SAFE_CALL(call, msg) _safe_cuda_call((call), (msg), __FILE__, __LINE__)
+// REMOVED: Duplicate SAFE_CALL definition here. Keep only one.
+// #define SAFE_CALL(call, msg) _safe_cuda_call((call), (msg), __FILE__, __LINE__)
 
 ///////////////////////////////////////////////////////////////////////////
 // Incident Angle Calculation Function
@@ -127,7 +153,25 @@ __global__ void column_sums_reduce(
   }
 }
 
-__global__ void gpu_matrix_mult(float * a, float * b, float * c, int m, int n, int k)
+__global__ void gpu_matrix_mult(const __half * a, const __half * b, __half * c, int m, int n, int k)
+{
+  int row = blockIdx.y * blockDim.y + threadIdx.y;
+  int col = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if (col < k && row < m)
+  {
+    __half sum = __float2half(0.0f);
+    for (int i = 0; i < n; ++i)
+    {
+      __half valA = a[row * n + i];
+      __half valB = b[i * k + col];
+      sum = __hadd(sum, __hmul(valA, valB));
+    }
+    c[row * k + col] = sum;
+  }
+}
+
+__global__ void gpu_matrix_mult_float(float * a, float * b, float * c, int m, int n, int k)
 {
   int row = blockIdx.y * blockDim.y + threadIdx.y;
   int col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -189,7 +233,7 @@ __global__ void sonar_calculation(
     float azimuthBeamPattern = 1.0;
     float elevationBeamPattern = 1.0;
     // float elevationBeamPattern = abs(unnormalized_sinc(M_PI * 0.884
-    //    				                  / (beam_elevationAngleWidth) *
+    //                              / (beam_elevationAngleWidth) *
     //    sin(ray_elevationAngles[ray])));
 
     // printf("angles %f", ray_elevationAngles[ray]);
@@ -274,6 +318,9 @@ CArray2D sonar_calculation_wrapper(
   double _attenuation, float * window, float ** beamCorrector, float beamCorrectorSum,
   bool debugFlag)
 {
+  // Start the timer for the entire function
+  auto total_start_time = std::chrono::high_resolution_clock::now();
+
   auto start = std::chrono::high_resolution_clock::now();
   auto stop = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
@@ -330,7 +377,9 @@ CArray2D sonar_calculation_wrapper(
   SAFE_CALL(cudaMalloc((void **)&d_rand_image, rand_image_Bytes), "CUDA Malloc Failed");
   SAFE_CALL(
     cudaMalloc((void **)&d_reflectivity_image, reflectivity_image_Bytes), "CUDA Malloc Failed");
-  cudaMallocHost((void **)&ray_elevationAngles, ray_elevationAngles_Bytes);
+  SAFE_CALL(
+    cudaMallocHost((void **)&ray_elevationAngles, ray_elevationAngles_Bytes),
+    "CUDA MallocHost Failed for ray_elevationAngles");  // Added SAFE_CALL
   SAFE_CALL(
     cudaMalloc((void **)&d_ray_elevationAngles, ray_elevationAngles_Bytes), "CUDA Malloc Failed");
   for (size_t ray = 0; ray < nRays; ray++)
@@ -416,7 +465,7 @@ CArray2D sonar_calculation_wrapper(
   //  Preallocate an array for return
   CArray2D P_Beams_F(CArray(nFreq), nBeams);
   // GPU grids and rows
-  unsigned int grid_rows, grid_cols;
+  // unsigned int grid_rows, grid_cols;
   dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
 
   // GPU Ray summation using column sum
@@ -428,10 +477,16 @@ CArray2D sonar_calculation_wrapper(
   float *d_P_Ray_F_real, *d_P_Ray_F_imag;
   const int P_Ray_F_N = (nFreq) * 1;
   const int P_Ray_F_Bytes = sizeof(float) * P_Ray_F_N;
-  cudaMallocHost((void **)&P_Ray_real, P_Ray_Bytes);
-  cudaMallocHost((void **)&P_Ray_imag, P_Ray_Bytes);
-  cudaMallocHost((void **)&P_Ray_F_real, P_Ray_F_Bytes);
-  cudaMallocHost((void **)&P_Ray_F_imag, P_Ray_F_Bytes);
+  SAFE_CALL(
+    cudaMallocHost((void **)&P_Ray_real, P_Ray_Bytes), "CUDA MallocHost Failed for P_Ray_real");
+  SAFE_CALL(
+    cudaMallocHost((void **)&P_Ray_imag, P_Ray_Bytes), "CUDA MallocHost Failed for P_Ray_imag");
+  SAFE_CALL(
+    cudaMallocHost((void **)&P_Ray_F_real, P_Ray_F_Bytes),
+    "CUDA MallocHost Failed for P_Ray_F_real");
+  SAFE_CALL(
+    cudaMallocHost((void **)&P_Ray_F_imag, P_Ray_F_Bytes),
+    "CUDA MallocHost Failed for P_Ray_F_imag");
   SAFE_CALL(cudaMalloc((void **)&d_P_Ray_real, P_Ray_Bytes), "CUDA Malloc Failed");
   SAFE_CALL(cudaMalloc((void **)&d_P_Ray_imag, P_Ray_Bytes), "CUDA Malloc Failed");
   SAFE_CALL(cudaMalloc((void **)&d_P_Ray_F_real, P_Ray_F_Bytes), "CUDA Malloc Failed");
@@ -461,8 +516,10 @@ CArray2D sonar_calculation_wrapper(
 
     column_sums_reduce<<<dimGrid_Ray, dimBlock>>>(
       d_P_Ray_real, d_P_Ray_F_real, nFreq, (int)(nRays / raySkips));
+    SAFE_CALL(cudaDeviceSynchronize(), "column_sums_reduce real kernel launch failed");
     column_sums_reduce<<<dimGrid_Ray, dimBlock>>>(
       d_P_Ray_imag, d_P_Ray_F_imag, nFreq, (int)(nRays / raySkips));
+    SAFE_CALL(cudaDeviceSynchronize(), "column_sums_reduce imag kernel launch failed");
 
     SAFE_CALL(
       cudaMemcpy(P_Ray_F_real, d_P_Ray_F_real, P_Ray_F_Bytes, cudaMemcpyDeviceToHost),
@@ -470,7 +527,6 @@ CArray2D sonar_calculation_wrapper(
     SAFE_CALL(
       cudaMemcpy(P_Ray_F_imag, d_P_Ray_F_imag, P_Ray_F_Bytes, cudaMemcpyDeviceToHost),
       "CUDA Memcpy Failed");
-    SAFE_CALL(cudaDeviceSynchronize(), "Kernel Launch Failed");
 
     for (size_t f = 0; f < nFreq; f++)
     {
@@ -498,103 +554,165 @@ CArray2D sonar_calculation_wrapper(
     start = std::chrono::high_resolution_clock::now();
   }
 
-  // -------------- Beam culling correction -----------------//
+  // --- Beam culling correction ---
   // beamCorrector and beamCorrectorSum is precalculated at parent cpp
-  float *P_Beams_Cor_real, *P_Beams_Cor_imag;
-  // float *P_Beams_Cor_F_real, *P_Beams_Cor_F_imag;
-  float *P_Beams_Cor_real_tmp, *P_Beams_Cor_imag_tmp;
-  float *d_P_Beams_Cor_real, *d_P_Beams_Cor_imag;
-  float *d_P_Beams_Cor_F_real, *d_P_Beams_Cor_F_imag;
+  cudaEvent_t start_event, stop_event;
+  float elapsed_ms = 0.0f;
+  cudaEventCreate(&start_event);
+  cudaEventCreate(&stop_event);
+
+  cublasHandle_t cublas_handle;
+  // Use SAFE_CUBLAS_CALL for cublas functions
+  SAFE_CUBLAS_CALL(cublasCreate_v2(&cublas_handle), "CUBLAS_STATUS_NOT_INITIALIZED");
+
+  float *P_Beams_Cor_real_h = nullptr, *P_Beams_Cor_imag_h = nullptr;
+  float *d_P_Beams_Cor_real = nullptr, *d_P_Beams_Cor_imag = nullptr;
+  float *d_P_Beams_Cor_F_real = nullptr, *d_P_Beams_Cor_F_imag = nullptr;
+  float *beamCorrector_lin_h = nullptr, *d_beamCorrector_lin = nullptr;
+
   const int P_Beams_Cor_N = nBeams * nFreq;
   const int P_Beams_Cor_Bytes = sizeof(float) * P_Beams_Cor_N;
-  cudaMallocHost((void **)&P_Beams_Cor_real, P_Beams_Cor_Bytes);
-  cudaMallocHost((void **)&P_Beams_Cor_imag, P_Beams_Cor_Bytes);
-  cudaMallocHost((void **)&P_Beams_Cor_real_tmp, P_Beams_Cor_Bytes);
-  cudaMallocHost((void **)&P_Beams_Cor_imag_tmp, P_Beams_Cor_Bytes);
-  // cudaMallocHost((void **)&P_Beams_Cor_F_real, P_Beams_Cor_Bytes);
-  // cudaMallocHost((void **)&P_Beams_Cor_F_imag, P_Beams_Cor_Bytes);
-  SAFE_CALL(cudaMalloc((void **)&d_P_Beams_Cor_real, P_Beams_Cor_Bytes), "CUDA Malloc Failed");
-  SAFE_CALL(cudaMalloc((void **)&d_P_Beams_Cor_imag, P_Beams_Cor_Bytes), "CUDA Malloc Failed");
-  SAFE_CALL(cudaMalloc((void **)&d_P_Beams_Cor_F_real, P_Beams_Cor_Bytes), "CUDA Malloc Failed");
-  SAFE_CALL(cudaMalloc((void **)&d_P_Beams_Cor_F_imag, P_Beams_Cor_Bytes), "CUDA Malloc Failed");
-
-  float *beamCorrector_lin, *d_beamCorrector_lin;
   const int beamCorrector_lin_N = nBeams * nBeams;
   const int beamCorrector_lin_Bytes = sizeof(float) * beamCorrector_lin_N;
-  cudaMallocHost((void **)&beamCorrector_lin, beamCorrector_lin_Bytes);
-  SAFE_CALL(
-    cudaMalloc((void **)&d_beamCorrector_lin, beamCorrector_lin_Bytes), "CUDA Malloc Failed");
 
-  // (nfreq x nBeams) * (nBeams x nBeams) = (nfreq x nBeams)
+  SAFE_CALL(
+    cudaMallocHost((void **)&P_Beams_Cor_real_h, P_Beams_Cor_Bytes),
+    "CUDA MallocHost Failed for P_Beams_Cor_real_h");
+  SAFE_CALL(
+    cudaMallocHost((void **)&P_Beams_Cor_imag_h, P_Beams_Cor_Bytes),
+    "CUDA MallocHost Failed for P_Beams_Cor_imag_h");
+  SAFE_CALL(
+    cudaMallocHost((void **)&beamCorrector_lin_h, beamCorrector_lin_Bytes),
+    "CUDA MallocHost Failed for beamCorrector_lin_h");
+
+  SAFE_CALL(
+    cudaMalloc((void **)&d_P_Beams_Cor_real, P_Beams_Cor_Bytes),
+    "CUDA Malloc Failed for d_P_Beams_Cor_real");
+  SAFE_CALL(
+    cudaMalloc((void **)&d_P_Beams_Cor_imag, P_Beams_Cor_Bytes),
+    "CUDA Malloc Failed for d_P_Beams_Cor_imag");
+  SAFE_CALL(
+    cudaMalloc((void **)&d_P_Beams_Cor_F_real, P_Beams_Cor_Bytes),
+    "CUDA Malloc Failed for d_P_Beams_Cor_F_real");
+  SAFE_CALL(
+    cudaMalloc((void **)&d_P_Beams_Cor_F_imag, P_Beams_Cor_Bytes),
+    "CUDA Malloc Failed for d_P_Beams_Cor_F_imag");
+  SAFE_CALL(
+    cudaMalloc((void **)&d_beamCorrector_lin, beamCorrector_lin_Bytes),
+    "CUDA Malloc Failed for d_beamCorrector_lin");
+
   for (size_t beam = 0; beam < nBeams; beam++)
   {
     for (size_t f = 0; f < nFreq; f++)
     {
-      P_Beams_Cor_real[f * nBeams + beam] = P_Beams_F[beam][f].real() * 1.0f;
-      P_Beams_Cor_imag[f * nBeams + beam] = P_Beams_F[beam][f].imag() * 1.0f;
+      P_Beams_Cor_real_h[f * nBeams + beam] = P_Beams_F[beam][f].real();
+      P_Beams_Cor_imag_h[f * nBeams + beam] = P_Beams_F[beam][f].imag();
     }
     for (size_t beam_other = 0; beam_other < nBeams; beam_other++)
     {
-      beamCorrector_lin[beam_other * nBeams + beam] = beamCorrector[beam][beam_other];
+      beamCorrector_lin_h[beam_other * nBeams + beam] = beamCorrector[beam][beam_other];
     }
   }
 
+  // Copy data to device
   SAFE_CALL(
-    cudaMemcpy(d_P_Beams_Cor_real, P_Beams_Cor_real, P_Beams_Cor_Bytes, cudaMemcpyHostToDevice),
-    "CUDA Memcpy Failed");
+    cudaMemcpy(d_P_Beams_Cor_real, P_Beams_Cor_real_h, P_Beams_Cor_Bytes, cudaMemcpyHostToDevice),
+    "CUDA Memcpy Failed (d_P_Beams_Cor_real)");
   SAFE_CALL(
-    cudaMemcpy(d_P_Beams_Cor_imag, P_Beams_Cor_imag, P_Beams_Cor_Bytes, cudaMemcpyHostToDevice),
-    "CUDA Memcpy Failed");
-  SAFE_CALL(
-    cudaMemcpy(
-      d_beamCorrector_lin, beamCorrector_lin, beamCorrector_lin_Bytes, cudaMemcpyHostToDevice),
-    "CUDA Memcpy Failed");
-
-  grid_rows = (nFreq + BLOCK_SIZE - 1) / BLOCK_SIZE;
-  grid_cols = (nBeams + BLOCK_SIZE - 1) / BLOCK_SIZE;
-  dim3 dimGrid_Beam(grid_cols, grid_rows);
-
-  gpu_matrix_mult<<<dimGrid_Beam, dimBlock>>>(
-    d_P_Beams_Cor_real, d_beamCorrector_lin, d_P_Beams_Cor_F_real, nFreq, nBeams, nBeams);
-  SAFE_CALL(cudaDeviceSynchronize(), "Kernel Launch Failed");
-
-  gpu_matrix_mult<<<dimGrid_Beam, dimBlock>>>(
-    d_P_Beams_Cor_imag, d_beamCorrector_lin, d_P_Beams_Cor_F_imag, nFreq, nBeams, nBeams);
-  SAFE_CALL(cudaDeviceSynchronize(), "Kernel Launch Failed");
-
-  // Copy back data from destination device meory
+    cudaMemcpy(d_P_Beams_Cor_imag, P_Beams_Cor_imag_h, P_Beams_Cor_Bytes, cudaMemcpyHostToDevice),
+    "CUDA Memcpy Failed (d_P_Beams_Cor_imag)");
   SAFE_CALL(
     cudaMemcpy(
-      P_Beams_Cor_real_tmp, d_P_Beams_Cor_F_real, P_Beams_Cor_Bytes, cudaMemcpyDeviceToHost),
-    "CUDA Memcpy Failed");
-  SAFE_CALL(
-    cudaMemcpy(
-      P_Beams_Cor_imag_tmp, d_P_Beams_Cor_F_imag, P_Beams_Cor_Bytes, cudaMemcpyDeviceToHost),
-    "CUDA Memcpy Failed");
-  SAFE_CALL(cudaDeviceSynchronize(), "Kernel Launch Failed");
+      d_beamCorrector_lin, beamCorrector_lin_h, beamCorrector_lin_Bytes, cudaMemcpyHostToDevice),
+    "CUDA Memcpy Failed (d_beamCorrector_lin)");
 
-  // Return
+  // Define matrix dimensions and GEMM parameters
+  // M_gemm = rows of A (P_Beams_Cor_real/imag) = nFreq
+  // N_gemm = cols of B (beamCorrector_lin) and cols of C (result) = nBeams
+  // K_gemm = cols of A and rows of B = nBeams
+  const int M_gemm = nFreq;
+  const int N_gemm = nBeams;
+  const int K_gemm = nBeams;
+
+  // Alpha and Beta for sgemm (float type)
+  const float alpha = 1.0f;
+  const float beta = 0.0f;  // Setting beta to 0.0f to overwrite C
+
+  // Real part
+  cudaEventRecord(start_event);
+  SAFE_CUBLAS_CALL(
+    cublasSgemm(
+      cublas_handle,
+      CUBLAS_OP_N,  // op(A)
+      CUBLAS_OP_N,  // op(B)
+      N_gemm, M_gemm, K_gemm, &alpha,
+      d_beamCorrector_lin,  // Pointer to B_original (now A in cublasSgemm)
+      N_gemm,               // lda: leading dimension of B_original
+      d_P_Beams_Cor_real,   // Pointer to A_original (now B in cublasSgemm)
+      K_gemm,               // ldb: leading dimension of A_original
+      &beta,
+      d_P_Beams_Cor_F_real,  // Pointer to C_original
+      N_gemm),               // ldc: leading dimension of C_original
+    "cublasSgemm Failed for real part");
+
+  // Imag part
+  SAFE_CUBLAS_CALL(
+    cublasSgemm(
+      cublas_handle, CUBLAS_OP_N, CUBLAS_OP_N, N_gemm, M_gemm, K_gemm, &alpha, d_beamCorrector_lin,
+      N_gemm, d_P_Beams_Cor_imag, K_gemm, &beta, d_P_Beams_Cor_F_imag, N_gemm),
+    "cublasSgemm Failed for imag part");
+
+  cudaEventRecord(stop_event);
+  cudaEventSynchronize(stop_event);
+  cudaEventElapsedTime(&elapsed_ms, start_event, stop_event);
+  printf("cuBLAS cublasSgemm time: %.3f ms\n", elapsed_ms);
+
+  // grid_rows = (nFreq + BLOCK_SIZE - 1) / BLOCK_SIZE;
+  // grid_cols = (nBeams + BLOCK_SIZE - 1) / BLOCK_SIZE;
+  // dim3 dimGrid_Beam(grid_cols, grid_rows);
+  // cudaEventRecord(start_event);
+
+  // gpu_matrix_mult_float<<<dimGrid_Beam, dimBlock>>>(
+  //   d_P_Beams_Cor_real, d_beamCorrector_lin, d_P_Beams_Cor_F_real, nFreq, nBeams, nBeams);
+  // SAFE_CALL(cudaDeviceSynchronize(), "Kernel Launch Failed");
+
+  // gpu_matrix_mult_float<<<dimGrid_Beam, dimBlock>>>(
+  //   d_P_Beams_Cor_imag, d_beamCorrector_lin, d_P_Beams_Cor_F_imag, nFreq, nBeams, nBeams);
+  // SAFE_CALL(cudaDeviceSynchronize(), "Kernel Launch Failed");
+
+  // cudaEventRecord(stop_event);
+  // cudaEventSynchronize(stop_event);
+  // cudaEventElapsedTime(&elapsed_ms, start_event, stop_event);
+  // printf("Custom kernel time: %.3f ms\n", elapsed_ms);
+  cudaEventDestroy(start_event);
+  cudaEventDestroy(stop_event);
+  SAFE_CUBLAS_CALL(cublasDestroy_v2(cublas_handle), "CUBLAS_STATUS_ALLOC_FAILED");
+
+  SAFE_CALL(
+    cudaMemcpy(P_Beams_Cor_real_h, d_P_Beams_Cor_F_real, P_Beams_Cor_Bytes, cudaMemcpyDeviceToHost),
+    "CUDA Memcpy Failed for P_Beams_Cor_real_h");
+  SAFE_CALL(
+    cudaMemcpy(P_Beams_Cor_imag_h, d_P_Beams_Cor_F_imag, P_Beams_Cor_Bytes, cudaMemcpyDeviceToHost),
+    "CUDA Memcpy Failed for P_Beams_Cor_imag_h");
+
   for (size_t beam = 0; beam < nBeams; beam++)
   {
     for (size_t f = 0; f < nFreq; f++)
     {
       P_Beams_F[beam][f] = Complex(
-        P_Beams_Cor_real_tmp[f * nBeams + beam] / beamCorrectorSum,
-        P_Beams_Cor_imag_tmp[f * nBeams + beam] / beamCorrectorSum);
+        P_Beams_Cor_real_h[f * nBeams + beam] / beamCorrectorSum,
+        P_Beams_Cor_imag_h[f * nBeams + beam] / beamCorrectorSum);
     }
   }
 
-  // Free memory
-  cudaFree(d_P_Beams_Cor_imag);
-  cudaFree(d_P_Beams_Cor_real);
-  cudaFree(d_P_Beams_Cor_F_imag);
-  cudaFree(d_P_Beams_Cor_F_real);
-  cudaFree(d_beamCorrector_lin);
-  cudaFreeHost(P_Beams_Cor_real);
-  cudaFreeHost(P_Beams_Cor_imag);
-  cudaFreeHost(P_Beams_Cor_real_tmp);
-  cudaFreeHost(P_Beams_Cor_imag_tmp);
-  cudaFreeHost(beamCorrector_lin);
+  SAFE_CALL(cudaFree(d_P_Beams_Cor_imag), "cudaFree failed for d_P_Beams_Cor_imag");
+  SAFE_CALL(cudaFree(d_P_Beams_Cor_real), "cudaFree failed for d_P_Beams_Cor_real");
+  SAFE_CALL(cudaFree(d_P_Beams_Cor_F_imag), "cudaFree failed for d_P_Beams_Cor_F_imag");
+  SAFE_CALL(cudaFree(d_P_Beams_Cor_F_real), "cudaFree failed for d_P_Beams_Cor_F_real");
+  SAFE_CALL(cudaFree(d_beamCorrector_lin), "cudaFree failed for d_beamCorrector_lin");
+  SAFE_CALL(cudaFreeHost(P_Beams_Cor_real_h), "cudaFreeHost failed for P_Beams_Cor_real_h");
+  SAFE_CALL(cudaFreeHost(P_Beams_Cor_imag_h), "cudaFreeHost failed for P_Beams_Cor_imag_h");
+  SAFE_CALL(cudaFreeHost(beamCorrector_lin_h), "cudaFreeHost failed for beamCorrector_lin_h");
 
   // For calc time measure
   if (debugFlag)
@@ -613,22 +731,44 @@ CArray2D sonar_calculation_wrapper(
   SAFE_CALL(cudaDeviceSynchronize(), "Kernel Launch Failed");
   const int DATASIZE = nFreq;
   const int BATCH = nBeams;
+
   // --- Host side input data allocation and initialization
   cufftComplex * hostInputData = (cufftComplex *)malloc(DATASIZE * BATCH * sizeof(cufftComplex));
-  for (int beam = 0; beam < BATCH; beam++)
+  start = std::chrono::high_resolution_clock::now();
+
+  // for (int beam = 0; beam < BATCH; beam++)
+  // {
+  //   for (int f = 0; f < DATASIZE; f++)
+  //   {
+  //     if (f < nFreq)
+  //     {
+  //       hostInputData[beam * DATASIZE + f] =
+  //         make_cuComplex(P_Beams_F[beam][f].real() * 1.0f, P_Beams_F[beam][f].imag() * 1.0f);
+  //     }
+  //     else
+  //     {
+  //       hostInputData[beam * DATASIZE + f] = (make_cuComplex(0.f, 0.f));  // zero padding
+  //     }
+  //   }
+  // }
+
+#pragma omp parallel for collapse(2)
+  for (int beam = 0; beam < BATCH; ++beam)
   {
-    for (int f = 0; f < DATASIZE; f++)
+    for (int f = 0; f < DATASIZE; ++f)
     {
-      if (f < nFreq)
-      {
-        hostInputData[beam * DATASIZE + f] =
-          make_cuComplex(P_Beams_F[beam][f].real() * 1.0f, P_Beams_F[beam][f].imag() * 1.0f);
-      }
-      else
-      {
-        hostInputData[beam * DATASIZE + f] = (make_cuComplex(0.f, 0.f));  // zero padding
-      }
+      int idx = beam * DATASIZE + f;
+      const std::complex<float> & val = P_Beams_F[beam][f];
+      hostInputData[idx] = make_cuComplex(val.real(), val.imag());
     }
+  }
+
+  if (debugFlag)
+  {
+    stop = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration = stop - start;
+    printf("GPU LOOP Computation Time: %.6f seconds\n", duration.count());
+    start = std::chrono::high_resolution_clock::now();
   }
 
   // --- Device side input data allocation and initialization
@@ -695,6 +835,17 @@ CArray2D sonar_calculation_wrapper(
     duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
     printf(
       "GPU FFT Calc Time %lld/100 [s]\n", static_cast<long long int>(duration.count() / 10000));
+  }
+
+  auto total_stop_time = std::chrono::high_resolution_clock::now();
+  auto total_duration =
+    std::chrono::duration_cast<std::chrono::microseconds>(total_stop_time - total_start_time);
+
+  if (debugFlag)
+  {
+    printf(
+      "Total Sonar Calculation Wrapper Time: %.3f ms\n",
+      static_cast<float>(total_duration.count()) / 1000.0f);
   }
 
   return P_Beams_F;

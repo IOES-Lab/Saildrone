@@ -73,7 +73,14 @@ if(CUDAToolkit_FOUND)
     ${gz-transport${GZ_TRANSPORT_VER}_INCLUDE_DIRS}
     ${gz-sim${GZ_SIM_VER}_INCLUDE_DIRS}
   )
-  target_link_libraries(${PROJECT_NAME} ${PCL_LIBRARIES} ${CUDA_LIBRARIES} ${CUDA_CUFFT_LIBRARIES})
+
+  find_library(CUBLAS_LIB cublas
+  HINTS ${CUDAToolkit_LIBRARY_DIR} /usr/local/cuda/lib64 /usr/lib/x86_64-linux-gnu /usr/lib)
+  if(NOT CUBLAS_LIB)
+    message(FATAL_ERROR "cuBLAS not found")
+  endif()
+
+  target_link_libraries(${PROJECT_NAME} ${PCL_LIBRARIES} ${CUDA_LIBRARIES} ${CUDA_CUFFT_LIBRARIES} ${CUBLAS_LIB})
 
   install(TARGETS ${PROJECT_NAME}
     DESTINATION lib/${PROJECT_NAME}
