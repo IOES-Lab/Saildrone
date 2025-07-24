@@ -66,6 +66,15 @@ ADD https://raw.githubusercontent.com/IOES-Lab/dave/$BRANCH/\
 extras/repos/dave.$ROS_DISTRO.repos $DAVE_WS/dave.repos
 RUN vcs import --shallow --input $DAVE_WS/dave.repos
 
+# FIX ROS GPG KEY error (may be temporary)
+RUN rm /etc/apt/sources.list.d/ros2.list && apt update && apt install -y jq && rm -rf /var/lib/apt/lists/
+RUN UBUNTU_CODENAME=noble && \
+    ROS_APT_SOURCE_VERSION=$(curl -s https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest | jq -r '.tag_name') && \
+    curl -L -o /tmp/ros2-apt-source.deb \
+    "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-apt-source_${ROS_APT_SOURCE_VERSION}.${UBUNTU_CODENAME}_all.deb" && \
+    apt-get install -y /tmp/ros2-apt-source.deb && \
+    rm -f /tmp/ros2-apt-source.deb
+
 # Install dave dependencies
 RUN apt-get update && rosdep update && \
     rosdep install -iy --from-paths . && \
