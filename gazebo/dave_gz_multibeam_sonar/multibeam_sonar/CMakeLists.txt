@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.11.0 FATAL_ERROR)
 
 # Suppress developer warnings for the entire workspace.
-set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS TRUE CACHE BOOL "Suppress developer warnings" FORCE)
+set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS TRUE CACHE BOOL
+    "Suppress developer warnings" FORCE)
 # Set CMP0144 to NEW to ensure find_package uses upper-case <PACKAGENAME>_ROOT variables.
 cmake_policy(SET CMP0144 NEW)
 
@@ -73,7 +74,12 @@ if(CUDAToolkit_FOUND)
     ${gz-transport${GZ_TRANSPORT_VER}_INCLUDE_DIRS}
     ${gz-sim${GZ_SIM_VER}_INCLUDE_DIRS}
   )
-  target_link_libraries(${PROJECT_NAME} ${PCL_LIBRARIES} ${CUDA_LIBRARIES} ${CUDA_CUFFT_LIBRARIES})
+
+  target_link_libraries(${PROJECT_NAME}
+  ${PCL_LIBRARIES}
+  ${CUDA_LIBRARIES}
+  ${CUDA_CUFFT_LIBRARIES}
+  ${CUBLAS_LIB})
 
   install(TARGETS ${PROJECT_NAME}
     DESTINATION lib/${PROJECT_NAME}
