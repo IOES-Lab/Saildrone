@@ -40,6 +40,9 @@ typedef std::valarray<CArray> CArray2D;
 /// \brief CUDA Device Check Function Wrapper
 void check_cuda_init_wrapper(void);
 
+/// \brief CUDA Free Memory Function
+void free_cuda_memory();
+
 /// \brief Sonar Claculation Function Wrapper
 CArray2D sonar_calculation_wrapper(
   const cv::Mat & depth_image, const cv::Mat & normal_image, const cv::Mat & rand_image,
