@@ -38,6 +38,11 @@
 #include <cublas_v2.h>
 #include <chrono>
 
+// FOR DEBUG -- DEV VERSION
+#include <fstream>
+
+std::ofstream debugLog("debug_timings.txt", std::ios::app);
+
 #define BLOCK_SIZE 32
 
 // Existing SAFE_CALL (for cudaError_t)
@@ -141,51 +146,6 @@ __device__ __host__ float unnormalized_sinc(float t)
   else
   {
     return sin(t) / t;
-  }
-}
-
-__global__ void gpu_matrix_mult(const __half * a, const __half * b, __half * c, int m, int n, int k)
-{
-  int row = blockIdx.y * blockDim.y + threadIdx.y;
-  int col = blockIdx.x * blockDim.x + threadIdx.x;
-
-  if (col < k && row < m)
-  {
-    __half sum = __float2half(0.0f);
-    for (int i = 0; i < n; ++i)
-    {
-      __half valA = a[row * n + i];
-      __half valB = b[i * k + col];
-      sum = __hadd(sum, __hmul(valA, valB));
-    }
-    c[row * k + col] = sum;
-  }
-}
-
-__global__ void gpu_matrix_mult_float(float * a, float * b, float * c, int m, int n, int k)
-{
-  int row = blockIdx.y * blockDim.y + threadIdx.y;
-  int col = blockIdx.x * blockDim.x + threadIdx.x;
-  float sum = 0;
-  if (col < k && row < m)
-  {
-    for (int i = 0; i < n; i++)
-    {
-      sum += a[row * n + i] * b[i * k + col];
-    }
-    c[row * k + col] = sum;
-  }
-}
-
-__global__ void gpu_diag_matrix_mult(float * Val, int * RowPtr, float * diagVals, int total_rows)
-{
-  const int row = threadIdx.x + blockIdx.x * blockDim.x;
-  if (row < total_rows)
-  {
-    for (int i = RowPtr[row]; i < RowPtr[row + 1]; i++)
-    {
-      Val[i] = diagVals[row] * Val[i];
-    }
   }
 }
 
@@ -460,7 +420,6 @@ CArray2D sonar_calculation_wrapper(
 
   if (!memory_initialized)
   {
-    std::cout << "Initializing..." << std::endl;
     SAFE_CALL(
       cudaMalloc((void **)&d_depth_image, depth_image.step * depth_image.rows), "depth malloc");
     SAFE_CALL(
@@ -482,8 +441,6 @@ CArray2D sonar_calculation_wrapper(
       "P_Beams malloc device");
     SAFE_CALL(cudaMalloc(&d_P_Beams_F_real, sizeof(float) * nBeams * nFreq), "beam real malloc");
     SAFE_CALL(cudaMalloc(&d_P_Beams_F_imag, sizeof(float) * nBeams * nFreq), "beam imag malloc");
-    std::cout << "Middle..." << std::endl;
-
     SAFE_CALL(
       cudaMallocHost((void **)&P_Ray_real, P_Ray_Bytes), "CUDA MallocHost Failed for P_Ray_real");
     SAFE_CALL(
@@ -507,8 +464,6 @@ CArray2D sonar_calculation_wrapper(
     SAFE_CALL(
       cudaMallocHost((void **)&beamCorrector_lin_h, beamCorrector_lin_Bytes),
       "CUDA MallocHost Failed for beamCorrector_lin_h");
-    std::cout << "DONE..." << std::endl;
-
     SAFE_CALL(
       cudaMalloc((void **)&d_P_Beams_Cor_real, P_Beams_Cor_Bytes),
       "CUDA Malloc Failed for d_P_Beams_Cor_real");
@@ -524,8 +479,6 @@ CArray2D sonar_calculation_wrapper(
     SAFE_CALL(
       cudaMalloc((void **)&d_beamCorrector_lin, beamCorrector_lin_Bytes),
       "CUDA Malloc Failed for d_beamCorrector_lin");
-    std::cout << "realdone..." << std::endl;
-
     memory_initialized = true;
   }
 
@@ -594,14 +547,20 @@ CArray2D sonar_calculation_wrapper(
   SAFE_CALL(
     cudaMemcpy(P_Beams, d_P_Beams, P_Beams_Bytes, cudaMemcpyDeviceToHost), "CUDA Memcpy Failed");
 
-  // For calc time measure
   if (debugFlag)
   {
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    printf(
-      "GPU Sonar Computation Time %lld/100 [s]\n",
-      static_cast<long long int>(duration.count() / 10000));
+
+    long long dcount = duration.count();
+    float ms = static_cast<float>(dcount) / 1000.0f;
+
+    printf("GPU Sonar Computation Time %lld/100 [s]\n", dcount / 10000);
+    printf("GPU Sonar Summation Time: %.3f ms\n", ms);
+
+    debugLog << "GPU Sonar Computation Time " << dcount / 10000 << "/100 [s]\n";
+    debugLog << "GPU Sonar Summation Time: " << ms << " ms\n";
+
     start = std::chrono::high_resolution_clock::now();
   }
 
@@ -641,9 +600,15 @@ CArray2D sonar_calculation_wrapper(
   {
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    printf(
-      "Sonar Ray Summation %lld/100 [s]\n", static_cast<long long int>(duration.count() / 10000));
-    printf("Sonar Ray Summation Time: %.3f ms\n", static_cast<float>(duration.count()) / 1000.0f);
+
+    long long dcount = duration.count();
+
+    printf("Sonar Ray Summation %lld/100 [s]\n", dcount / 10000);
+    printf("Sonar Ray Summation Time: %.3f ms\n", static_cast<float>(dcount) / 1000.0f);
+
+    debugLog << "Sonar Ray Summation " << dcount / 10000 << "/100 [s]\n";
+    debugLog << "Sonar Ray Summation Time: " << static_cast<float>(dcount) / 1000.0f << " ms\n";
+
     start = std::chrono::high_resolution_clock::now();
   }
 
@@ -747,15 +712,21 @@ CArray2D sonar_calculation_wrapper(
         P_Beams_Cor_imag_h[f * nBeams + beam] / beamCorrectorSum);
     }
   }
-  // For calc time measure
+
   if (debugFlag)
   {
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    printf(
-      "GPU Window & Correction %lld/100 [s]\n",
-      static_cast<long long int>(duration.count() / 10000));
-    printf("GPU Window & Correction: %.3f ms\n", static_cast<float>(duration.count()) / 1000.0f);
+
+    long long dcount = duration.count();
+
+    printf("GPU Window & Correction %lld/100 [s]\n", dcount / 10000);
+    printf("GPU Window & Correction: %.3f ms\n", static_cast<float>(dcount) / 1000.0f);
+
+    // Write to file
+    debugLog << "GPU Window & Correction " << dcount / 10000 << "/100 [s]\n";
+    debugLog << "GPU Window & Correction: " << static_cast<float>(dcount) / 1000.0f << " ms\n";
+
     start = std::chrono::high_resolution_clock::now();
   }
 
@@ -795,14 +766,6 @@ CArray2D sonar_calculation_wrapper(
       const std::complex<float> & val = P_Beams_F[beam][f];
       hostInputData[idx] = make_cuComplex(val.real(), val.imag());
     }
-  }
-
-  if (debugFlag)
-  {
-    stop = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> duration = stop - start;
-    printf("GPU LOOP Computation Time: %.6f seconds\n", duration.count());
-    start = std::chrono::high_resolution_clock::now();
   }
 
   // --- Device side input data allocation and initialization
@@ -862,14 +825,22 @@ CArray2D sonar_calculation_wrapper(
     }
   }
 
-  // For calc time measure
   if (debugFlag)
   {
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    printf("GPU FFT Calc Time Time: %.3f ms\n", static_cast<float>(duration.count()) / 1000.0f);
-    printf(
-      "GPU FFT Calc Time %lld/100 [s]\n", static_cast<long long int>(duration.count() / 10000));
+
+    long long dcount = duration.count();
+    float ms = static_cast<float>(dcount) / 1000.0f;
+
+    printf("GPU FFT Calc Time: %.3f ms\n", ms);
+    printf("GPU FFT Calc Time %lld/100 [s]\n", dcount / 10000);
+
+    // Write to file
+    debugLog << "GPU FFT Calc Time: " << ms << " ms\n";
+    debugLog << "GPU FFT Calc Time " << dcount / 10000 << "/100 [s]\n";
+
+    start = std::chrono::high_resolution_clock::now();
   }
 
   auto total_stop_time = std::chrono::high_resolution_clock::now();
@@ -878,9 +849,11 @@ CArray2D sonar_calculation_wrapper(
 
   if (debugFlag)
   {
-    printf(
-      "Total Sonar Calculation Wrapper Time: %.3f ms\n",
-      static_cast<float>(total_duration.count()) / 1000.0f);
+    float ms = static_cast<float>(total_duration.count()) / 1000.0f;
+
+    printf("Total Sonar Calculation Wrapper Time: %.3f ms\n", ms);
+
+    debugLog << "Total Sonar Calculation Wrapper Time: " << ms << " ms\n";
   }
 
   return P_Beams_F;
