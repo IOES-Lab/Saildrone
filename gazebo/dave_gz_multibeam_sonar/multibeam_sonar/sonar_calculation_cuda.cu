@@ -279,6 +279,7 @@ CArray2D sonar_calculation_wrapper(
   double _attenuation, float * window, float ** beamCorrector, float beamCorrectorSum,
   bool debugFlag)
 {
+  auto total_start_time = std::chrono::high_resolution_clock::now();
   auto start = std::chrono::high_resolution_clock::now();
   auto stop = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
@@ -286,8 +287,6 @@ CArray2D sonar_calculation_wrapper(
   {
     start = std::chrono::high_resolution_clock::now();
   }
-
-  auto total_start_time = std::chrono::high_resolution_clock::now();
 
   // ----  Allocation of properties parameters  ---- //
   const float hPixelSize = (float)_hPixelSize;
@@ -411,18 +410,15 @@ CArray2D sonar_calculation_wrapper(
   {
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    printf(
-      "GPU Sonar Computation Time %lld/100 [s]\n",
-      static_cast<long long int>(duration.count() / 10000));
 
     long long dcount = duration.count();
     float ms = static_cast<float>(dcount) / 1000.0f;
 
     printf("GPU Sonar Computation Time %lld/100 [s]\n", dcount / 10000);
-    printf("GPU Sonar Summation Time: %.3f ms\n", ms);
+    printf("GPU Sonar Computation Time: %.3f ms\n", ms);
 
     debugLog << "GPU Sonar Computation Time " << dcount / 10000 << "/100 [s]\n";
-    debugLog << "GPU Sonar Summation Time: " << ms << " ms\n";
+    debugLog << "GPU Sonar Computation Time: " << ms << " ms\n";
 
     start = std::chrono::high_resolution_clock::now();
   }
@@ -510,9 +506,6 @@ CArray2D sonar_calculation_wrapper(
   {
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    printf(
-      "Sonar Ray Summation %lld/100 [s]\n", static_cast<long long int>(duration.count() / 10000));
-
     long long dcount = duration.count();
 
     printf("Sonar Ray Summation %lld/100 [s]\n", dcount / 10000);
