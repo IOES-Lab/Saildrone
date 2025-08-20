@@ -541,12 +541,6 @@ CArray2D sonar_calculation_wrapper(
   cudaEventDestroy(start1);
   cudaEventDestroy(stop1);
 
-  printf("Total sonar calculation (kernel) time: %.3f ms\n", milliseconds);
-
-  // Copy back data from destination device meory to OpenCV output image
-  SAFE_CALL(
-    cudaMemcpy(P_Beams, d_P_Beams, P_Beams_Bytes, cudaMemcpyDeviceToHost), "CUDA Memcpy Failed");
-
   if (debugFlag)
   {
     stop = std::chrono::high_resolution_clock::now();
