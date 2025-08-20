@@ -30,7 +30,6 @@ if(CUDAToolkit_FOUND)
     add_definitions(-DWITH_OGRE2)
   endif()
 
-
   add_subdirectory(../multibeam_sonar ${CMAKE_BINARY_DIR}/multibeam_sonar)
 
   add_library(${PROJECT_NAME} SHARED MultibeamSonarSystem.cc)

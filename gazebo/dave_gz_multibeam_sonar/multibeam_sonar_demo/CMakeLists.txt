@@ -15,7 +15,8 @@ if(CUDAToolkit_FOUND)
     DESTINATION share/${PROJECT_NAME}
   )
 
-  ament_environment_hooks("${CMAKE_CURRENT_SOURCE_DIR}/hooks/${PROJECT_NAME}.dsv.in")
+  ament_environment_hooks(
+    "${CMAKE_CURRENT_SOURCE_DIR}/hooks/${PROJECT_NAME}.dsv.in")
 
 else()
   message(STATUS "CUDA Toolkit not found: Skipping CUDA-specific targets")
