@@ -41,7 +41,7 @@
 // FOR DEBUG -- DEV VERSION
 #include <fstream>
 
-std::ofstream debugLog("debug_timings.txt", std::ios::app);
+std::ofstream debugLog("debug_timings.txt");
 
 #define BLOCK_SIZE 32
 
