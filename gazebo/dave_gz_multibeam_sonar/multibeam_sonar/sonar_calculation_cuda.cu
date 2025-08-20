@@ -556,10 +556,10 @@ CArray2D sonar_calculation_wrapper(
     float ms = static_cast<float>(dcount) / 1000.0f;
 
     printf("GPU Sonar Computation Time %lld/100 [s]\n", dcount / 10000);
-    printf("GPU Sonar Summation Time: %.3f ms\n", ms);
+    printf("GPU Sonar Computation Time: %.3f ms\n", ms);
 
     debugLog << "GPU Sonar Computation Time " << dcount / 10000 << "/100 [s]\n";
-    debugLog << "GPU Sonar Summation Time: " << ms << " ms\n";
+    debugLog << "GPU Sonar Computation Time: " << ms << " ms\n";
 
     start = std::chrono::high_resolution_clock::now();
   }
