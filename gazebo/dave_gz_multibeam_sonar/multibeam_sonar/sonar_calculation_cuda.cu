@@ -39,6 +39,11 @@
 
 #define BLOCK_SIZE 32
 
+// FOR DEBUG -- DEV VERSION
+#include <fstream>
+
+std::ofstream debugLog("debug_timings.txt");
+
 static inline void _safe_cuda_call(
   cudaError err, const char * msg, const char * file_name, const int line_number)
 {
@@ -282,6 +287,8 @@ CArray2D sonar_calculation_wrapper(
     start = std::chrono::high_resolution_clock::now();
   }
 
+  auto total_start_time = std::chrono::high_resolution_clock::now();
+
   // ----  Allocation of properties parameters  ---- //
   const float hPixelSize = (float)_hPixelSize;
   const float vPixelSize = (float)_vPixelSize;
@@ -407,6 +414,16 @@ CArray2D sonar_calculation_wrapper(
     printf(
       "GPU Sonar Computation Time %lld/100 [s]\n",
       static_cast<long long int>(duration.count() / 10000));
+
+    long long dcount = duration.count();
+    float ms = static_cast<float>(dcount) / 1000.0f;
+
+    printf("GPU Sonar Computation Time %lld/100 [s]\n", dcount / 10000);
+    printf("GPU Sonar Summation Time: %.3f ms\n", ms);
+
+    debugLog << "GPU Sonar Computation Time " << dcount / 10000 << "/100 [s]\n";
+    debugLog << "GPU Sonar Summation Time: " << ms << " ms\n";
+
     start = std::chrono::high_resolution_clock::now();
   }
 
@@ -495,6 +512,15 @@ CArray2D sonar_calculation_wrapper(
     duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
     printf(
       "Sonar Ray Summation %lld/100 [s]\n", static_cast<long long int>(duration.count() / 10000));
+
+    long long dcount = duration.count();
+
+    printf("Sonar Ray Summation %lld/100 [s]\n", dcount / 10000);
+    printf("Sonar Ray Summation Time: %.3f ms\n", static_cast<float>(dcount) / 1000.0f);
+
+    debugLog << "Sonar Ray Summation " << dcount / 10000 << "/100 [s]\n";
+    debugLog << "Sonar Ray Summation Time: " << static_cast<float>(dcount) / 1000.0f << " ms\n";
+
     start = std::chrono::high_resolution_clock::now();
   }
 
@@ -604,6 +630,15 @@ CArray2D sonar_calculation_wrapper(
     printf(
       "GPU Window & Correction %lld/100 [s]\n",
       static_cast<long long int>(duration.count() / 10000));
+
+    long long dcount = duration.count();
+
+    printf("GPU Window & Correction %lld/100 [s]\n", dcount / 10000);
+    printf("GPU Window & Correction: %.3f ms\n", static_cast<float>(dcount) / 1000.0f);
+
+    debugLog << "GPU Window & Correction " << dcount / 10000 << "/100 [s]\n";
+    debugLog << "GPU Window & Correction: " << static_cast<float>(dcount) / 1000.0f << " ms\n";
+
     start = std::chrono::high_resolution_clock::now();
   }
 
@@ -688,13 +723,37 @@ CArray2D sonar_calculation_wrapper(
     }
   }
 
-  // For calc time measure
   if (debugFlag)
   {
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
     printf(
       "GPU FFT Calc Time %lld/100 [s]\n", static_cast<long long int>(duration.count() / 10000));
+
+    long long dcount = duration.count();
+    float ms = static_cast<float>(dcount) / 1000.0f;
+
+    printf("GPU FFT Calc Time: %.3f ms\n", ms);
+    printf("GPU FFT Calc Time %lld/100 [s]\n", dcount / 10000);
+
+    // Write to file
+    debugLog << "GPU FFT Calc Time: " << ms << " ms\n";
+    debugLog << "GPU FFT Calc Time " << dcount / 10000 << "/100 [s]\n";
+
+    start = std::chrono::high_resolution_clock::now();
+  }
+
+  auto total_stop_time = std::chrono::high_resolution_clock::now();
+  auto total_duration =
+    std::chrono::duration_cast<std::chrono::microseconds>(total_stop_time - total_start_time);
+
+  if (debugFlag)
+  {
+    float ms = static_cast<float>(total_duration.count()) / 1000.0f;
+
+    printf("Total Sonar Calculation Wrapper Time: %.3f ms\n", ms);
+
+    debugLog << "Total Sonar Calculation Wrapper Time: " << ms << " ms\n";
   }
 
   return P_Beams_F;
