@@ -95,15 +95,6 @@ static thrust::complex<float> * P_Beams = nullptr;
 static bool memory_initialized = false;
 float * ray_elevationAngles = nullptr;
 
-float *P_Ray_real, *P_Ray_imag;
-float *d_P_Ray_real, *d_P_Ray_imag;
-int P_Ray_N;
-int P_Ray_Bytes;
-float *P_Ray_F_real, *P_Ray_F_imag;
-float *d_P_Ray_F_real, *d_P_Ray_F_imag;
-int P_Ray_F_N;
-int P_Ray_F_Bytes;
-
 float *P_Beams_Cor_real_h = nullptr, *P_Beams_Cor_imag_h = nullptr;
 float *d_P_Beams_Cor_real = nullptr, *d_P_Beams_Cor_imag = nullptr;
 float *d_P_Beams_Cor_F_real = nullptr, *d_P_Beams_Cor_F_imag = nullptr;
@@ -113,6 +104,10 @@ int P_Beams_Cor_N;
 int P_Beams_Cor_Bytes;
 int beamCorrector_lin_N;
 int beamCorrector_lin_Bytes;
+
+// FFT
+cufftComplex * deviceInputData;
+cufftComplex * deviceOutputData;
 
 ///////////////////////////////////////////////////////////////////////////
 // Incident Angle Calculation Function
@@ -193,7 +188,7 @@ __global__ void reduce_beams_kernel(
 
   if (threadIdx.x == 0)
   {
-    int output_idx = beam * nFreq + f;
+    int output_idx = f * nBeams + beam;
     d_P_Beams_F_real[output_idx] = shared_real[0];
     d_P_Beams_F_imag[output_idx] = shared_imag[0];
   }
@@ -321,17 +316,11 @@ void free_cuda_memory()
   SAFE_CALL(cudaFree(d_reflectivity_image), "cudaFree failed for d_reflectivity_image");
   SAFE_CALL(cudaFree(d_ray_elevationAngles), "cudaFree failed for d_ray_elevationAngles");
   SAFE_CALL(cudaFree(d_P_Beams), "cudaFree failed for d_P_Beams");
+  SAFE_CALL(cudaFree(deviceOutputData), "cudaFree failed for OutputData");
+  SAFE_CALL(cudaFree(deviceInputData), "cudaFree failed for InputData");
   SAFE_CALL(cudaFreeHost(P_Beams), "cudaFreeHost failed for P_Beams");
   SAFE_CALL(cudaFree(d_P_Beams_F_real), "cudaFree failed for d_P_Beams_F_real");
   SAFE_CALL(cudaFree(d_P_Beams_F_imag), "cudaFree failed for d_P_Beams_F_imag");
-  SAFE_CALL(cudaFreeHost(P_Ray_real), "cudaFreeHost failed for P_Ray_real");
-  SAFE_CALL(cudaFreeHost(P_Ray_imag), "cudaFreeHost failed for P_Ray_imag");
-  SAFE_CALL(cudaFreeHost(P_Ray_F_real), "cudaFreeHost failed for P_Ray_F_real");
-  SAFE_CALL(cudaFreeHost(P_Ray_F_imag), "cudaFreeHost failed for P_Ray_F_imag");
-  SAFE_CALL(cudaFree(d_P_Ray_real), "cudaFree failed for d_P_Ray_real");
-  SAFE_CALL(cudaFree(d_P_Ray_imag), "cudaFree failed for d_P_Ray_imag");
-  SAFE_CALL(cudaFree(d_P_Ray_F_real), "cudaFree failed for d_P_Ray_F_real");
-  SAFE_CALL(cudaFree(d_P_Ray_F_imag), "cudaFree failed for d_P_Ray_F_imag");
   SAFE_CALL(cudaFree(d_P_Beams_Cor_imag), "cudaFree failed for d_P_Beams_Cor_imag");
   SAFE_CALL(cudaFree(d_P_Beams_Cor_real), "cudaFree failed for d_P_Beams_Cor_real");
   SAFE_CALL(cudaFree(d_P_Beams_Cor_F_imag), "cudaFree failed for d_P_Beams_Cor_F_imag");
@@ -340,7 +329,6 @@ void free_cuda_memory()
   SAFE_CALL(cudaFreeHost(P_Beams_Cor_real_h), "cudaFreeHost failed for P_Beams_Cor_real_h");
   SAFE_CALL(cudaFreeHost(P_Beams_Cor_imag_h), "cudaFreeHost failed for P_Beams_Cor_imag_h");
   SAFE_CALL(cudaFreeHost(beamCorrector_lin_h), "cudaFreeHost failed for beamCorrector_lin_h");
-
   memory_initialized = false;
 }
 
@@ -406,17 +394,15 @@ CArray2D sonar_calculation_wrapper(
   const int reflectivity_image_Bytes = reflectivity_image.step * reflectivity_image.rows;
   const int ray_elevationAngles_Bytes = sizeof(float) * nRays;
   const int P_Beams_N = nBeams * (int)(nRays / raySkips) * (nFreq + 1);
-  const int P_Beams_Bytes = sizeof(thrust::complex<float>) * P_Beams_N;
-
-  P_Ray_N = (int)(nRays / raySkips) * (nFreq);
-  P_Ray_Bytes = sizeof(float) * P_Ray_N;
-  P_Ray_F_N = (nFreq) * 1;
-  P_Ray_F_Bytes = sizeof(float) * P_Ray_F_N;
 
   P_Beams_Cor_N = nBeams * nFreq;
   P_Beams_Cor_Bytes = sizeof(float) * P_Beams_Cor_N;
   beamCorrector_lin_N = nBeams * nBeams;
   beamCorrector_lin_Bytes = sizeof(float) * beamCorrector_lin_N;
+
+  // FFT Parameters
+  const int DATASIZE = nFreq;
+  const int BATCH = nBeams;
 
   if (!memory_initialized)
   {
@@ -442,20 +428,6 @@ CArray2D sonar_calculation_wrapper(
     SAFE_CALL(cudaMalloc(&d_P_Beams_F_real, sizeof(float) * nBeams * nFreq), "beam real malloc");
     SAFE_CALL(cudaMalloc(&d_P_Beams_F_imag, sizeof(float) * nBeams * nFreq), "beam imag malloc");
     SAFE_CALL(
-      cudaMallocHost((void **)&P_Ray_real, P_Ray_Bytes), "CUDA MallocHost Failed for P_Ray_real");
-    SAFE_CALL(
-      cudaMallocHost((void **)&P_Ray_imag, P_Ray_Bytes), "CUDA MallocHost Failed for P_Ray_imag");
-    SAFE_CALL(
-      cudaMallocHost((void **)&P_Ray_F_real, P_Ray_F_Bytes),
-      "CUDA MallocHost Failed for P_Ray_F_real");
-    SAFE_CALL(
-      cudaMallocHost((void **)&P_Ray_F_imag, P_Ray_F_Bytes),
-      "CUDA MallocHost Failed for P_Ray_F_imag");
-    SAFE_CALL(cudaMalloc((void **)&d_P_Ray_real, P_Ray_Bytes), "CUDA Malloc Failed");
-    SAFE_CALL(cudaMalloc((void **)&d_P_Ray_imag, P_Ray_Bytes), "CUDA Malloc Failed");
-    SAFE_CALL(cudaMalloc((void **)&d_P_Ray_F_real, P_Ray_F_Bytes), "CUDA Malloc Failed");
-    SAFE_CALL(cudaMalloc((void **)&d_P_Ray_F_imag, P_Ray_F_Bytes), "CUDA Malloc Failed");
-    SAFE_CALL(
       cudaMallocHost((void **)&P_Beams_Cor_real_h, P_Beams_Cor_Bytes),
       "CUDA MallocHost Failed for P_Beams_Cor_real_h");
     SAFE_CALL(
@@ -479,6 +451,13 @@ CArray2D sonar_calculation_wrapper(
     SAFE_CALL(
       cudaMalloc((void **)&d_beamCorrector_lin, beamCorrector_lin_Bytes),
       "CUDA Malloc Failed for d_beamCorrector_lin");
+    SAFE_CALL(
+      cudaMalloc((void **)&deviceInputData, DATASIZE * BATCH * sizeof(cufftComplex)),
+      "FFT CUDA Malloc Failed");
+    SAFE_CALL(
+      cudaMalloc((void **)&deviceOutputData, DATASIZE * BATCH * sizeof(cufftComplex)),
+      "FFT CUDA Malloc Failed");
+
     memory_initialized = true;
   }
 
@@ -515,13 +494,6 @@ CArray2D sonar_calculation_wrapper(
   const dim3 grid(
     (depth_image.cols + block.x - 1) / block.x, (depth_image.rows + block.y - 1) / block.y);
 
-  cudaEvent_t start1, stop1;
-  float milliseconds = 0;
-
-  cudaEventCreate(&start1);
-  cudaEventCreate(&stop1);
-  cudaEventRecord(start1);
-
   // Launch the beamor conversion kernel
   sonar_calculation<<<grid, block>>>(
     d_P_Beams, d_depth_image, d_normal_image, normal_image.cols, normal_image.rows,
@@ -533,13 +505,6 @@ CArray2D sonar_calculation_wrapper(
 
   // Synchronize to check for any kernel launch errors
   SAFE_CALL(cudaDeviceSynchronize(), "Kernel Launch Failed");
-
-  cudaEventRecord(stop1);
-  cudaEventSynchronize(stop1);
-
-  cudaEventElapsedTime(&milliseconds, start1, stop1);
-  cudaEventDestroy(start1);
-  cudaEventDestroy(stop1);
 
   if (debugFlag)
   {
@@ -566,29 +531,9 @@ CArray2D sonar_calculation_wrapper(
   dim3 gridDim(nFreq, nBeams);  // one thread block per beam+freq pair
 
   reduce_beams_kernel<<<gridDim, blockDim>>>(
-    d_P_Beams, d_P_Beams_F_real, d_P_Beams_F_imag, nBeams, nFreq, nRays / raySkips);
+    d_P_Beams, d_P_Beams_Cor_real, d_P_Beams_Cor_imag, nBeams, nFreq, nRays / raySkips);
   SAFE_CALL(cudaGetLastError(), "reduce_beams_kernel launch failed");
   SAFE_CALL(cudaDeviceSynchronize(), "reduce_beams_kernel execution failed");
-
-  std::vector<float> P_Beams_F_real(nBeams * nFreq);
-  std::vector<float> P_Beams_F_imag(nBeams * nFreq);
-
-  cudaMemcpy(
-    P_Beams_F_real.data(), d_P_Beams_F_real, sizeof(float) * nBeams * nFreq,
-    cudaMemcpyDeviceToHost);
-  cudaMemcpy(
-    P_Beams_F_imag.data(), d_P_Beams_F_imag, sizeof(float) * nBeams * nFreq,
-    cudaMemcpyDeviceToHost);
-
-  CArray2D P_Beams_F(CArray(nFreq), nBeams);
-  for (int beam = 0; beam < nBeams; beam++)
-  {
-    for (int f = 0; f < nFreq; f++)
-    {
-      P_Beams_F[beam][f] =
-        Complex(P_Beams_F_real[beam * nFreq + f], P_Beams_F_imag[beam * nFreq + f]);
-    }
-  }
 
   if (debugFlag)
   {
@@ -608,10 +553,7 @@ CArray2D sonar_calculation_wrapper(
 
   // --- Beam culling correction ---
   // beamCorrector and beamCorrectorSum is precalculated at parent cpp
-  cudaEvent_t start_event, stop_event;
-  float elapsed_ms = 0.0f;
-  cudaEventCreate(&start_event);
-  cudaEventCreate(&stop_event);
+  CArray2D P_Beams_F(CArray(nFreq), nBeams);
   cublasHandle_t cublas_handle;
 
   cublasStatus_t stat = cublasCreate(&cublas_handle);
@@ -623,24 +565,12 @@ CArray2D sonar_calculation_wrapper(
 
   for (size_t beam = 0; beam < nBeams; beam++)
   {
-    for (size_t f = 0; f < nFreq; f++)
-    {
-      P_Beams_Cor_real_h[f * nBeams + beam] = P_Beams_F[beam][f].real();
-      P_Beams_Cor_imag_h[f * nBeams + beam] = P_Beams_F[beam][f].imag();
-    }
     for (size_t beam_other = 0; beam_other < nBeams; beam_other++)
     {
       beamCorrector_lin_h[beam_other * nBeams + beam] = beamCorrector[beam][beam_other];
     }
   }
 
-  // Copy data to device
-  SAFE_CALL(
-    cudaMemcpy(d_P_Beams_Cor_real, P_Beams_Cor_real_h, P_Beams_Cor_Bytes, cudaMemcpyHostToDevice),
-    "CUDA Memcpy Failed (d_P_Beams_Cor_real)");
-  SAFE_CALL(
-    cudaMemcpy(d_P_Beams_Cor_imag, P_Beams_Cor_imag_h, P_Beams_Cor_Bytes, cudaMemcpyHostToDevice),
-    "CUDA Memcpy Failed (d_P_Beams_Cor_imag)");
   SAFE_CALL(
     cudaMemcpy(
       d_beamCorrector_lin, beamCorrector_lin_h, beamCorrector_lin_Bytes, cudaMemcpyHostToDevice),
@@ -659,7 +589,6 @@ CArray2D sonar_calculation_wrapper(
   const float beta = 0.0f;  // Setting beta to 0.0f to overwrite C
 
   // Real part
-  cudaEventRecord(start_event);
   SAFE_CUBLAS_CALL(
     cublasSgemm(
       cublas_handle,
@@ -682,12 +611,6 @@ CArray2D sonar_calculation_wrapper(
       N_gemm, d_P_Beams_Cor_imag, K_gemm, &beta, d_P_Beams_Cor_F_imag, N_gemm),
     "cublasSgemm Failed for imag part");
 
-  cudaEventRecord(stop_event);
-  cudaEventSynchronize(stop_event);
-  cudaEventElapsedTime(&elapsed_ms, start_event, stop_event);
-  printf("cuBLAS cublasSgemm time: %.3f ms\n", elapsed_ms);
-  cudaEventDestroy(start_event);
-  cudaEventDestroy(stop_event);
   SAFE_CUBLAS_CALL(cublasDestroy_v2(cublas_handle), "CUBLAS_STATUS_ALLOC_FAILED");
 
   SAFE_CALL(
@@ -696,16 +619,6 @@ CArray2D sonar_calculation_wrapper(
   SAFE_CALL(
     cudaMemcpy(P_Beams_Cor_imag_h, d_P_Beams_Cor_F_imag, P_Beams_Cor_Bytes, cudaMemcpyDeviceToHost),
     "CUDA Memcpy Failed for P_Beams_Cor_imag_h");
-
-  for (size_t beam = 0; beam < nBeams; beam++)
-  {
-    for (size_t f = 0; f < nFreq; f++)
-    {
-      P_Beams_F[beam][f] = Complex(
-        P_Beams_Cor_real_h[f * nBeams + beam] / beamCorrectorSum,
-        P_Beams_Cor_imag_h[f * nBeams + beam] / beamCorrectorSum);
-    }
-  }
 
   if (debugFlag)
   {
@@ -728,28 +641,10 @@ CArray2D sonar_calculation_wrapper(
   // ###################   FFT   #####################//
   // #################################################//
   SAFE_CALL(cudaDeviceSynchronize(), "Kernel Launch Failed");
-  const int DATASIZE = nFreq;
-  const int BATCH = nBeams;
 
   // --- Host side input data allocation and initialization
   cufftComplex * hostInputData = (cufftComplex *)malloc(DATASIZE * BATCH * sizeof(cufftComplex));
   start = std::chrono::high_resolution_clock::now();
-
-  // for (int beam = 0; beam < BATCH; beam++)
-  // {
-  //   for (int f = 0; f < DATASIZE; f++)
-  //   {
-  //     if (f < nFreq)
-  //     {
-  //       hostInputData[beam * DATASIZE + f] =
-  //         make_cuComplex(P_Beams_F[beam][f].real() * 1.0f, P_Beams_F[beam][f].imag() * 1.0f);
-  //     }
-  //     else
-  //     {
-  //       hostInputData[beam * DATASIZE + f] = (make_cuComplex(0.f, 0.f));  // zero padding
-  //     }
-  //   }
-  // }
 
 #pragma omp parallel for collapse(2)
   for (int beam = 0; beam < BATCH; ++beam)
@@ -758,15 +653,13 @@ CArray2D sonar_calculation_wrapper(
     {
       int idx = beam * DATASIZE + f;
       const std::complex<float> & val = P_Beams_F[beam][f];
-      hostInputData[idx] = make_cuComplex(val.real(), val.imag());
+      hostInputData[idx] = make_cuComplex(
+        P_Beams_Cor_real_h[f * nBeams + beam] / beamCorrectorSum,
+        P_Beams_Cor_imag_h[f * nBeams + beam] / beamCorrectorSum);
     }
   }
 
   // --- Device side input data allocation and initialization
-  cufftComplex * deviceInputData;
-  SAFE_CALL(
-    cudaMalloc((void **)&deviceInputData, DATASIZE * BATCH * sizeof(cufftComplex)),
-    "FFT CUDA Malloc Failed");
   SAFE_CALL(
     cudaMemcpy(
       deviceInputData, hostInputData, DATASIZE * BATCH * sizeof(cufftComplex),
@@ -775,10 +668,6 @@ CArray2D sonar_calculation_wrapper(
 
   // --- Host side output data allocation
   cufftComplex * hostOutputData = (cufftComplex *)malloc(DATASIZE * BATCH * sizeof(cufftComplex));
-
-  // --- Device side output data allocation
-  cufftComplex * deviceOutputData;
-  cudaMalloc((void **)&deviceOutputData, DATASIZE * BATCH * sizeof(cufftComplex));
 
   // --- Batched 1D FFTs
   cufftHandle handle;
@@ -803,12 +692,6 @@ CArray2D sonar_calculation_wrapper(
       cudaMemcpyDeviceToHost),
     "FFT CUDA Memcopy Failed");
 
-  cufftDestroy(handle);
-  cudaFree(deviceOutputData);
-  cudaFree(deviceInputData);
-  free(hostInputData);
-  free(hostOutputData);
-
   for (int beam = 0; beam < BATCH; beam++)
   {
     for (int f = 0; f < nFreq; f++)
@@ -818,6 +701,10 @@ CArray2D sonar_calculation_wrapper(
         hostOutputData[beam * DATASIZE + f].y * delta_f);
     }
   }
+
+  cufftDestroy(handle);
+  free(hostInputData);
+  free(hostOutputData);
 
   if (debugFlag)
   {
