@@ -372,6 +372,9 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
   this->debugFlag = sensorElement->Get<bool>("debugFlag", false).first;
   gzmsg << "Debug: " << this->debugFlag << std::endl;
 
+  this->blazingFlag = sensorElement->Get<bool>("blazingSonarImage", false).first;
+  gzmsg << "BlazingSonarImage: " << this->blazingFlag << std::endl;
+
   this->pointCloudTopicName =
     sensorElement->Get<std::string>("pointCloudTopicName", "point_cloud").first;
   gzmsg << "pointCloudTopicName: " << this->pointCloudTopicName << std::endl;
@@ -647,16 +650,6 @@ bool MultibeamSonarSensor::Implementation::InitializeBeamArrangement(MultibeamSo
   RCLCPP_INFO_STREAM(this->ros_node_->get_logger(), "");
 
   // -- Pre calculations for sonar -- //
-
-  // Random number generator
-  gzmsg << "Initializing random number generator..." << std::endl;
-  this->randImage = cv::Mat(this->pointMsg.height(), this->pointMsg.width(), CV_32FC2);
-  uint64 randN = static_cast<uint64>(std::rand());
-  gzmsg << "Random seed: " << randN << std::endl;
-  cv::theRNG().state = randN;
-  cv::RNG rng = cv::theRNG();
-  rng.fill(this->randImage, cv::RNG::NORMAL, 0.0f, 1.0f);
-  gzmsg << "Random image generated with normal distribution." << std::endl;
 
   // Hamming window
   gzmsg << "Computing Hamming window for " << this->nFreq << " frequencies." << std::endl;
@@ -1069,7 +1062,6 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
   CArray2D P_Beams = NpsGazeboSonar::sonar_calculation_wrapper(
     this->pointCloudImage,        // cv::Mat& depth_image (the point cloud image)
     normal_image,                 // cv::Mat& normal_image
-    this->randImage,              // cv::Mat& rand_image
     hPixelSize,                   // hPixelSize
     vPixelSize,                   // vPixelSize
     hFOV,                         // hFOV
@@ -1093,7 +1085,9 @@ void MultibeamSonarSensor::Implementation::ComputeSonarImage()
     this->window,                 // _window
     this->beamCorrector,          // _beamCorrector
     this->beamCorrectorSum,       // _beamCorrectorSum
-    this->debugFlag);
+    this->debugFlag,              // debugFlag
+    this->blazingFlag             // _blazingFlag
+  );
 
   // For calc time measure
   auto stop = std::chrono::high_resolution_clock::now();

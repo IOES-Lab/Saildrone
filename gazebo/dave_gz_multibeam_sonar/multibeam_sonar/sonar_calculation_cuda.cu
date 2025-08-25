@@ -37,6 +37,7 @@
 
 #include <cublas_v2.h>
 #include <chrono>
+#include <ctime>
 
 // FOR DEBUG -- DEV VERSION
 #include <fstream>
@@ -85,7 +86,6 @@ static inline void _safe_cuda_call(
 // Persistent GPU memory pointers (device)
 static float * d_depth_image = nullptr;
 static float * d_normal_image = nullptr;
-static float * d_rand_image = nullptr;
 static float * d_reflectivity_image = nullptr;
 static float * d_ray_elevationAngles = nullptr;
 static float * d_P_Beams_F_real = nullptr;
@@ -198,7 +198,7 @@ __global__ void reduce_beams_kernel(
 // Sonar Claculation Function
 __global__ void sonar_calculation(
   thrust::complex<float> * P_Beams, float * depth_image, float * normal_image, int width,
-  int height, int depth_image_step, int normal_image_step, float * rand_image, int rand_image_step,
+  int height, int depth_image_step, int normal_image_step, unsigned long long seed,
   float * reflectivity_image, int reflectivity_image_step, float hPixelSize, float vPixelSize,
   float hFOV, float vFOV, float beam_azimuthAngleWidth, float beam_elevationAngleWidth,
   float ray_azimuthAngleWidth, float * ray_elevationAngles, float ray_elevationAngleWidth,
@@ -216,7 +216,6 @@ __global__ void sonar_calculation(
     // Location of the image pixel
     const int depth_index = ray * depth_image_step / sizeof(float) + beam;
     const int normal_index = ray * normal_image_step / sizeof(float) + (3 * beam);
-    const int rand_index = ray * rand_image_step / sizeof(float) + (2 * beam);
     const int reflectivity_index = ray * reflectivity_image_step / sizeof(float) + beam;
 
     // Input parameters for ray processing
@@ -239,9 +238,10 @@ __global__ void sonar_calculation(
       acos(normal[2]);  // compute_incidence(ray_azimuthAngle, ray_elevationAngle, normal);
 
     // ----- Point scattering model ------ //
-    // Gaussian noise generated using opencv RNG
-    float xi_z = rand_image[rand_index];
-    float xi_y = rand_image[rand_index + 1];
+    curandState state;
+    curand_init(seed, beam * height + ray, 0, &state);  // seed, unique id, offset, state
+    float xi_z = curand_normal(&state);                 // standard normal random value
+    float xi_y = curand_normal(&state);                 // standard normal random value
 
     // Calculate amplitude
     thrust::complex<float> randomAmps = thrust::complex<float>(xi_z / sqrt(2.0), xi_y / sqrt(2.0));
@@ -312,7 +312,6 @@ void free_cuda_memory()
 {
   SAFE_CALL(cudaFree(d_depth_image), "cudaFree failed for d_depth_image");
   SAFE_CALL(cudaFree(d_normal_image), "cudaFree failed for d_normal_image");
-  SAFE_CALL(cudaFree(d_rand_image), "cudaFree failed for d_rand_image");
   SAFE_CALL(cudaFree(d_reflectivity_image), "cudaFree failed for d_reflectivity_image");
   SAFE_CALL(cudaFree(d_ray_elevationAngles), "cudaFree failed for d_ray_elevationAngles");
   SAFE_CALL(cudaFree(d_P_Beams), "cudaFree failed for d_P_Beams");
@@ -334,14 +333,13 @@ void free_cuda_memory()
 
 // Sonar Claculation Function Wrapper
 CArray2D sonar_calculation_wrapper(
-  const cv::Mat & depth_image, const cv::Mat & normal_image, const cv::Mat & rand_image,
-  double _hPixelSize, double _vPixelSize, double _hFOV, double _vFOV,
-  double _beam_azimuthAngleWidth, double _beam_elevationAngleWidth, double _ray_azimuthAngleWidth,
-  float * _ray_elevationAngles, double _ray_elevationAngleWidth, double _soundSpeed,
-  double _maxDistance, double _sourceLevel, int _nBeams, int _nRays, int _raySkips,
-  double _sonarFreq, double _bandwidth, int _nFreq, const cv::Mat & reflectivity_image,
-  double _attenuation, float * window, float ** beamCorrector, float beamCorrectorSum,
-  bool debugFlag)
+  const cv::Mat & depth_image, const cv::Mat & normal_image, double _hPixelSize, double _vPixelSize,
+  double _hFOV, double _vFOV, double _beam_azimuthAngleWidth, double _beam_elevationAngleWidth,
+  double _ray_azimuthAngleWidth, float * _ray_elevationAngles, double _ray_elevationAngleWidth,
+  double _soundSpeed, double _maxDistance, double _sourceLevel, int _nBeams, int _nRays,
+  int _raySkips, double _sonarFreq, double _bandwidth, int _nFreq,
+  const cv::Mat & reflectivity_image, double _attenuation, float * window, float ** beamCorrector,
+  float beamCorrectorSum, bool debugFlag, bool blazingFlag)
 {
   // Start the timer for the entire function
   auto total_start_time = std::chrono::high_resolution_clock::now();
@@ -390,7 +388,6 @@ CArray2D sonar_calculation_wrapper(
   // Calculate total number of bytes of input and output image
   const int depth_image_Bytes = depth_image.step * depth_image.rows;
   const int normal_image_Bytes = normal_image.step * normal_image.rows;
-  const int rand_image_Bytes = rand_image.step * rand_image.rows;
   const int reflectivity_image_Bytes = reflectivity_image.step * reflectivity_image.rows;
   const int ray_elevationAngles_Bytes = sizeof(float) * nRays;
   const int P_Beams_N = nBeams * (int)(nRays / raySkips) * (nFreq + 1);
@@ -413,7 +410,6 @@ CArray2D sonar_calculation_wrapper(
       "MallocHost ray_elevationAngles");
     SAFE_CALL(
       cudaMalloc((void **)&d_normal_image, normal_image.step * normal_image.rows), "normal malloc");
-    SAFE_CALL(cudaMalloc((void **)&d_rand_image, rand_image.step * rand_image.rows), "rand malloc");
     SAFE_CALL(
       cudaMalloc((void **)&d_reflectivity_image, reflectivity_image.step * reflectivity_image.rows),
       "reflectivity malloc");
@@ -474,9 +470,6 @@ CArray2D sonar_calculation_wrapper(
     cudaMemcpy(d_normal_image, normal_image.ptr(), normal_image_Bytes, cudaMemcpyHostToDevice),
     "CUDA Memcpy Failed");
   SAFE_CALL(
-    cudaMemcpy(d_rand_image, rand_image.ptr(), rand_image_Bytes, cudaMemcpyHostToDevice),
-    "CUDA Memcpy Failed");
-  SAFE_CALL(
     cudaMemcpy(
       d_reflectivity_image, reflectivity_image.ptr(), reflectivity_image_Bytes,
       cudaMemcpyHostToDevice),
@@ -494,14 +487,25 @@ CArray2D sonar_calculation_wrapper(
   const dim3 grid(
     (depth_image.cols + block.x - 1) / block.x, (depth_image.rows + block.y - 1) / block.y);
 
+  // Random seed for blazing sonar image
+  unsigned long long seed;
+  if (blazingFlag)
+  {
+    seed = static_cast<unsigned long long>(time(NULL));
+  }
+  else
+  {
+    seed = 1234;
+  }
+
   // Launch the beamor conversion kernel
   sonar_calculation<<<grid, block>>>(
     d_P_Beams, d_depth_image, d_normal_image, normal_image.cols, normal_image.rows,
-    depth_image.step, normal_image.step, d_rand_image, rand_image.step, d_reflectivity_image,
-    reflectivity_image.step, hPixelSize, vPixelSize, hFOV, vFOV, beam_azimuthAngleWidth,
-    beam_elevationAngleWidth, ray_azimuthAngleWidth, d_ray_elevationAngles, ray_elevationAngleWidth,
-    soundSpeed, sourceTerm, nBeams, nRays, raySkips, sonarFreq, delta_f, nFreq, bandwidth,
-    max_distance, attenuation, area_scaler);
+    depth_image.step, normal_image.step, seed, d_reflectivity_image, reflectivity_image.step,
+    hPixelSize, vPixelSize, hFOV, vFOV, beam_azimuthAngleWidth, beam_elevationAngleWidth,
+    ray_azimuthAngleWidth, d_ray_elevationAngles, ray_elevationAngleWidth, soundSpeed, sourceTerm,
+    nBeams, nRays, raySkips, sonarFreq, delta_f, nFreq, bandwidth, max_distance, attenuation,
+    area_scaler);
 
   // Synchronize to check for any kernel launch errors
   SAFE_CALL(cudaDeviceSynchronize(), "Kernel Launch Failed");
