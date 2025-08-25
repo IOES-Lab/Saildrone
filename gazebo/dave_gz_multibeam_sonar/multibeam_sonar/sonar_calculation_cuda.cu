@@ -88,8 +88,6 @@ static float * d_depth_image = nullptr;
 static float * d_normal_image = nullptr;
 static float * d_reflectivity_image = nullptr;
 static float * d_ray_elevationAngles = nullptr;
-static float * d_P_Beams_F_real = nullptr;
-static float * d_P_Beams_F_imag = nullptr;
 static thrust::complex<float> * d_P_Beams = nullptr;
 static thrust::complex<float> * P_Beams = nullptr;
 static bool memory_initialized = false;
@@ -145,8 +143,8 @@ __device__ __host__ float unnormalized_sinc(float t)
 }
 
 __global__ void reduce_beams_kernel(
-  const thrust::complex<float> * __restrict__ d_P_Beams, float * d_P_Beams_F_real,
-  float * d_P_Beams_F_imag, int nBeams, int nFreq, int nRaysSkipped)
+  const thrust::complex<float> * __restrict__ d_P_Beams, float * d_P_Beams_Cor_real,
+  float * d_P_Beams_Cor_imag, int nBeams, int nFreq, int nRaysSkipped)
 {
   const int beam = blockIdx.y;
   const int f = blockIdx.x;
@@ -189,8 +187,8 @@ __global__ void reduce_beams_kernel(
   if (threadIdx.x == 0)
   {
     int output_idx = f * nBeams + beam;
-    d_P_Beams_F_real[output_idx] = shared_real[0];
-    d_P_Beams_F_imag[output_idx] = shared_imag[0];
+    d_P_Beams_Cor_real[output_idx] = shared_real[0];
+    d_P_Beams_Cor_imag[output_idx] = shared_imag[0];
   }
 }
 
@@ -318,8 +316,6 @@ void free_cuda_memory()
   SAFE_CALL(cudaFree(deviceOutputData), "cudaFree failed for OutputData");
   SAFE_CALL(cudaFree(deviceInputData), "cudaFree failed for InputData");
   SAFE_CALL(cudaFreeHost(P_Beams), "cudaFreeHost failed for P_Beams");
-  SAFE_CALL(cudaFree(d_P_Beams_F_real), "cudaFree failed for d_P_Beams_F_real");
-  SAFE_CALL(cudaFree(d_P_Beams_F_imag), "cudaFree failed for d_P_Beams_F_imag");
   SAFE_CALL(cudaFree(d_P_Beams_Cor_imag), "cudaFree failed for d_P_Beams_Cor_imag");
   SAFE_CALL(cudaFree(d_P_Beams_Cor_real), "cudaFree failed for d_P_Beams_Cor_real");
   SAFE_CALL(cudaFree(d_P_Beams_Cor_F_imag), "cudaFree failed for d_P_Beams_Cor_F_imag");
@@ -421,8 +417,6 @@ CArray2D sonar_calculation_wrapper(
     SAFE_CALL(
       cudaMalloc((void **)&d_P_Beams, sizeof(thrust::complex<float>) * P_Beams_N),
       "P_Beams malloc device");
-    SAFE_CALL(cudaMalloc(&d_P_Beams_F_real, sizeof(float) * nBeams * nFreq), "beam real malloc");
-    SAFE_CALL(cudaMalloc(&d_P_Beams_F_imag, sizeof(float) * nBeams * nFreq), "beam imag malloc");
     SAFE_CALL(
       cudaMallocHost((void **)&P_Beams_Cor_real_h, P_Beams_Cor_Bytes),
       "CUDA MallocHost Failed for P_Beams_Cor_real_h");
