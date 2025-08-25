@@ -236,10 +236,13 @@ __global__ void sonar_calculation(
       acos(normal[2]);  // compute_incidence(ray_azimuthAngle, ray_elevationAngle, normal);
 
     // ----- Point scattering model ------ //
-    curandState state;
+    curandStatePhilox4_32_10_t state;
     curand_init(seed, beam * height + ray, 0, &state);  // seed, unique id, offset, state
-    float xi_z = curand_normal(&state);                 // standard normal random value
-    float xi_y = curand_normal(&state);                 // standard normal random value
+
+    float4 xi = curand_normal4(&state);  // standard 4 normal random values
+
+    float xi_z = xi.x;
+    float xi_y = xi.y;
 
     // Calculate amplitude
     thrust::complex<float> randomAmps = thrust::complex<float>(xi_z / sqrt(2.0), xi_y / sqrt(2.0));
