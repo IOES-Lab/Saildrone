@@ -32,15 +32,9 @@ if(CUDAToolkit_FOUND)
   find_package(sensor_msgs REQUIRED)
   find_package(geometry_msgs REQUIRED)
   find_package(rosidl_default_generators REQUIRED)
-  find_package(PCL REQUIRED)
-  find_package(pcl_conversions REQUIRED)
   find_package(OpenCV REQUIRED)
   find_package(marine_acoustic_msgs REQUIRED)
   find_package(cv_bridge REQUIRED)
-
-  include_directories(${PCL_INCLUDE_DIRS})
-  link_directories(${PCL_LIBRARY_DIRS})
-  add_definitions(${PCL_DEFINITIONS})
 
   set(GZ_MSGS_VER ${gz-msgs10_VERSION_MAJOR})
   set(GZ_RENDERING_VER ${gz-rendering8_VERSION_MAJOR})
@@ -88,7 +82,6 @@ if(CUDAToolkit_FOUND)
   endif()
 
   target_link_libraries(${PROJECT_NAME}
-    ${PCL_LIBRARIES}
     ${CUDA_LIBRARIES}
     ${CUDA_CUFFT_LIBRARIES}
     ${CUBLAS_LIB}
@@ -107,8 +100,6 @@ if(CUDAToolkit_FOUND)
     rclcpp
     sensor_msgs
     rosidl_default_generators
-    PCL
-    pcl_conversions
     OpenCV
     marine_acoustic_msgs
     geometry_msgs
