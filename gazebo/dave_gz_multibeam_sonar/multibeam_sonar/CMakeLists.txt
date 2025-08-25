@@ -16,7 +16,7 @@ set(CUDA_ARCHITECTURE "60" CACHE STRING "Target CUDA SM version")
 find_package(ament_cmake REQUIRED)
 find_package(CUDAToolkit QUIET)
 
-if(BUILD_WITH_CUDA AND CUDAToolkit_FOUND)
+if(CUDAToolkit_FOUND)
 
   enable_language(CUDA)
   find_package(CUDA REQUIRED)
