@@ -36,6 +36,8 @@
 #include <list>
 
 #include <cublas_v2.h>
+#include <cuda_runtime.h>
+#include <math_constants.h>
 #include <chrono>
 #include <ctime>
 
@@ -270,17 +272,18 @@ __global__ void sonar_calculation(
       float freq;
       if (nFreq % 2 == 0)
       {
-        freq = delta_f * (-nFreq / 2.0f + f + 1.0f);
+        freq = __fdividef(delta_f * (-nFreq + 2.0f * (f + 1.0f)), 2.0f);
       }
       else
       {
-        freq = delta_f * (-(nFreq - 1) / 2.0f + f + 1.0f);
+        freq = __fdividef(delta_f * (-(nFreq - 1) + 2.0f * (f + 1.0f)), 2.0f);
       }
-      float kw = 2.0f * M_PI * freq / soundSpeed;  // wave vector
+
+      float kw = __fdividef(2.0f * M_PI * freq, soundSpeed);  // wave vector
 
       float phase = 2.0f * distance * kw;
       float s, c;
-      __sincosf(phase, &s, &c);
+      __sincosf(phase, &s, &c);  // intrinsic sine and cosine
 
       thrust::complex<float> kernel(c, s);
       kernel *= amplitude;
