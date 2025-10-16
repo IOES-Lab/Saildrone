@@ -161,8 +161,6 @@ RUN . "/opt/ros/${ROS_DISTRO}/setup.sh" && colcon build
 # Set User as user
 USER docker
 RUN echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc && \
-    echo "source /opt/gazebo/install/setup.bash" >> ~/.bashrc && \
-    echo "source /opt/mavros/install/setup.bash" >> ~/.bashrc && \
     echo "source $DAVE_UNDERLAY/install/setup.bash" >> ~/.bashrc && \
     echo "export GEOGRAPHICLIB_GEOID_PATH=/usr/local/share/GeographicLib/geoids" >> ~/.bashrc && \
     echo "export PYTHONPATH=\$PYTHONPATH:/opt/gazebo/install/lib/python" >> ~/.bashrc && \
