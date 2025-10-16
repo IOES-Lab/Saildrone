@@ -17,7 +17,7 @@ RUN apt-get update && \
     x11-apps mesa-utils bison flex automake \
     && rm -rf /var/lib/apt/lists/
 
-# Prereqs for Ardupilot - Ardusub
+# Prereqs for Ardupilot - ArduRover
 ADD --chown=root:root --chmod=0644 https://raw.githubusercontent.com/osrf/osrf-rosdep/master/gz/00-gazebo.list /etc/ros/rosdep/sources.list.d/00-gazebo.list
 RUN wget https://packages.osrfoundation.org/gazebo.gpg -O /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg \
     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" |  tee /etc/apt/sources.list.d/gazebo-stable.list > /dev/null \
@@ -46,9 +46,9 @@ ADD https://raw.githubusercontent.com/IOES-Lab/dave/$BRANCH/\
 extras/ros-jazzy-gz-harmonic-install.sh install.sh
 RUN bash install.sh
 
-# Install Ardupilot - Ardusub
+# Install Ardupilot - ArduRover
 ADD https://raw.githubusercontent.com/IOES-Lab/dave/$BRANCH/\
-extras/ardusub-ubuntu-install.sh install.sh
+extras/ardurover-ubuntu-install.sh install.sh
 RUN bash install.sh
 # Install mavros
 RUN apt-get update && \
@@ -87,20 +87,15 @@ RUN echo "source /opt/ros/jazzy/setup.bash" >> /root/.bashrc && \
     echo "export PS1='\[\e[1;36m\]\u@DAVE_docker\[\e[0m\]\[\e[1;34m\](\$(hostname | cut -c1-12))\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ '" >> /root/.bashrc
 
 RUN touch /root/.dave_entrypoint && printf '\033[1;36m =====\n' >> /root/.dave_entrypoint && \
-    printf '  ____    ___     _______      _                     _   _      \n' >> /root/.dave_entrypoint && \
-    printf ' |  _ \  / \ \   / | ____|    / \   __ _ _   _  __ _| |_(_) ___ \n' >> /root/.dave_entrypoint && \
-    printf ' | | | |/ _ \ \ / /|  _|     / _ \ / _` | | | |/ _` | __| |/ __|\n' >> /root/.dave_entrypoint && \
-    printf ' | |_| / ___ \ V / | |___   / ___ | (_| | |_| | (_| | |_| | (__ \n' >> /root/.dave_entrypoint && \
-    printf ' |____/_/   \_\_/  |_____| /_/   \_\__, |\__,_|\__,_|\__|_|\___|\n' >> /root/.dave_entrypoint && \
-    printf ' __     ___      _               _     _____            _       \n' >> /root/.dave_entrypoint && \
-    printf ' \ \   / (_)_ __| |_ _   _  __ _| |   | ____|_ ____   _(_)_ __  \n' >> /root/.dave_entrypoint && \
-    printf '  \ \ / /| | `__| __| | | |/ _` | |   |  _| | `_ \ \ / | | `__| \n' >> /root/.dave_entrypoint && \
-    printf '   \ V / | | |  | |_| |_| | (_| | |   | |___| | | \ V /| | |_   \n' >> /root/.dave_entrypoint && \
-    printf '    \_/  |_|_|   \__|\__,_|\__,_|_|   |_____|_| |_|\_/ |_|_(_)  \n\033[0m' >> /root/.dave_entrypoint && \
+    printf '  ____    _    _____ _       _     ____   ____   _   _   _____  \n' >> /root/.dave_entrypoint && \
+    printf ' / ___|  / \  |  ___| |     | |   |  _ \\ / ___| | \\ | | | ____| \n' >> /root/.dave_entrypoint && \
+    printf '| |     / _ \ | |_  | |     | |   | | | | |     |  \\| | |  _|   \n' >> /root/.dave_entrypoint && \
+    printf '| |___ / ___ \|  _| | |___  | |   | |_| | |___  | |\\  | | |___  \n' >> /root/.dave_entrypoint && \
+    printf ' \\____/_/   \\_\\_|   |_____| |_|   |____/ \\____| |_| \\_| |_____| \n\033[0m' >> /root/.dave_entrypoint && \
     printf '\033[1;32m\n =====\n\033[0m' >> /root/.dave_entrypoint && \
     printf "\\033[1;32m 👋 Hi! This is Docker virtual environment for DAVE\n\\033[0m" \
     >> /root/.dave_entrypoint && \
-    printf "\\033[1;33m\tROS2 Jazzy - Gazebo Harmonic (w ardupilot(ardusub) + mavros)\n\n\\033[0m" \
+    printf "\\033[1;33m\tROS2 Jazzy - Gazebo Harmonic (w ardupilot(ardurover) + mavros)\n\n\\033[0m" \
     >> /root/.dave_entrypoint && \
     echo 'cat /root/.dave_entrypoint' >> /root/.bashrc
 

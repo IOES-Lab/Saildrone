@@ -93,7 +93,7 @@ ADD https://raw.githubusercontent.com/IOES-Lab/dave/$BRANCH/\
 extras/ros-jazzy-gz-harmonic-install.sh install.sh
 RUN sudo bash install.sh
 
-# Prereqs for Ardupilot - Ardusub
+# Prereqs for Ardupilot - ArduRover
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DEBCONF_NONINTERACTIVE_SEEN=true
 # hadolint ignore=DL3008
@@ -127,9 +127,9 @@ extras/background.png && \
     cp /usr/share/backgrounds/warty-final-ubuntu.png \
         /usr/share/backgrounds/ubuntu-wallpaper-d.png
 
-# Install Ardupilot - Ardusub
+# Install Ardupilot - ArduRover
 USER docker
-RUN wget -O /tmp/install.sh https://raw.githubusercontent.com/IOES-Lab/dave/$BRANCH/extras/ardusub-ubuntu-install-local.sh
+RUN wget -O /tmp/install.sh https://raw.githubusercontent.com/IOES-Lab/dave/$BRANCH/extras/ardurover-ubuntu-install-local.sh
 RUN chmod +x /tmp/install.sh && bash /tmp/install.sh
 
 # Set up Dave workspace
@@ -173,20 +173,17 @@ RUN echo "export XDG_RUNTIME_DIR=~/.xdg_log" >> ~/.bashrc && \
 # Create and write the welcome message to a new file
 RUN mkdir -p /home/docker/.config/autostart && \
     printf '\033[1;36m =====\n' >> ~/.hi && \
-    printf '  ____    ___     _______      _                     _   _      \n' >> ~/.hi && \
-    printf ' |  _ \  / \ \   / | ____|    / \   __ _ _   _  __ _| |_(_) ___ \n' >> ~/.hi && \
-    printf ' | | | |/ _ \ \ / /|  _|     / _ \ / _` | | | |/ _` | __| |/ __|\n' >> ~/.hi && \
-    printf ' | |_| / ___ \ V / | |___   / ___ | (_| | |_| | (_| | |_| | (__ \n' >> ~/.hi && \
-    printf ' |____/_/   \_\_/  |_____| /_/   \_\__, |\__,_|\__,_|\__|_|\___|\n' >> ~/.hi && \
-    printf ' __     ___      _               _     _____            _       \n' >> ~/.hi && \
-    printf ' \ \   / (_)_ __| |_ _   _  __ _| |   | ____|_ ____   _(_)_ __  \n' >> ~/.hi && \
-    printf '  \ \ / /| | `__| __| | | |/ _` | |   |  _| | `_ \ \ / | | `__| \n' >> ~/.hi && \
-    printf '   \ V / | | |  | |_| |_| | (_| | |   | |___| | | \ V /| | |_   \n' >> ~/.hi && \
-    printf '    \_/  |_|_|   \__|\__,_|\__,_|_|   |_____|_| |_|\_/ |_|_(_)  \n\033[0m' >> ~/.hi && \
+    printf '  _____    _    _____ _     _     ____   ____   _   _  \n' >> ~/.hi && \
+    printf ' / ____|  / \\  |  __ \\ |   | |   |  _ \\ / __ \\ | \\ | | \n' >> ~/.hi && \
+    printf '| (___   / _ \\ | |  | | |   | |   | |_) | |  | ||  \\| | \n' >> ~/.hi && \
+    printf ' \\___ \\ / ___ \\| |  | | |   | |   |  _ <| |  | || . ` | \n' >> ~/.hi && \
+    printf ' ____) /_/   \\_\\_|  |_|_|   |_|   | |_) | |__| || |\\  | \n' >> ~/.hi && \
+    printf '|_____/            |_| (_) (_)   |____/ \\____/ |_| \\_| \n' >> ~/.hi && \
+    printf '\033[0m' >> ~/.hi && \
     printf '\033[1;32m\n =====\n\033[0m' >> ~/.hi && \
     printf "\\033[1;32m 👋 Hi! This is Docker virtual environment for DAVE\n\\033[0m" \
     >> ~/.hi && \
-    printf "\\033[1;33m\tROS2 Jazzy - Gazebo Harmonic (w ardupilot(ardusub) + mavros)\n\n\n\\033[0m" \
+    printf "\\033[1;33m\tROS2 Jazzy - Gazebo Harmonic (w ardupilot(ardurover) + mavros)\n\n\n\\033[0m" \
     >> ~/.hi
 
 # Remove sudo message

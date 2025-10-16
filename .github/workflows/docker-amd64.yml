@@ -6,7 +6,7 @@ on:
   push:
     tags: ["*"]
     branches:
-      - ros2
+      - main
       - dockertest
 
 env:
@@ -39,7 +39,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ioeslab/dave
+          images: ioeslab/saildrone
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
