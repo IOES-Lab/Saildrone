@@ -145,8 +145,15 @@ RUN apt update && apt --fix-broken install && \
     rosdep init && rosdep update --rosdistro $ROS_DISTRO && \
     rosdep install --rosdistro $ROS_DISTRO -iy --from-paths . && \
     rm -rf /var/lib/apt/lists/
-USER docker
 
+# Install VSCode
+RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /usr/share/keyrings/microsoft.gpg && \
+    echo "deb [arch=arm64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main" \
+    > /etc/apt/sources.list.d/vscode.list && \
+    apt-get update && apt-get install -y code && \
+    rm -rf /var/lib/apt/lists/*
+
+USER docker
 # Build Saildrone workspace
 WORKDIR $DAVE_UNDERLAY
 RUN . "/opt/ros/${ROS_DISTRO}/setup.sh" && colcon build
