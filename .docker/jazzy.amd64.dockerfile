@@ -1,6 +1,6 @@
 ARG ROS_DISTRO="jazzy"
 FROM osrf/ros:$ROS_DISTRO-desktop-full
-ARG BRANCH="ros2"
+ARG BRANCH="main"
 
 # Install Utilities
 # hadolint ignore=DL3008
@@ -42,12 +42,12 @@ RUN locale-gen en_US en_US.UTF-8 && update-locale LC_ALL=en_US.UTF-8 LANG=en_US.
     export LANG=en_US.UTF-8
 
 # Install ROS-Gazebo framework
-ADD https://raw.githubusercontent.com/IOES-Lab/dave/$BRANCH/\
+ADD https://raw.githubusercontent.com/IOES-Lab/saildrone/$BRANCH/\
 extras/ros-jazzy-gz-harmonic-install.sh install.sh
 RUN bash install.sh
 
 # Install Ardupilot - ArduRover
-ADD https://raw.githubusercontent.com/IOES-Lab/dave/$BRANCH/\
+ADD https://raw.githubusercontent.com/IOES-Lab/saildrone/$BRANCH/\
 extras/ardurover-ubuntu-install.sh install.sh
 RUN bash install.sh
 # Install mavros
@@ -58,45 +58,45 @@ WORKDIR /opt/mavros_ws
 RUN wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh && \
     bash ./install_geographiclib_datasets.sh
 
-# Set up Dave workspace
-ENV DAVE_WS=/opt/dave_ws
-WORKDIR $DAVE_WS/src
+# Set up Saildrone workspace
+ENV SAILDRONE_WS=/opt/saildrone_ws
+WORKDIR $SAILDRONE_WS/src
 
-ADD https://raw.githubusercontent.com/IOES-Lab/dave/$BRANCH/\
-extras/repos/dave.$ROS_DISTRO.repos $DAVE_WS/dave.repos
-RUN vcs import --shallow --input $DAVE_WS/dave.repos
+ADD https://raw.githubusercontent.com/IOES-Lab/saildrone/$BRANCH/\
+extras/repos/dave.$ROS_DISTRO.repos $SAILDRONE_WS/dave.repos
+RUN vcs import --shallow --input $SAILDRONE_WS/dave.repos
 
-# Install dave dependencies
+# Install Saildrone dependencies
 RUN apt-get update && rosdep update && \
     rosdep install -iy --from-paths . && \
     rm -rf /var/lib/apt/lists/
 
-# Compile Dave
-WORKDIR $DAVE_WS
+# Compile Saildrone
+WORKDIR $SAILDRONE_WS
 RUN . "/opt/ros/${ROS_DISTRO}/setup.sh" && \
     colcon build
 WORKDIR /
 
 # Set up bashrc for root
 RUN echo "source /opt/ros/jazzy/setup.bash" >> /root/.bashrc && \
-    echo "source /opt/dave_ws/install/setup.bash" >> /root/.bashrc && \
+    echo "source /opt/saildrone_ws/install/setup.bash" >> /root/.bashrc && \
     echo "export PATH=/opt/ardupilot_ws/ardupilot/Tools/autotest:\$PATH" >> /root/.bashrc && \
     echo "export PATH=/opt/ardupilot_ws/ardupilot/build/sitl/bin:\$PATH" >> /root/.bashrc && \
     echo "export GZ_SIM_SYSTEM_PLUGIN_PATH=/opt/ardupilot_ws/ardupilot_gazebo/build:\$GZ_SIM_SYSTEM_PLUGIN_PATH" >> /root/.bashrc && \
     echo "export GZ_SIM_RESOURCE_PATH=/opt/ardupilot_ws/ardupilot_gazebo/models:/opt/ardupilot_ws/ardupilot_gazebo/worlds:\$GZ_SIM_RESOURCE_PATH" >> /root/.bashrc && \
     echo "export PS1='\[\e[1;36m\]\u@DAVE_docker\[\e[0m\]\[\e[1;34m\](\$(hostname | cut -c1-12))\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ '" >> /root/.bashrc
 
-RUN touch /root/.dave_entrypoint && printf '\033[1;36m =====\n' >> /root/.dave_entrypoint && \
-    printf '  ____    _    _____ _       _     ____   ____   _   _   _____  \n' >> /root/.dave_entrypoint && \
-    printf ' / ___|  / \  |  ___| |     | |   |  _ \\ / ___| | \\ | | | ____| \n' >> /root/.dave_entrypoint && \
-    printf '| |     / _ \ | |_  | |     | |   | | | | |     |  \\| | |  _|   \n' >> /root/.dave_entrypoint && \
-    printf '| |___ / ___ \|  _| | |___  | |   | |_| | |___  | |\\  | | |___  \n' >> /root/.dave_entrypoint && \
-    printf ' \\____/_/   \\_\\_|   |_____| |_|   |____/ \\____| |_| \\_| |_____| \n\033[0m' >> /root/.dave_entrypoint && \
-    printf '\033[1;32m\n =====\n\033[0m' >> /root/.dave_entrypoint && \
-    printf "\\033[1;32m 👋 Hi! This is Docker virtual environment for DAVE\n\\033[0m" \
-    >> /root/.dave_entrypoint && \
+RUN touch /root/.saildrone_entrypoint && printf '\033[1;36m =====\n' >> /root/.saildrone_entrypoint && \
+    printf '  ____    _    _____ _       _     ____   ____   _   _   _____  \n' >> /root/.saildrone_entrypoint && \
+    printf ' / ___|  / \  |  ___| |     | |   |  _ \\ / ___| | \\ | | | ____| \n' >> /root/.saildrone_entrypoint && \
+    printf '| |     / _ \ | |_  | |     | |   | | | | |     |  \\| | |  _|   \n' >> /root/.saildrone_entrypoint && \
+    printf '| |___ / ___ \|  _| | |___  | |   | |_| | |___  | |\\  | | |___  \n' >> /root/.saildrone_entrypoint && \
+    printf ' \\____/_/   \\_\\_|   |_____| |_|   |____/ \\____| |_| \\_| |_____| \n\033[0m' >> /root/.saildrone_entrypoint && \
+    printf '\033[1;32m\n =====\n\033[0m' >> /root/.saildrone_entrypoint && \
+    printf "\\033[1;32m 👋 Hi! This is Docker virtual environment for Saildrone (fork from Dave)\n\\033[0m" \
+    >> /root/.saildrone_entrypoint && \
     printf "\\033[1;33m\tROS2 Jazzy - Gazebo Harmonic (w ardupilot(ardurover) + mavros)\n\n\\033[0m" \
-    >> /root/.dave_entrypoint && \
-    echo 'cat /root/.dave_entrypoint' >> /root/.bashrc
+    >> /root/.saildrone_entrypoint && \
+    echo 'cat /root/.saildrone_entrypoint' >> /root/.bashrc
 
 WORKDIR /root

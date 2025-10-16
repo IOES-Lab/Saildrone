@@ -89,7 +89,7 @@ ARG ROS_DISTRO="jazzy"
 RUN apt update && apt full-upgrade -y && apt autoremove -y
 
 # Install ROS-Gazebo framework
-ADD https://raw.githubusercontent.com/IOES-Lab/dave/$BRANCH/\
+ADD https://raw.githubusercontent.com/IOES-Lab/saildrone/$BRANCH/\
 extras/ros-jazzy-gz-harmonic-install.sh install.sh
 RUN sudo bash install.sh
 
@@ -118,7 +118,7 @@ RUN wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/
 # Download the background image from GitHub raw content URL
 # hadolint ignore=DL3047
 RUN wget -O /usr/share/backgrounds/custom-background.png -q \
-    https://raw.githubusercontent.com/IOES-Lab/dave/$BRANCH/\
+    https://raw.githubusercontent.com/IOES-Lab/saildrone/$BRANCH/\
 extras/background.png && \
     mv /usr/share/backgrounds/warty-final-ubuntu.png \
         /usr/share/backgrounds/warty-final-ubuntu.png.bak && \
@@ -129,15 +129,15 @@ extras/background.png && \
 
 # Install Ardupilot - ArduRover
 USER docker
-RUN wget -O /tmp/install.sh https://raw.githubusercontent.com/IOES-Lab/dave/$BRANCH/extras/ardurover-ubuntu-install-local.sh
+RUN wget -O /tmp/install.sh https://raw.githubusercontent.com/IOES-Lab/saildrone/$BRANCH/extras/ardurover-ubuntu-install-local.sh
 RUN chmod +x /tmp/install.sh && bash /tmp/install.sh
 
 # Set up Dave workspace
-ENV DAVE_UNDERLAY=/home/$USER/dave_ws
+ENV DAVE_UNDERLAY=/home/$USER/saildrone_ws
 WORKDIR $DAVE_UNDERLAY/src
-RUN wget -O /home/$USER/dave_ws/dave.repos -q https://raw.githubusercontent.com/IOES-Lab/dave/$BRANCH/\
+RUN wget -O /home/$USER/saildrone_ws/dave.repos -q https://raw.githubusercontent.com/IOES-Lab/saildrone/$BRANCH/\
 extras/repos/dave.$ROS_DISTRO.repos
-RUN vcs import --shallow --input "/home/$USER/dave_ws/dave.repos"
+RUN vcs import --shallow --input "/home/$USER/saildrone_ws/dave.repos"
 
 USER root
 # hadolint ignore=DL3027
@@ -147,7 +147,7 @@ RUN apt update && apt --fix-broken install && \
     rm -rf /var/lib/apt/lists/
 USER docker
 
-# Build dave workspace
+# Build Saildrone workspace
 WORKDIR $DAVE_UNDERLAY
 RUN . "/opt/ros/${ROS_DISTRO}/setup.sh" && colcon build
 
@@ -181,7 +181,7 @@ RUN mkdir -p /home/docker/.config/autostart && \
     printf '|_____/            |_| (_) (_)   |____/ \\____/ |_| \\_| \n' >> ~/.hi && \
     printf '\033[0m' >> ~/.hi && \
     printf '\033[1;32m\n =====\n\033[0m' >> ~/.hi && \
-    printf "\\033[1;32m 👋 Hi! This is Docker virtual environment for DAVE\n\\033[0m" \
+    printf "\\033[1;32m 👋 Hi! This is Docker virtual environment for SailDrone (fork from Dave)\n\\033[0m" \
     >> ~/.hi && \
     printf "\\033[1;33m\tROS2 Jazzy - Gazebo Harmonic (w ardupilot(ardurover) + mavros)\n\n\n\\033[0m" \
     >> ~/.hi
