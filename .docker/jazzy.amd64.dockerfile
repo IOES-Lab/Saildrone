@@ -87,11 +87,10 @@ RUN echo "source /opt/ros/jazzy/setup.bash" >> /root/.bashrc && \
     echo "export PS1='\[\e[1;36m\]\u@DAVE_docker\[\e[0m\]\[\e[1;34m\](\$(hostname | cut -c1-12))\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ '" >> /root/.bashrc
 
 RUN touch /root/.saildrone_entrypoint && printf '\033[1;36m =====\n' >> /root/.saildrone_entrypoint && \
-    printf '  ____    _    _____ _       _     ____   ____   _   _   _____  \n' >> /root/.saildrone_entrypoint && \
-    printf ' / ___|  / \  |  ___| |     | |   |  _ \\ / ___| | \\ | | | ____| \n' >> /root/.saildrone_entrypoint && \
-    printf '| |     / _ \ | |_  | |     | |   | | | | |     |  \\| | |  _|   \n' >> /root/.saildrone_entrypoint && \
-    printf '| |___ / ___ \|  _| | |___  | |   | |_| | |___  | |\\  | | |___  \n' >> /root/.saildrone_entrypoint && \
-    printf ' \\____/_/   \\_\\_|   |_____| |_|   |____/ \\____| |_| \\_| |_____| \n\033[0m' >> /root/.saildrone_entrypoint && \
+    printf ' ▗▄▄▖ ▗▄▖ ▗▄▄▄▖▗▖   ▗▄▄▄ ▗▄▄▖  ▗▄▖ ▗▖  ▗▖▗▄▄▄▖\n' >> /root/.saildrone_entrypoint && \
+    printf '▐▌   ▐▌ ▐▌  █  ▐▌   ▐▌  █▐▌ ▐▌▐▌ ▐▌▐▛▚▖▐▌▐▌   \n' >> /root/.saildrone_entrypoint && \
+    printf ' ▝▀▚▖▐▛▀▜▌  █  ▐▌   ▐▌  █▐▛▀▚▖▐▌ ▐▌▐▌ ▝▜▌▐▛▀▀▘\n' >> /root/.saildrone_entrypoint && \
+    printf '▗▄▄▞▘▐▌ ▐▌▗▄█▄▖▐▙▄▄▖▐▙▄▄▀▐▌ ▐▌▝▚▄▞▘▐▌  ▐▌▐▙▄▄▖ by IOES\n\033[0m' >> /root/.saildrone_entrypoint && \
     printf '\033[1;32m\n =====\n\033[0m' >> /root/.saildrone_entrypoint && \
     printf "\\033[1;32m 👋 Hi! This is Docker virtual environment for Saildrone (fork from Dave)\n\\033[0m" \
     >> /root/.saildrone_entrypoint && \

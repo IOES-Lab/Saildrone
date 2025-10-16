@@ -82,7 +82,7 @@ FROM woensugchoi/ubuntu-arm-rdp-base:latest
 ARG USER=docker
 
 # ROS-Gazebo arg
-ARG BRANCH="ros2"
+ARG BRANCH="main"
 ARG ROS_DISTRO="jazzy"
 
 # Update OS
@@ -173,12 +173,10 @@ RUN echo "export XDG_RUNTIME_DIR=~/.xdg_log" >> ~/.bashrc && \
 # Create and write the welcome message to a new file
 RUN mkdir -p /home/docker/.config/autostart && \
     printf '\033[1;36m =====\n' >> ~/.hi && \
-    printf '  _____    _    _____ _     _     ____   ____   _   _  \n' >> ~/.hi && \
-    printf ' / ____|  / \\  |  __ \\ |   | |   |  _ \\ / __ \\ | \\ | | \n' >> ~/.hi && \
-    printf '| (___   / _ \\ | |  | | |   | |   | |_) | |  | ||  \\| | \n' >> ~/.hi && \
-    printf ' \\___ \\ / ___ \\| |  | | |   | |   |  _ <| |  | || . ` | \n' >> ~/.hi && \
-    printf ' ____) /_/   \\_\\_|  |_|_|   |_|   | |_) | |__| || |\\  | \n' >> ~/.hi && \
-    printf '|_____/            |_| (_) (_)   |____/ \\____/ |_| \\_| \n' >> ~/.hi && \
+    printf ' ▗▄▄▖ ▗▄▖ ▗▄▄▄▖▗▖   ▗▄▄▄ ▗▄▄▖  ▗▄▖ ▗▖  ▗▖▗▄▄▄▖\n' >> ~/.hi && \
+    printf '▐▌   ▐▌ ▐▌  █  ▐▌   ▐▌  █▐▌ ▐▌▐▌ ▐▌▐▛▚▖▐▌▐▌   \n' >> ~/.hi && \
+    printf ' ▝▀▚▖▐▛▀▜▌  █  ▐▌   ▐▌  █▐▛▀▚▖▐▌ ▐▌▐▌ ▝▜▌▐▛▀▀▘\n' >> ~/.hi && \
+    printf '▗▄▄▞▘▐▌ ▐▌▗▄█▄▖▐▙▄▄▖▐▙▄▄▀▐▌ ▐▌▝▚▄▞▘▐▌  ▐▌▐▙▄▄▖\n' >> ~/.hi && \
     printf '\033[0m' >> ~/.hi && \
     printf '\033[1;32m\n =====\n\033[0m' >> ~/.hi && \
     printf "\\033[1;32m 👋 Hi! This is Docker virtual environment for SailDrone (fork from Dave)\n\\033[0m" \
