@@ -9,8 +9,8 @@ repositories:
     url: https://github.com/IOES-Lab/rocker.git
     version: main
 
-  dave:
+  saildrone:
     type: git
-    url: https://github.com/IOES-Lab/dave.git
-    version: ros2
+    url: https://github.com/IOES-Lab/Saildrone.git
+    version: main
 

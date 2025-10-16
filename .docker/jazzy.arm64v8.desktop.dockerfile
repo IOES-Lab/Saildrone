@@ -1,6 +1,10 @@
-ARG ROS_DISTRO="jazzy"
-FROM osrf/ros:$ROS_DISTRO-desktop-full
+FROM arm64v8/ros:jazzy
 ARG BRANCH="main"
+
+# install ros2 packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-jazzy-desktop-full \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Utilities
 # hadolint ignore=DL3008
@@ -86,7 +90,6 @@ RUN echo "source /opt/ros/jazzy/setup.bash" >> /root/.bashrc && \
     echo "source /opt/saildrone_ws/install/setup.bash" >> /root/.bashrc && \
     echo "export PATH=/opt/ardupilot_ws/ardupilot/Tools/autotest:\$PATH" >> /root/.bashrc && \
     echo "export PATH=/opt/ardupilot_ws/ardupilot/build/sitl/bin:\$PATH" >> /root/.bashrc && \
-    echo "export GZ_SIM_SYSTEM_PLUGIN_PATH=/opt/ardupilot_ws/ardupilot_gazebo/build:\$GZ_SIM_SYSTEM_PLUGIN_PATH" >> /root/.bashrc && \
     echo "export GZ_SIM_SYSTEM_PLUGIN_PATH=/opt/ardupilot_ws/ardupilot_gazebo/build:\$GZ_SIM_SYSTEM_PLUGIN_PATH:/opt/saildrone_ws/install/wave/lib" >> ~/.bashrc && \
     echo "export GZ_GUI_PLUGIN_PATH=\$GZ_GUI_PLUGIN_PATH:/opt/saildrone_ws/install/wave/src/gui/plugins/waves_control/build" >> ~/.bashrc && \
     echo "export GZ_SIM_RESOURCE_PATH=/opt/ardupilot_ws/ardupilot_gazebo/models:/opt/ardupilot_ws/ardupilot_gazebo/worlds:\$GZ_SIM_RESOURCE_PATH" >> /root/.bashrc && \
