@@ -123,7 +123,7 @@ RUN wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/
 # Download the background image from GitHub raw content URL
 # hadolint ignore=DL3047
 RUN wget -O /usr/share/backgrounds/custom-background.png -q \
-    https://raw.githubusercontent.com/IOES-Lab/saildrone/$BRANCH/\
+    https://raw.githubusercontent.com/IOES-Lab/saildrone/main/\
 extras/background.png && \
     mv /usr/share/backgrounds/warty-final-ubuntu.png \
         /usr/share/backgrounds/warty-final-ubuntu.png.bak && \
@@ -138,8 +138,8 @@ RUN wget -O /tmp/install.sh https://raw.githubusercontent.com/IOES-Lab/saildrone
 RUN chmod +x /tmp/install.sh && bash /tmp/install.sh
 
 # Set up Dave workspace
-ENV DAVE_UNDERLAY=/home/$USER/saildrone_ws
-WORKDIR $DAVE_UNDERLAY/src
+ENV SAILDRONE_WS=/home/$USER/saildrone_ws
+WORKDIR $SAILDRONE_WS/src
 RUN wget -O /home/$USER/saildrone_ws/saildrone.repos -q https://raw.githubusercontent.com/IOES-Lab/saildrone/$BRANCH/\
 extras/repos/saildrone.$ROS_DISTRO.repos
 RUN vcs import --shallow --input "/home/$USER/saildrone_ws/saildrone.repos"
@@ -152,31 +152,58 @@ RUN apt update && apt --fix-broken install && \
     rm -rf /var/lib/apt/lists/
 
 # Install VSCode
-RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /usr/share/keyrings/microsoft.gpg && \
-    echo "deb [arch=arm64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main" \
-    > /etc/apt/sources.list.d/vscode.list && \
-    apt-get update && apt-get install -y code && \
-    rm -rf /var/lib/apt/lists/*
+# RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /usr/share/keyrings/microsoft.gpg && \
+#     echo "deb [arch=arm64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main" \
+#     > /etc/apt/sources.list.d/vscode.list && \
+#     apt-get update && apt-get install -y code && \
+#     rm -rf /var/lib/apt/lists/*
 
 USER docker
 # Build Saildrone workspace
-WORKDIR $DAVE_UNDERLAY
+WORKDIR $SAILDRONE_WS
 RUN . "/opt/ros/${ROS_DISTRO}/setup.sh" && colcon build
+
+# Build wave sim
+WORKDIR $SAILDRONE_WS/src/saildrone/gazebo/dave_gz_world_plugins/ocean-waves
+RUN colcon build
+
+# Build wave sim GUI plugin
+WORKDIR $SAILDRONE_WS/src/saildrone/gazebo/dave_gz_world_plugins/ocean-waves/src/gui/plugins/waves_control
+RUN mkdir build && cd build && cmake .. && make
 
 # Patch for wave sim
 USER root
 RUN ln -s /opt/ros/jazzy/opt/gz_ogre_next_vendor/lib/libOgreNextMain.so.2.3.3 /opt/ros/jazzy/opt/gz_ogre_next_vendor/lib/libOgreNextMain.so.2.3.1
 
+# Install ROS_GZ_ROVER
+USER docker
+RUN mkdir -p /home/docker/ros_gz_rover/src
+WORKDIR /home/docker/ros_gz_rover/src
+RUN git clone https://github.com/IOES-Lab/ros_gz_rover.git -b jazzy
+WORKDIR /home/docker/ros_gz_rover
+RUN . "/opt/ros/${ROS_DISTRO}/setup.sh" && colcon build
+
+WORKDIR /home/docker
+RUN git clone https://github.com/ArduPilot/SITL_Models.git
+WORKDIR /home/docker/SITL_Models/Gazebo
+RUN . "/opt/ros/${ROS_DISTRO}/setup.sh" && colcon build
+
+RUN pip install PyYAML mavproxy --break-system-packages
+RUN echo "export PATH=\$PATH:\$HOME/.local/bin" >> ~/.bashrc
+
 # Set User as user
 USER docker
 RUN echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc && \
-    echo "source $DAVE_UNDERLAY/install/setup.bash" >> ~/.bashrc && \
-    echo "export GEOGRAPHICLIB_GEOID_PATH=/usr/local/share/GeographicLib/geoids" >> ~/.bashrc && \
+    echo "source $SAILDRONE_WS/install/setup.bash" >> ~/.bashrc && \
+    echo "source /home/$USER/SITL_Models/Gazebo/install/setup.bash" >> ~/.bashrc && \
+    echo "source /home/$USER/ros_gz_rover/install/setup.bash" >> ~/.bashrc && \
+    echo "export GEOGRAPHICLIB_GEOID_PATH=/usr/share/GeographicLib/geoids" >> ~/.bashrc && \
     echo "export PYTHONPATH=\$PYTHONPATH:/opt/gazebo/install/lib/python" >> ~/.bashrc && \
     echo "export PATH=/home/$USER/ardupilot_ws/ardupilot/Tools/autotest:\$PATH" >> ~/.bashrc && \
     echo "export PATH=/home/$USER/ardupilot_ws/ardupilot/build/sitl/bin:\$PATH" >> ~/.bashrc && \
-    echo "export GZ_SIM_SYSTEM_PLUGIN_PATH=/home/$USER/ardupilot_ws/ardupilot_gazebo/build:\$GZ_SIM_SYSTEM_PLUGIN_PATH:/home/docker/saildrone_ws/install/wave/lib" >> ~/.bashrc && \
-    echo "export GZ_GUI_PLUGIN_PATH=\$GZ_GUI_PLUGIN_PATH:/home/docker/saildrone_ws/install/wave/src/gui/plugins/waves_control/build" >> ~/.bashrc && \
+    echo "export GZ_SIM_SYSTEM_PLUGIN_PATH=/home/$USER/ardupilot_ws/ardupilot_gazebo/build:\$GZ_SIM_SYSTEM_PLUGIN_PATH:/home/docker/saildrone_ws/src/saildrone/gazebo/dave_gz_world_plugins/ocean-waves/install/wave/lib" >> ~/.bashrc && \
+    echo "export GZ_GUI_PLUGIN_PATH=\$GZ_GUI_PLUGIN_PATH:/home/docker/saildrone_ws/src/saildrone/gazebo/dave_gz_world_plugins/ocean-waves/src/gui/plugins/waves_control/build" >> ~/.bashrc && \
+    echo "export LD_LIBRARY_PATH=/home/docker/saildrone_ws/src/saildrone/gazebo/dave_gz_world_plugins/ocean-waves/install/wave/lib:\$LD_LIBRARY_PATH" >> ~/.bashrc && \
     echo "export GZ_SIM_RESOURCE_PATH=/home/$USER/ardupilot_ws/ardupilot_gazebo/models:/home/$USER/ardupilot_ws/ardupilot_gazebo/worlds:\$GZ_SIM_RESOURCE_PATH" >> ~/.bashrc && \
     echo "\n\n" >> ~/.bashrc && echo "if [ -d ~/HOST ]; then chown $USER:$USER ~/HOST; fi" >> ~/.bashrc  && \
     echo "export PS1='\[\e[1;36m\]\u@DAVE_docker\[\e[0m\]\[\e[1;34m\](\$(hostname | cut -c1-12))\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ '" >>  ~/.bashrc
