@@ -1,7 +1,14 @@
 # Saildrone
 
 [![Publish a Docker image (AMD64; Common X86_64 Linux Machine)](https://github.com/IOES-Lab/Saildrone/actions/workflows/docker-amd64.yml/badge.svg)](https://github.com/IOES-Lab/Saildrone/actions/workflows/docker-amd64.yml)
-[![Publish a Docker image (ARM64; Apple Silicon)](https://github.com/IOES-Lab/dave/actions/workflows/docker-arm64v8.yml/badge.svg?branch=ros2)](https://github.com/IOES-Lab/Saildrone/actions/workflows/docker-arm64v8.yml)
+- Image at `ioeslab/saildrone:ros2-amd64`
+
+
+[![Publish a Docker image (ARM64; Apple Silicon - Desktop)](https://github.com/IOES-Lab/dave/actions/workflows/docker-arm64v8-desktop.yml/badge.svg?branch=ros2)](https://github.com/IOES-Lab/Saildrone/actions/workflows/docker-arm64v8-desktop.yml)
+- Image at `ioeslab/saildrone:ros2-arm-desktop`
+
+[![Publish a Docker image (ARM64; Apple Silicon - RDP)](https://github.com/IOES-Lab/dave/actions/workflows/docker-arm64v8.yml/badge.svg?branch=ros2)](https://github.com/IOES-Lab/Saildrone/actions/workflows/docker-arm64v8.yml)
+- Image at `ioeslab/saildrone:ros2-arm-rdp`
 
 The original Documentation is currently at [http://dave-ros2.notion.site](http://dave-ros2.notion.site)
 

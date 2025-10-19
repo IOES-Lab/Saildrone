@@ -76,7 +76,33 @@ RUN apt-get update && rosdep update && \
 WORKDIR $SAILDRONE_WS
 RUN . "/opt/ros/${ROS_DISTRO}/setup.sh" && \
     colcon build
-WORKDIR /
+
+# Build wave sim
+WORKDIR $SAILDRONE_WS/src/saildrone/gazebo/dave_gz_world_plugins/ocean-waves
+RUN colcon build
+
+# Build wave sim GUI plugin
+WORKDIR $SAILDRONE_WS/src/saildrone/gazebo/dave_gz_world_plugins/ocean-waves/src/gui/plugins/waves_control
+RUN mkdir build && cd build && cmake .. && make
+
+# Patch for wave sim
+RUN ln -s /opt/ros/jazzy/opt/gz_ogre_next_vendor/lib/libOgreNextMain.so.2.3.3 /opt/ros/jazzy/opt/gz_ogre_next_vendor/lib/libOgreNextMain.so.2.3.1
+
+# Install ROS_GZ_ROVER
+USER docker
+RUN mkdir -p /opt/ros_gz_rover/src
+WORKDIR /opt/ros_gz_rover/src
+RUN git clone https://github.com/IOES-Lab/ros_gz_rover.git -b jazzy
+WORKDIR /opt/ros_gz_rover
+RUN . "/opt/ros/${ROS_DISTRO}/setup.sh" && colcon build
+
+WORKDIR /opt
+RUN git clone https://github.com/ArduPilot/SITL_Models.git
+WORKDIR /opt/SITL_Models/Gazebo
+RUN . "/opt/ros/${ROS_DISTRO}/setup.sh" && colcon build
+
+RUN pip install PyYAML mavproxy --break-system-packages
+RUN echo "export PATH=\$PATH:\$HOME/.local/bin" >> ~/.bashrc
 
 # Patch for wave sim
 RUN ln -s /opt/ros/jazzy/opt/gz_ogre_next_vendor/lib/libOgreNextMain.so.2.3.3 /opt/ros/jazzy/opt/gz_ogre_next_vendor/lib/libOgreNextMain.so.2.3.1
@@ -84,11 +110,14 @@ RUN ln -s /opt/ros/jazzy/opt/gz_ogre_next_vendor/lib/libOgreNextMain.so.2.3.3 /o
 # Set up bashrc for root
 RUN echo "source /opt/ros/jazzy/setup.bash" >> /root/.bashrc && \
     echo "source /opt/saildrone_ws/install/setup.bash" >> /root/.bashrc && \
+    echo "source /opt/SITL_Models/Gazebo/install/setup.bash" >> ~/.bashrc && \
+    echo "source /opt/ros_gz_rover/install/setup.bash" >> ~/.bashrc && \
     echo "export PATH=/opt/ardupilot_ws/ardupilot/Tools/autotest:\$PATH" >> /root/.bashrc && \
     echo "export PATH=/opt/ardupilot_ws/ardupilot/build/sitl/bin:\$PATH" >> /root/.bashrc && \
     echo "export GZ_SIM_SYSTEM_PLUGIN_PATH=/opt/ardupilot_ws/ardupilot_gazebo/build:\$GZ_SIM_SYSTEM_PLUGIN_PATH" >> /root/.bashrc && \
-    echo "export GZ_SIM_SYSTEM_PLUGIN_PATH=/opt/ardupilot_ws/ardupilot_gazebo/build:\$GZ_SIM_SYSTEM_PLUGIN_PATH:/opt/saildrone_ws/install/wave/lib" >> ~/.bashrc && \
-    echo "export GZ_GUI_PLUGIN_PATH=\$GZ_GUI_PLUGIN_PATH:/opt/saildrone_ws/install/wave/src/gui/plugins/waves_control/build" >> ~/.bashrc && \
+    echo "export GZ_SIM_SYSTEM_PLUGIN_PATH=/opt/ardupilot_ws/ardupilot_gazebo/build:\$GZ_SIM_SYSTEM_PLUGIN_PATH:/opt/saildrone_ws/src/saildrone/gazebo/dave_gz_world_plugins/ocean-waves/install/wave/lib" >> ~/.bashrc && \
+    echo "export GZ_GUI_PLUGIN_PATH=\$GZ_GUI_PLUGIN_PATH:/opt/saildrone_ws/src/saildrone/gazebo/dave_gz_world_plugins/ocean-waves/src/gui/plugins/waves_control/build" >> ~/.bashrc && \
+    echo "export LD_LIBRARY_PATH=/opt/saildrone_ws/src/saildrone/gazebo/dave_gz_world_plugins/ocean-waves/install/wave/lib:\$LD_LIBRARY_PATH" >> ~/.bashrc && \
     echo "export GZ_SIM_RESOURCE_PATH=/opt/ardupilot_ws/ardupilot_gazebo/models:/opt/ardupilot_ws/ardupilot_gazebo/worlds:\$GZ_SIM_RESOURCE_PATH" >> /root/.bashrc && \
     echo "export PS1='\[\e[1;36m\]\u@DAVE_docker\[\e[0m\]\[\e[1;34m\](\$(hostname | cut -c1-12))\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ '" >> /root/.bashrc
 

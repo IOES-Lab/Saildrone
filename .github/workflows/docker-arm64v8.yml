@@ -1,5 +1,5 @@
 ---
-name: Publish a Docker image (ARM64; Apple Silicon)
+name: Publish a Docker image (ARM64; Apple Silicon - RDP)
 
 # yamllint disable-line rule:truthy
 on:
@@ -50,7 +50,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          file: .docker/jazzy.arm64v8.dockerfile
+          file: .docker/jazzy.arm64v8.rdp.dockerfile
           platforms: linux/arm64/v8
           build-args: |
             ROS_DISTRO=${{ env.ROS_DISTRO }}
