@@ -103,9 +103,6 @@ RUN . "/opt/ros/${ROS_DISTRO}/setup.sh" && colcon build
 RUN pip install PyYAML mavproxy --break-system-packages
 RUN echo "export PATH=\$PATH:\$HOME/.local/bin" >> ~/.bashrc
 
-# Patch for wave sim
-RUN ln -s /opt/ros/jazzy/opt/gz_ogre_next_vendor/lib/libOgreNextMain.so.2.3.3 /opt/ros/jazzy/opt/gz_ogre_next_vendor/lib/libOgreNextMain.so.2.3.1
-
 # Set up bashrc for root
 RUN echo "source /opt/ros/jazzy/setup.bash" >> /root/.bashrc && \
     echo "source /opt/saildrone_ws/install/setup.bash" >> /root/.bashrc && \
