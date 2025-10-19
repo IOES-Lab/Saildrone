@@ -89,7 +89,6 @@ RUN mkdir build && cd build && cmake .. && make
 RUN ln -s /opt/ros/jazzy/opt/gz_ogre_next_vendor/lib/libOgreNextMain.so.2.3.3 /opt/ros/jazzy/opt/gz_ogre_next_vendor/lib/libOgreNextMain.so.2.3.1
 
 # Install ROS_GZ_ROVER
-USER docker
 RUN mkdir -p /opt/ros_gz_rover/src
 WORKDIR /opt/ros_gz_rover/src
 RUN git clone https://github.com/IOES-Lab/ros_gz_rover.git -b jazzy
